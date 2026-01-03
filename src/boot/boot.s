@@ -3,7 +3,7 @@
 .set MEMINFO,	1<<1		/* provide memory map */
 .set FLAGS,	ALIGN | MEMINFO	/* this is the Multiboot 'flag' field */
 .set MAGIC,	0x1BADB002	/* 'magic number' lets bootloader find the header */
-.set CHECKSUM,	-(MAGIC + FLAGS)/* checksum of above, to prove we are multiboot */
+.set CHACKSUM,	-(MAGIC + FLAGS)/* checksum of above, to prove we are multiboot */
 
 /*
 Declare a multiboot header that marks the program as a kernel. There are maginc
@@ -79,6 +79,7 @@ _start:
 	( pushed 0 bytes so far), so the alignment has thus been preserved and the
 	call is well defined.
 	*/
+	call kernel_main
 
 	/*
 	If the system has nothign more to do, put the computer into an infinite loop.
@@ -93,8 +94,8 @@ _start:
 	   non-maskable interrupt occurring or due to system management mode.
 	*/
 	cli
-1:	htl
-	jum 1b
+1:	hlt
+	jmp 1b
 
 /*
 Set the size of the _start symbol to the current location '.' minus its start.
