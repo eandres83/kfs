@@ -4,5 +4,6 @@
 #include <stddef.h>
 
 size_t	kstrlen(const char *str);
+void	*kmemcpy(void *dest, const void *src, size_t n);
 
 #endif
