@@ -1,7 +1,7 @@
 CC = i686-elf-gcc
 AS = i686-elf-as
 
-CFLAGS = -m32 -ffreestanding -02 -Wall -Wextra -Werror -g \
+CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs
 
@@ -18,7 +18,7 @@ all: $(NAME)
 
 $(NAME): $(OBJS)
 	@echo "Linking kernel..."
-	$(CC) $(LDLFAGS) -o $(NAME) $(OBJS) -lgc
+	$(CC) $(LDFLAGS) -o $(NAME) $(OBJS) -lgc
 	@echo "!Kernel compiled"
 
 %.o: %.c
@@ -32,7 +32,7 @@ $(NAME): $(OBJS)
 clean:
 	rm -f $(OBJS)
 
-flean: clean
+fclean: clean
 	rm -f $(NAME)
 
 re: fclean all
