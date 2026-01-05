@@ -18,7 +18,7 @@ all: $(NAME)
 
 $(NAME): $(OBJS)
 	@echo "Linking kernel..."
-	$(CC) $(LDFLAGS) -o $(NAME) $(OBJS) -lgc
+	$(CC) $(LDFLAGS) -o $(NAME) $(OBJS) -nostdlib -lgcc
 	@echo "!Kernel compiled"
 
 %.o: %.c
