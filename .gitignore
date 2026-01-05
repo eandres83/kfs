@@ -2,3 +2,6 @@
 *.o
 *.out
 *.so
+*.iso
+*.bin
+isodir
