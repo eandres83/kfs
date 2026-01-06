@@ -20,5 +20,16 @@ void	kernel_main(void)
 
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 	terminal_writestring("42\n");
+
+	terminal_setcolor(VGA_COLOR_LIGHT_GREEN);
+
+	int i = 0;
+	while (i < 50)
+	{
+		terminal_writestring("Probando scroll... linea de relleno\n");
+		i++;
+	}
+	terminal_setcolor(VGA_COLOR_WHITE);
+	terminal_writestring("Si lees esto, el scroll funciona :)");
 }
 
