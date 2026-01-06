@@ -41,8 +41,11 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
-run: $(NAME)
+run:
 	qemu-system-i386 -kernel $(NAME) -curses
+
+debug:
+	qemu-system-i386 -kernel $(NAME) -curses -s -S
 
 re: fclean all
 
