@@ -11,10 +11,13 @@ LDFLAGS = -T linker.ld
 
 NAME = kernel.bin
 
-SRCS_C = $(wildcard src/kernel/*.c) $(wildcard src/lib/*.c)
+BUILD_DIR = .obj
+
+SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/kernel/*.c) $(wildcard src/lib/*.c)
 SRCS_S = $(wildcard src/boot/*.s)
 
-OBJS = $(SRCS_S:.s=.o) $(SRCS_C:.c=.o)
+OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SRCS_C)) \
+	$(patsubst src/%.s, $(BUILD_DIR)/%.o, $(SRCS_S))
 
 all: $(NAME)
 
@@ -23,16 +26,18 @@ $(NAME): $(OBJS)
 	$(CC) $(LDFLAGS) -o $(NAME) $(OBJS) -nostdlib -lgcc
 	@echo "!Kernel compiled"
 
-%.o: %.c
+$(BUILD_DIR)/%.o: src/%.c
+	@mkdir -p $(dir $@)
 	@echo "Compiling C: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.s
+$(BUILD_DIR)/%.o: src/%.s
+	@mkdir -p $(dir $@)
 	@echo "Compiling ASM: $<"
 	$(AS) -o $@ $<
 
 clean:
-	rm -f $(OBJS)
+	rm -rf $(BUILD_DIR)
 
 fclean: clean
 	rm -f $(NAME)
