@@ -1,4 +1,5 @@
 #include "drivers/vga.h"
+#include <utils.h>
 
 size_t		terminal_row;
 size_t		terminal_column;
@@ -21,6 +22,42 @@ static void	terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 	terminal_buffer[index] = vga_entry(c, color);
 }
 
+// Envia el byte (val) a un puerto de hardware (port)
+static inline void outb(uint16_t port, uint8_t val)
+{
+	/* "a"(val) -> Carga la variable 'val' en el registro AL
+	   "Nd"(port) -> Carga 'port' en el registro DX
+	   "outb %0, %1" -> Ejecuta la instruccion de ensamblador
+	*/
+	asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+}
+
+static void	update_cursor(int x, int y)
+{
+	uint16_t pos = y * VGA_WIDTH + x;
+
+	// 1. send Low Byte
+	outb(0x3D4, 0x0F); // VGA registro 15
+	outb(0x3D5, (uint8_t)(pos & 0xFF));
+
+	// 2. send High Byte
+	outb(0x3D4, 0x0E); // VGA registro 14
+	outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
+}
+
+void	terminal_scroll(void)
+{
+	kmemcpy(terminal_buffer, terminal_buffer + VGA_WIDTH, (VGA_HEIGHT - 1)
+	* VGA_WIDTH * 2);
+
+	size_t	start_index = (VGA_HEIGHT - 1) * VGA_WIDTH;
+
+	for (size_t x = 0; x < VGA_WIDTH; x++)
+		terminal_buffer[start_index + x] = vga_entry(' ', terminal_color);
+
+	terminal_row = VGA_HEIGHT - 1;
+}
+
 void	terminal_initialize(void)
 {
 	terminal_row = 0;
@@ -33,6 +70,7 @@ void	terminal_initialize(void)
 			terminal_buffer[index] = vga_entry(' ', terminal_color);
 		}
 	}
+	update_cursor(0, 0);
 }
 
 void	terminal_setcolor(uint8_t color)
@@ -57,6 +95,11 @@ void	terminal_putchar(char c)
 			}
 		}
 	}
+
+	if (terminal_row == VGA_HEIGHT)
+		terminal_scroll();
+
+	update_cursor(terminal_column, terminal_row);
 }
 
 void	terminal_write(const char* data, size_t size)

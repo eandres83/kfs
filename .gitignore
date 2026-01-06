@@ -3,4 +3,5 @@
 *.out
 *.so
 *.iso
+.obj
 isodir
