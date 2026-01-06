@@ -1,9 +1,11 @@
 CC = i686-elf-gcc
 AS = i686-elf-as
 
+INCLUDES = -I include -I src
+
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
-	 -nostdlib -nodefaultlibs
+	 -nostdlib -nodefaultlibs $(INCLUDES)
 
 LDFLAGS = -T linker.ld
 
