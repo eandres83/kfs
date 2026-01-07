@@ -117,17 +117,25 @@ char	keyboard_read_char()
 	{
 		uint8_t data = inb(0x60);
 
-		if ((kbdus[data] = SHIFT_KEY) && shift_status == 0)
+		// 0x2A = Left shift Press, 0x36 = Right shift Prees
+		if (data == 0x2A || data == 0x36)
 		{
 			shift_status = 1;
 			return (0);
 		}
 
-//		// Comprobar si esta el bit 7 encendido
-//		if (data & 0x80)
-//			return (0);
+		// 0xAA = Left shift release, 0xB6 = Right shift release
+		if (data == 0xAA || data == 0xB6)
+		{
+			shift_status = 0;
+			return (0);
+		}
 
-		if (data < 128 && shift_status == 0)
+		// Comprobar si esta el bit 7 encendido
+		if (data & 0x80)
+			return (0);
+
+		if (!shift_status)
 			return (kbdus[data]);
 		else
 			return (shift_kbdus[data]);
