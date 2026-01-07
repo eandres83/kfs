@@ -47,7 +47,7 @@ static unsigned char kbdus[128] =
 	'l',
 	';',
 	'\'',
-	'\'',
+	'`',
 	SHIFT_KEY,	// left shift
 	'\\',
 	'z',
