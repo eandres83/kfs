@@ -30,6 +30,6 @@ void	kernel_main(void)
 		i++;
 	}
 	terminal_setcolor(VGA_COLOR_WHITE);
-	terminal_writestring("Si lees esto, el scroll funciona :)");
+	kprintf("Hola esto es una prueba para ver que mi printf, \n y esto es el valor de un int -> %d", i);
 }
 
