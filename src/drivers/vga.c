@@ -1,5 +1,6 @@
 #include "drivers/vga.h"
 #include <utils.h>
+#include "drivers/io.h"
 
 size_t		terminal_row;
 size_t		terminal_column;
@@ -20,16 +21,6 @@ static void	terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
 	const size_t index = y * VGA_WIDTH + x;
 	terminal_buffer[index] = vga_entry(c, color);
-}
-
-// Envia el byte (val) a un puerto de hardware (port)
-static inline void outb(uint16_t port, uint8_t val)
-{
-	/* "a"(val) -> Carga la variable 'val' en el registro AL
-	   "Nd"(port) -> Carga 'port' en el registro DX
-	   "outb %0, %1" -> Ejecuta la instruccion de ensamblador
-	*/
-	asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
 static void	update_cursor(int x, int y)
