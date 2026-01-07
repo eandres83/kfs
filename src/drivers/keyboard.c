@@ -98,7 +98,7 @@ static unsigned char kbdus[128] =
 	0		// undefined keys
 };
 
-static const char shift_kbdus = 
+static const char shift_kbdus[128] = 
 {
 	0, 0, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b', 0,
 	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n', 0, 'A',
@@ -117,7 +117,7 @@ char	keyboard_read_char()
 	{
 		uint8_t data = inb(0x60);
 
-		if (kbdus[data] == SHIFT_RIGHT || kbdus[data] == SHIFT_LEFT && shift_status == 0)
+		if ((kbdus[data] = SHIFT_KEY) && shift_status == 0)
 		{
 			shift_status = 1;
 			return (0);
