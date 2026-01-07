@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "drivers/vga.h"
+#include "drivers/keyboard.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -21,15 +22,12 @@ void	kernel_main(void)
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 	terminal_writestring("42\n");
 
-	terminal_setcolor(VGA_COLOR_LIGHT_GREEN);
-
-	int i = 0;
-	while (i < 50)
+	while (1)
 	{
-		terminal_writestring("Probando scroll... linea de relleno\n");
-		i++;
+		char c = keyboard_read_char();
+		if (c > 0)
+			terminal_putchar(c);
 	}
-	terminal_setcolor(VGA_COLOR_WHITE);
-	kprintf("Hola esto es una prueba para ver que mi printf, \n y esto es el valor de un int -> %d", i);
+
 }
 
