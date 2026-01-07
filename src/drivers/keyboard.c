@@ -2,7 +2,9 @@
 #include "io.h"
 #include "keyboard.h"
 
-unsigned char kbdus[128] =
+int	shift_status = 0;
+
+static unsigned char kbdus[128] =
 {
 	0,
 	0,
@@ -96,6 +98,16 @@ unsigned char kbdus[128] =
 	0		// undefined keys
 };
 
+static const char shift_kbdus = 
+{
+	0, 0, '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\b', 0,
+	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n', 0, 'A',
+	'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '\"', '~', 0, '|', 'Z', 'X',
+	'C', 'V', 'B', 'N', 'M', '<', '>', '?', 0, '*', 0, ' ', 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3',
+	'0', '.', '6', 0, 0, 0, 0, 0
+};
+
 char	keyboard_read_char()
 {
 	// Leer el estado del puerto, si el primer bit es un 1 significa que hay info.
@@ -105,12 +117,20 @@ char	keyboard_read_char()
 	{
 		uint8_t data = inb(0x60);
 
-		// Comprobar si esta el bit 7 encendido
-		if (data & 0x80)
+		if (kbdus[data] == SHIFT_RIGHT || kbdus[data] == SHIFT_LEFT && shift_status == 0)
+		{
+			shift_status = 1;
 			return (0);
+		}
 
-		if (data < 128)
+//		// Comprobar si esta el bit 7 encendido
+//		if (data & 0x80)
+//			return (0);
+
+		if (data < 128 && shift_status == 0)
 			return (kbdus[data]);
+		else
+			return (shift_kbdus[data]);
 	}
 	return (0);
 }
