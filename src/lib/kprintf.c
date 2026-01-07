@@ -1,4 +1,5 @@
 #include <utils.h>
+#include "drivers/vga.h"
 
 void	kprintf(const char *format, ...)
 {
@@ -15,13 +16,13 @@ void	kprintf(const char *format, ...)
 			else if (format[i] == 's')
 				terminal_writestring(va_arg(args, char*));
 			else if (format[i] == 'd')
-				fputnbr((long long)va_arg(args, int), 10);
+				kputnbr((long long)va_arg(args, int), 10);
 			else if (format[i] == 'x')
-				fputnbr((long long)va_arg(args, unsigned int), 16);
+				kputnbr((long long)va_arg(args, unsigned int), 16);
 			else if (format[i] == 'p')
 			{
 				terminal_writestring("0x");
-				fputnbr((unsigned long)va_arg(args, void*), 16);
+				kputnbr((unsigned long)va_arg(args, void*), 16);
 			}
 			else if (format[i] == '%')
 				terminal_putchar('%');

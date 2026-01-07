@@ -1,4 +1,5 @@
 #include <utils.h>
+#include "drivers/vga.h"
 
 void	kputnbr(long long n, int base)
 {
@@ -32,7 +33,7 @@ void	kputnbr(long long n, int base)
 	}
 
 	if (is_neg)
-		buf[i++] = '-';
+		buffer[i++] = '-';
 
 	while (i > 0)
 	{
