@@ -79,10 +79,14 @@ void	terminal_putchar(char c)
 	else
 	{
 		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-		if (++terminal_column == VGA_WIDTH) {
+		if (++terminal_column == VGA_WIDTH)
+		{
 			terminal_column = 0;
-			if (++terminal_row == VGA_HEIGHT) {
+			kprintf("Numero de column %d\n", terminal_column);
+			if (++terminal_row == VGA_HEIGHT)
+			{
 				terminal_row = 0;
+				kprintf("Numero de linea %d\n", terminal_row);
 			}
 		}
 	}
