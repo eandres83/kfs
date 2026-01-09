@@ -83,7 +83,6 @@ void	terminal_putchar(char c)
 		{
 			terminal_column = 0;
 			terminal_row++;
-			kprintf("Numero de column %d\n", terminal_column);
 		}
 	}
 
