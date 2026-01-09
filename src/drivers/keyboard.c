@@ -110,7 +110,7 @@ static const char shift_kbdus[128] =
 
 char	keyboard_read_char()
 {
-	// Leer el estado del puerto, si el primer bit es un 1 significa que hay info.
+	// Read the port status, if the first bit is set means that it has info
 	uint8_t status = inb(0x64);
 
 	if (status & 0x01)
@@ -131,7 +131,7 @@ char	keyboard_read_char()
 			return (0);
 		}
 
-		// Comprobar si esta el bit 7 encendido
+		// Check if bit 7 is set
 		if (data & 0x80)
 			return (0);
 
