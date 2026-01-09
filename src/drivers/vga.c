@@ -39,7 +39,7 @@ static void	update_cursor(int x, int y)
 void	terminal_scroll(void)
 {
 	kmemcpy(terminal_buffer, terminal_buffer + VGA_WIDTH, (VGA_HEIGHT - 1)
-	* VGA_WIDTH * 2);
+	* VGA_WIDTH * 2); // kmemcpy 1 byte, terminal_buffer 2 bytes
 
 	size_t	start_index = (VGA_HEIGHT - 1) * VGA_WIDTH;
 
