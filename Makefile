@@ -41,6 +41,18 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	rm -f kfs.iso
+	rm -rf isodir
+
+iso: $(NAME)
+	@mkdir -p isodir/boot/grub
+	@cp $(NAME) isodir/boot/$(NAME)
+	@echo 'menuentry "kfs" {' > isodir/boot/grub/grub.cfg
+	@echo ' multiboot /boot/$(NAME)' >> isodir/boot/grub/grub.cfg
+	@echo '}' >> isodir/boot/grub/grub.cfg
+	@grub-mkrescue -o kfs.iso isodir
+	@echo "kfs.iso created"
+
 run:
 	qemu-system-i386 -kernel $(NAME) -curses
 
@@ -49,4 +61,4 @@ debug:
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re run debug iso
