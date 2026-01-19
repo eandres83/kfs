@@ -3,5 +3,7 @@
 *.out
 *.so
 *.iso
+*.bin
 .obj
 isodir
+.push.sh

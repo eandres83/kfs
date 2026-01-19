@@ -1,6 +1,9 @@
 #ifndef GDT_H
 #define GDT_H
 
+#define GDT_ENTRIES 7
+#define GDT_ADDRESS 0x00000800
+
 #include <utils.h>
 #include <stdint.h>
 
@@ -12,14 +15,16 @@ struct gdt_entry_struct
 	uint8_t		access; // Byte de Acceso
 	uint8_t		granularity; // Granularidad + 4 bits altos del limite
 	uint8_t		base_high; // Los ultimos 8 bits de la base
-} __atribute__((packed));
+} __attribute__((packed));
 
 struct	gdt_ptr_struct
 {
 	uint16_t	limit;
 	uint32_t	base; // Direccion de memoria donde empieza GDT
-} __atribute__((packed));
+} __attribute__((packed));
 
 void	init_gdt();
+
+extern void gdt_flush(uint32_t);
 
 #endif

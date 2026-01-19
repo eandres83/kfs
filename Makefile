@@ -14,7 +14,7 @@ NAME = kernel.bin
 BUILD_DIR = .obj
 
 SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/kernel/*.c) $(wildcard src/lib/*.c)
-SRCS_S = $(wildcard src/boot/*.s)
+SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/kernel/*.s)
 
 OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SRCS_C)) \
 	$(patsubst src/%.s, $(BUILD_DIR)/%.o, $(SRCS_S))
