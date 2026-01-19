@@ -1,7 +1,7 @@
 #include "gdt.h"
 
-struct gdt_entry_struct	gdt[GDT_ENTRIES];
-struct gdt_ptr_struct 		*gdt_ptr = (struct gdt_ptr_struct *)GDT_ADDRESS;
+struct gdt_entry_struct	*gdt = (struct gdt_entry_struct *)GDT_ADDRESS;
+struct gdt_ptr_struct 	gdt_ptr;
 
 static void	gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
 {
