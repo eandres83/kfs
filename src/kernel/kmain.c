@@ -29,6 +29,48 @@ static void	print_splash()
 	terminal_writestring("   By eandres - KFS v0.1\n\n");
 }
 
+extern uint32_t	get_stack_pointer();
+
+static	void	print_stack(void *stack_ptr, size_t lines)
+{
+	unsigned char *ptr;
+
+	ptr = (unsigned char *)stack_ptr;
+
+	kprintf("Stack Dump: \n");
+
+	for (size_t i = 0; i < lines; i++)
+	{
+		terminal_setcolor(VGA_COLOR_BLUE);
+		kprintf("%p : ", ptr);
+
+		terminal_setcolor(VGA_COLOR_RED);
+		for (int x = 0; x < 16; x++)
+		{
+			if (ptr[x] < 16)
+				terminal_putchar('0');
+			kprintf("%x ", ptr[x]);
+		}
+		terminal_setcolor(VGA_COLOR_GREEN);
+		terminal_writestring(" |");
+
+		for (int j = 0; j < 16; j ++)
+		{
+			unsigned char c = ptr[j];
+
+			if (c >= 32 && c <= 126)
+				terminal_putchar(c);
+			else
+				terminal_putchar('.');
+		}
+		terminal_writestring("|");
+
+		terminal_writestring("\n");
+		ptr += 16;
+	}
+	terminal_setcolor(VGA_COLOR_LIGHT_GREY);
+}
+
 void	kernel_main(void)
 {
 	/* Initialize terminal interface */
@@ -37,6 +79,9 @@ void	kernel_main(void)
 
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 	terminal_writestring("42\n");
+
+	void *esp = (void*)get_stack_pointer();
+	print_stack(esp, 10);
 
 	while (1)
 	{
