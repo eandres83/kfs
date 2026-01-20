@@ -76,6 +76,11 @@ void	terminal_putchar(char c)
 		terminal_column = 0;
 		terminal_row++;
 	}
+	else if (c == '\b')
+	{
+		if (terminal_column > 0)
+			terminal_column--;
+	}
 	else
 	{
 		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);

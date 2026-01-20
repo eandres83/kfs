@@ -11,5 +11,6 @@ void	*kmemcpy(void *dest, const void *src, size_t n);
 void	*kmemset(void *dest, int c, size_t n);
 void	kputnbr(long long n, int base);
 void	kprintf(const char *format, ...);
+int	kstrcmp(const char *s1, const char *s2);
 
 #endif
