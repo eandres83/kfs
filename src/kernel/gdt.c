@@ -31,19 +31,19 @@ void	init_gdt()
 	gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
 
 	// Entrada 2 Kernel data
-	gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xC);
+	gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
 
 	// Entrada 3 Kernel stack
-	gdt_set_gate(3, 0, 0xFFFFFFFF, 0x92, 0xC);
+	gdt_set_gate(3, 0, 0xFFFFFFFF, 0x92, 0xCF);
 
 	// Entrada 4 User code
-	gdt_set_gate(4, 0, 0xFFFFFFFF, 0xFA, 0xC);
+	gdt_set_gate(4, 0, 0xFFFFFFFF, 0xFA, 0xCF);
 
 	// Entrada 5 User data
-	gdt_set_gate(5, 0, 0xFFFFFFFF, 0xF2, 0xC);
+	gdt_set_gate(5, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 
 	// Entrada 6 User stack
-	gdt_set_gate(6, 0, 0xFFFFFFFF, 0xF2, 0xC);
+	gdt_set_gate(6, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 
 	gdt_flush((uint32_t)&gdt_ptr);
 }
