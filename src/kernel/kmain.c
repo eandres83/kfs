@@ -4,6 +4,7 @@
 #include "drivers/vga.h"
 #include "drivers/keyboard.h"
 #include "drivers/io.h"
+#include "gdt.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -96,6 +97,7 @@ static void	execute_command(char *str)
 
 void	kernel_main(void)
 {
+	init_gdt();
 	/* Initialize terminal interface */
 	terminal_initialize();
 	print_splash();

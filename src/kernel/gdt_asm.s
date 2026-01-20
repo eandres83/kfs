@@ -19,7 +19,7 @@ gdt_flush:
 	ret
 
 get_stack_pointer:
-	mov (%esp), %eax
+	mov %esp, %eax
 	ret
 
 

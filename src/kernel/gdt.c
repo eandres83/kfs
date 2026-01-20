@@ -20,11 +20,12 @@ static void	gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access,
 
 void	init_gdt()
 {
-	gdt_ptr.limit = (sizeof(struct gdt_ptr_struct) * GDT_ENTRIES) - 1;
+	gdt_ptr.limit = (sizeof(struct gdt_entry_struct) * GDT_ENTRIES) - 1;
 	gdt_ptr.base = (uint32_t)gdt;
 
 	// Escribir en GDT, lo primero todo NULL
 	gdt_set_gate(0, 0, 0, 0, 0);
+//	gdt_set_gate(0, 0xDEADBEEF, 0x4242, 0, 0);
 
 	// Entrada 1. Kernel code
 	gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
