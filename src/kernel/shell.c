@@ -46,13 +46,6 @@ static	void	print_stack(void *stack_ptr, size_t lines)
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 }
 
-static void premission_fault()
-{
-	kprintf("Violating Segment Premissions\n");
-
-	asm volatile ("mov $0x08, %ax\n" "mov %ax, %ds\n" "movl $0, (0)\n");
-}
-
 static inline void halt()
 {
 	asm volatile("hlt");
@@ -97,10 +90,6 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "clear") == 0)
 	{
 		terminal_initialize();
-	}
-	else if (kstrcmp(str, "triple") == 0)
-	{
-		premission_fault();
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
