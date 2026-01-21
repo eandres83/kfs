@@ -25,9 +25,10 @@ Development is divided into strict milestones (branches). This `main` branch con
 | Module | Focus | Status | Key Engineering Concepts |
 | :--- | :--- | :--- | :--- |
 | **[KFS-1](https://github.com/eandres83/kfs/tree/kfs-1)** | **Boot & I/O** | ✅ Completed | Multiboot, Stack Setup, VGA Driver, Polling I/O. |
-| **KFS-2** | **Interrupts** | 🚧 In Progress | GDT, IDT, ISRs, PIC Remapping, Keyboard Interrupts. |
-| **KFS-3** | **Memory** | ⏳ Pending | Virtual Memory, Paging, Heap (kmalloc). |
-| **KFS-4** | **Processes** | ⏳ Pending | Multitasking, Scheduler, User Space, Signals. |
+| **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | **GDT & Shell** | ✅ Completed | Memory Segmentation (GDT), Flat Model, Interactive Shell. |
+| **KFS-3** | **Interrupts** | 🚧 In Progress | IDT, ISRs, PIC Remapping, Keyboard IRQs. |
+| **KFS-4** | **Memory** | ⏳ Pending | Virtual Memory, Paging, Heap (kmalloc). |
+| **KFS-5** | **Processes** | ⏳ Pending | Multitasking, Scheduler, User Space. |
 
 ---
 
@@ -36,7 +37,7 @@ Development is divided into strict milestones (branches). This `main` branch con
 .
 ├── src/
 │   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── kernel/        # Core kernel logic (kmain, interrupts, panic)
+│   ├── kernel/        # Core kernel logic (GDT, Shell, Main)
 │   ├── drivers/       # Hardware drivers (VGA, Keyboard, Serial)
 │   └── lib/           # Custom standard library (kprintf, strings, memory)
 ├── include/           # System-wide header files
@@ -49,11 +50,45 @@ Development is divided into strict milestones (branches). This `main` branch con
 ## 🚀 Current Capabilities (Main Branch)
 
 Running the latest build allows you to:
+* **Interactive Shell:** A CLI environment supporting commands like `help`, `reboot`, `halt`, and `clear`.
+* **Memory Segmentation:** Custom **GDT** implementation enforcing a Flat Memory Model (Code/Data/Stack segments).
 * **Boot via GRUB:** Compliant with Multiboot specifications.
 * **Video Output:** Custom `kprintf` implementation writing to VGA `0xB8000`.
 * **Input:** PS/2 Keyboard driver handling Scancode Set 1.
-* **Library:** A minimalist C library implementation (`kmemset`, `kmemcpy`, `kstrlen`) running without standard system headers.
+* **Library:** A minimalist C library implementation (`kmemset`, `kmemcpy`, `kstrcmp`) running without standard system headers.
 
 ---
 
+## 🛠️ Installation & Usage
+
+### ⚠️ Critical Requirement: Cross-Compiler
+You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
+
+* **Compiler:** `i686-elf-gcc`
+* **Linker:** `i686-elf-ld`
+
+### Build Instructions
+
+1.  **Clone the repository:**
+    ~~~bash
+    git clone https://github.com/eandres83/kfs.git
+    cd kfs
+    ~~~
+
+2.  **Compile the Kernel:**
+    ~~~bash
+    make
+    ~~~
+
+3.  **Run the OS (QEMU):**
+    ~~~bash
+    make run
+    ~~~
+
+4.  **Debug (GDB Connection):**
+    ~~~bash
+    make debug
+    ~~~
+
+---
 *Author: Eleder Andres. "Where there is a shell, there is a way."*
