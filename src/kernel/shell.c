@@ -62,6 +62,7 @@ static void reboot()
 
 static void shutdown()
 {
+	// Se utiliza outw porque son 16 bits no 8
 	outw(0x604, 0x2000);
 }
 
@@ -85,6 +86,10 @@ static void	execute_command(char *str)
 	{
 		kprintf("Shutdown now");
 		shutdown();
+	}
+	else if (kstrcmp(str, "clear") == 0)
+	{
+		terminal_initialize();
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);

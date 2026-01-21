@@ -34,7 +34,7 @@ static void	print_splash()
 	{
 		for (int col = 0; logo[row][col]; col++)
 		{
-			terminal_setcolor(((cor + row) % 14) + 1);
+			terminal_setcolor(((col + row) % 14) + 1);
 			terminal_putchar(logo[row][col]);
 		}
 		terminal_putchar('\n');
@@ -42,9 +42,9 @@ static void	print_splash()
 	terminal_writestring("\n");
 
 	terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
-	termianl_writestring("   By eandres - KFS v0.1\n\n");
+	terminal_writestring(" By eandres - KFS v0.1\n\n");
 
-	termianl_setcolor(VGA_COLOR_LIGHT_GREY);
+	terminal_setcolor(VGA_COLOR_LIGHT_GREY);
 }
 
 void	kernel_main(void)
