@@ -44,7 +44,7 @@ static void	print_splash()
 	terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
 	terminal_writestring(" By eandres - KFS v0.1\n\n");
 
-	terminal_setcolor(VGA_COLOR_LIGHT_GREY);
+	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 }
 
 void	kernel_main(void)
