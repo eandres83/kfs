@@ -19,17 +19,32 @@ extern void	prompt();
 
 static void	print_splash()
 {
-	terminal_setcolor(VGA_COLOR_LIGHT_GREEN);
+	const char *logo[] = {
+	"  _  __  _____   ____  ",
+	" | |/ / |  ___| / ___| ",
+	" | ' /  | |_    \\___ \\ ",
+	" | . \\  |  _|    ___) |",
+	" |_|\\_\\ |_|     |____/ ",
+	0
+	};
+
 	terminal_writestring("\n");
-	terminal_writestring("  _  __  _____   ____  \n");
-	terminal_writestring(" | |/ / |  ___| / ___| \n");
-	terminal_writestring(" | ' /  | |_	\\___ \\ \n");
-	terminal_writestring(" | . \\  |  _|	___) |\n");
-	terminal_writestring(" |_|\\_\\ |_|	 |____/ \n");
+
+	for (int row = 0; logo[row]; row++)
+	{
+		for (int col = 0; logo[row][col]; col++)
+		{
+			terminal_setcolor(((cor + row) % 14) + 1);
+			terminal_putchar(logo[row][col]);
+		}
+		terminal_putchar('\n');
+	}
 	terminal_writestring("\n");
-	
+
 	terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
-	terminal_writestring("   By eandres - KFS v0.1\n\n");
+	termianl_writestring("   By eandres - KFS v0.1\n\n");
+
+	termianl_setcolor(VGA_COLOR_LIGHT_GREY);
 }
 
 void	kernel_main(void)
