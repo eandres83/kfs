@@ -65,7 +65,7 @@ Running the latest build allows you to:
 You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
 
 * **Compiler:** `i686-elf-gcc`
-* **Linker:** `i686-elf-ld`
+* **ASM:** `i686-elf-as`
 
 ### Build Instructions
 
