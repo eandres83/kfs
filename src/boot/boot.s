@@ -70,7 +70,8 @@ _start:
 	should be enabled here. C++ features such as global constructors and exceptions
 	will requier runtime support to work as well.
 	*/
-
+	push %ebx
+	push %eax
 	/*
 	Enter the high-level kernel. The ABI requires the stack is 16-bytes
 	aligned at the time of the call instructino (which afterwards pushes

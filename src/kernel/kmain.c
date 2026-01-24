@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "drivers/vga.h"
 #include "gdt.h"
+#include "multiboot.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -47,12 +48,22 @@ static void	print_splash()
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 }
 
-void	kernel_main(void)
+void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 {
-	init_gdt();
 	/* Initialize terminal interface */
 	terminal_initialize();
 	print_splash();
+
+	// Make sure the magic number matches for memory mapping
+	if (magic != 0x2BADB002)
+		kprintf("error");
+
+	init_pmm(boot_info);
+
+	init_gdt();
+
+	kprintf("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
+	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	prompt();
 }

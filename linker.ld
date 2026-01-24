@@ -46,6 +46,8 @@ SECTIONS
 		*(.bss)
 	}
 
+	_end = .;
+
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply and stuff here as needed. */
 }
