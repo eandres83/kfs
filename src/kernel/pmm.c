@@ -8,7 +8,6 @@ extern uint32_t _start;
 extern uint32_t _end;
 
 static uint32_t pmm_bitmap[MAX_PAGES];
-
 static uint32_t total_ram_frames = 0;
 
 // Marca una pagina como OCUPADA bit = 1
@@ -25,12 +24,37 @@ static void pmm_unset_bit(uint32_t frame_idx)
 	pmm_bitmap[frame_idx / 32] &= ~(1 << (frame_idx % 32));
 }
 
-// Comprobar si la pagina esta ocupada
-int pmm_test_bit(uint32_t frame_idx)
+static	void	pmm_reserver_kernel(void)
 {
-	if ((pmm_bitmap[frame_idx / 32] & (1 << (frame_idx % 32))) != 0)
-		return (1);
-	return (0);
+	uint32_t start_page;
+	uint32_t end_page;
+
+	start_page = ((uint32_t)&_start) / PAGE_SIZE;
+	end_page = ((uint32_t)&_end) / PAGE_SIZE;
+
+	for (uint32_t i = start_page; i <= end_page; i++)
+		pmm_set_bit(i);
+}
+
+static void	pmm_init_region(uint64_t addr, uint64_t len)
+{
+	uint64_t current_addr;
+	uint64_t page_idx;
+
+	// Iteramos por cada pagina dentro de la region
+	for (uint64_t i = 0; i < len; i += PAGE_SIZE)
+	{
+		current_addr = addr + i;
+		page_idx = current_addr / PAGE_SIZE;
+
+		// Solo si el indice cabe en nuestro bitmap
+		if (page_idx < (MAX_PAGES * 32))
+		{
+			pmm_unset_bit(page_idx);
+			total_ram_frames++;
+		}
+	}
+
 }
 
 void	init_pmm(multiboot_info_t *mboot_info)
@@ -45,33 +69,61 @@ void	init_pmm(multiboot_info_t *mboot_info)
 	while ((uint32_t)entry < mmap_end_addr)
 	{
 		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE)
-		{
-			uint64_t addr = entry->addr;
-			uint64_t len = entry->len;
+			pmm_init_region(mboot_info->mmap_addr, mboot_info->mmap_length);
 
-			for (uint64_t i = 0; i < len; i += PAGE_SIZE)
-			{
-				uint64_t current_addr = addr + i;
-				// Indice de pagina
-				uint32_t page_idx = current_addr / PAGE_SIZE;
-
-				// Solo si el indice cabe en nuestro bitmap (seguridad para > 4GB)
-				if (page_idx < (MAX_PAGES * 32))
-				{
-					pmm_unset_bit(page_idx);
-					total_ram_frames++;
-				}
-			}
-		}
 		// Avanzar a la siguiente entrada del mapa
 		entry = (multiboot_memory_map_t *)((uint32_t)entry + entry->size + sizeof(entry->size));
 	}
-	uint32_t kernel_start_page = ((uint32_t)&_start) / PAGE_SIZE;
-	uint32_t kernel_end_page = ((uint32_t)&_end) / PAGE_SIZE;
 
-	for (uint32_t i = kernel_start_page; i <= kernel_end_page; i++)
-		pmm_set_bit(i);
+	// Proteger el kernel
+	pmm_reserver_kernel();
 
 	kprintf("PMM Initialized. Total RAM Pages: %d\n", total_ram_frames);
+}
+
+void	*pmm_alloc_page()
+{
+	uint32_t	phys_address;
+	uint32_t	frame_idx;
+
+	for (uint32_t i = 0; i < MAX_PAGES; i++)
+	{
+		if (pmm_bitmap[i] == 0xFFFFFFFF)
+			continue;
+
+		for (uint32_t j = 0; j < 32; j++)
+		{
+			if ((pmm_bitmap[i] & (1 << j)) == 0)
+			{
+				frame_idx = (i * 32) + j;
+
+				pmm_set_bit(frame_idx);
+				total_ram_frames++;
+
+				phys_address = frame_idx * PAGE_SIZE;
+				return ((void *)phys_address);
+			}
+		}
+	}
+
+	kprintf("PANIC: Out of memory\n");
+	return (NULL);
+}
+
+void	pmm_free_page(void *p)
+{
+	uint32_t addr;
+	uint32_t frame_idx;
+
+	addr = (uint32_t)p;
+	frame_idx = addr / PAGE_SIZE;
+
+	if (frame_idx < (MAX_PAGES * 32))
+	{
+		pmm_unset_bit(frame_idx);
+		total_ram_frames--;
+		p = NULL;
+	}
+	return ;
 }
 
