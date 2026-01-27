@@ -8,7 +8,9 @@ extern uint32_t _start;
 extern uint32_t _end;
 
 static uint32_t pmm_bitmap[MAX_PAGES];
+
 static uint32_t total_ram_frames = 0;
+static uint32_t used_frames = 0;
 
 // Marca una pagina como OCUPADA bit = 1
 static void pmm_set_bit(uint32_t frame_idx)
@@ -69,7 +71,7 @@ void	init_pmm(multiboot_info_t *mboot_info)
 	while ((uint32_t)entry < mmap_end_addr)
 	{
 		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE)
-			pmm_init_region(mboot_info->mmap_addr, mboot_info->mmap_length);
+			pmm_init_region(entry->addr, entry->len);
 
 		// Avanzar a la siguiente entrada del mapa
 		entry = (multiboot_memory_map_t *)((uint32_t)entry + entry->size + sizeof(entry->size));
@@ -98,7 +100,7 @@ void	*pmm_alloc_page()
 				frame_idx = (i * 32) + j;
 
 				pmm_set_bit(frame_idx);
-				total_ram_frames++;
+				used_frames++;
 
 				phys_address = frame_idx * PAGE_SIZE;
 				return ((void *)phys_address);
@@ -121,8 +123,7 @@ void	pmm_free_page(void *p)
 	if (frame_idx < (MAX_PAGES * 32))
 	{
 		pmm_unset_bit(frame_idx);
-		total_ram_frames--;
-		p = NULL;
+		used_frames--;
 	}
 	return ;
 }

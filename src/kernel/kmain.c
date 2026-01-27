@@ -4,6 +4,7 @@
 #include "drivers/vga.h"
 #include "gdt.h"
 #include "multiboot.h"
+#include "paging.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -61,6 +62,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_pmm(boot_info);
 
 	init_gdt();
+	init_paging();
 
 	kprintf("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);

@@ -22,4 +22,3 @@ get_stack_pointer:
 	mov %esp, %eax
 	ret
 
-
