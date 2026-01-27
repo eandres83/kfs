@@ -6,7 +6,7 @@ void	init_paging()
 	kmemset(pd, 0, 4096);
 
 	page_table_t *pt = (page_table_t *)pmm_alloc_page();
-	kmemset(pt, 0, 1024);
+	kmemset(pt, 0, 4096);
 
 	for (uint32_t i = 0; i < 1024; i++)
 	{
