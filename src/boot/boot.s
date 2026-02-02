@@ -117,9 +117,6 @@ _start:
 4:
 	# At this point, paging is fully set up and enabled.
 
-	# Unmap the identity paggind as it is now unnecessary
-	movl $0, boot_page_directory + 0
-
 	# Reload cr3 to force a TLB flush so the change to take effect.
 	movl %cr3, %ecx
 	movl %ecx, %cr3
@@ -130,7 +127,6 @@ _start:
 	in assembly as languages such as C cannot function without a stack.
 	*/
 	mov $stack_top, %esp
-
 	/*
 	This is a good place to initialize crucial processor state before the
 	high-level kernel is entered. It's best to minimize the early enviroment
@@ -141,6 +137,8 @@ _start:
 	will requier runtime support to work as well.
 	*/
 
+	push %ebx
+	push %eax
 	/*
 	Enter the high-level kernel. The ABI requires the stack is 16-bytes
 	aligned at the time of the call instructino (which afterwards pushes

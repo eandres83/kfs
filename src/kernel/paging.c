@@ -15,6 +15,16 @@ void	init_paging()
 		pt->entries[i].rw = 1;
 	}
 
+	// Conectamos la tabla 'pt' a la entrada 768 (3 GB virtuales)
+	pd->entries[768].frame = (uint32_t)pt >> 12;
+	pd->entries[768].present = 1;
+	pd->entries[768].rw = 1;
+
+	// La direccion 0xC03FF000 es la ultima pagina  de la tabla en 768
+	pt->entries[1023].frame = 0xB8000 >> 12;
+	pt->entries[1023].present = 1;
+	pt->entries[1023].rw = 1;
+
 	pd->entries[0].frame = (uint32_t)pt >> 12;
 	pd->entries[0].present = 1;
 	pd->entries[0].rw = 1;
