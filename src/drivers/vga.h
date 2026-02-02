@@ -7,7 +7,7 @@
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
-#define VGA_MEMORY 0xB8000
+#define VGA_MEMORY 0xC03FF000
 
 /* Hardware text mode color constants. */
 enum vga_color {

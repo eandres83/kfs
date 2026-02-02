@@ -63,7 +63,7 @@ _start:
 
 1:
 	# Only map the kernel
-	cmpl $_kernel_start, %esi
+	cmpl $(_kernel_start - 0xC0000000), %esi
 	jl 2f
 	cmpl $(_end - 0xC0000000), %esi
 	jge 3f

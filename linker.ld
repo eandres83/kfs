@@ -6,7 +6,7 @@ ENTRY(_start)
    kernel image. */
 SECTIONS
 {
-	. = 0x00200000;
+	. = 0xC0100000;
 	/* The kernel will live at 3GB + 2MB in the virtual address space,
 	   which will be mapped to 1MB in the physical address space.
 	   Note that we page-align the sectiong. */
