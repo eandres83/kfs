@@ -14,6 +14,7 @@ typedef struct page_entry
 	uint32_t accessed	: 1;
 	uint32_t dirty		: 1;
 	uint32_t ps		: 1; // Page Size
+	uint32_t glogal		: 1;
 	uint32_t avail		: 3; // Available
 	uint32_t frame		: 20; // Physical direction >> 12
 } __attribute__((packed)) page_entry_t;

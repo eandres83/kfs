@@ -6,14 +6,14 @@ gdt_flush:
 
 	lgdt (%eax)
 
-	mov $0x10, %ax
+	mov $0x10, %ax # Kernel code segment
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
 	mov %ax, %ss
 
-	ljmp $0x08, $.flush
+	ljmp $0x08, $.flush # Kernel data segment
 
 .flush:
 	ret
