@@ -1,8 +1,9 @@
 #include <stdint.h>
+#include <utils.h>
 #include "io.h"
 #include "keyboard.h"
 
-int	shift_status = 0;
+static int	shift_status = 0;
 
 static unsigned char kbdus[128] =
 {
@@ -107,6 +108,14 @@ static const char shift_kbdus[128] =
 	0, 0, 0, 0, 0, 0, 0, '7', '8', '9', '-', '4', '5', '6', '+', '1', '2', '3',
 	'0', '.', '6', 0, 0, 0, 0, 0
 };
+
+void	init_keyboard()
+{
+	shift_status = 0;
+
+	while (inb(0x64) & 0x1)
+		inb(0x60);
+}
 
 char	keyboard_read_char()
 {

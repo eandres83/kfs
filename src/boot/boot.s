@@ -81,14 +81,14 @@ _start:
 	movl $1023, %ecx
 
 1:
-	/* Map logic: Physical Address | Present (1) | Writable (2)
-	   Note: We map everythig as writable for now. In the future, .text
-	   should be Read-Only for security.
-	*/
-	cmpl $(_kernel_start - KERNEL_VIRTUAL_BASE), %esi
-	jl 2f
-	cmpl $(_end - KERNEL_VIRTUAL_BASE), %esi
-	jge 3f
+#	/* Map logic: Physical Address | Present (1) | Writable (2)
+#	   Note: We map everythig as writable for now. In the future, .text
+#	   should be Read-Only for security.
+#	*/
+#	cmpl $(_kernel_start - KERNEL_VIRTUAL_BASE), %esi
+#	jl 2f
+#	cmpl $(_end - KERNEL_VIRTUAL_BASE), %esi
+#	jge 3f
 
 	movl %esi, %edx
 	orl $0x003, %edx
@@ -161,7 +161,6 @@ _start:
 	should be enabled here. C++ features such as global constructors and exceptions
 	will requier runtime support to work as well.
 	*/
-
 	push %ebx
 	push %eax
 	/*
@@ -172,6 +171,7 @@ _start:
 	( pushed 0 bytes so far), so the alignment has thus been preserved and the
 	call is well defined.
 	*/
+
 	call kernel_main
 
 	/*

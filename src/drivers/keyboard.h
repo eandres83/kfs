@@ -8,5 +8,6 @@
 #define RIGHT_ARROW_KEY	-11
 
 char	keyboard_read_char(void);
+void	init_keyboard();
 
 #endif

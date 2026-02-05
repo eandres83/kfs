@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "drivers/vga.h"
+#include "drivers/keyboard.h"
 #include "gdt.h"
 #include "multiboot.h"
 #include "paging.h"
@@ -67,6 +68,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kprintf("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
+	init_keyboard();
 	prompt();
 }
 
