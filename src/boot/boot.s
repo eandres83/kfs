@@ -62,11 +62,11 @@ _start:
 	movl $1023, %ecx
 
 1:
-	# Only map the kernel
-	cmpl $(_kernel_start - 0xC0000000), %esi
-	jl 2f
-	cmpl $(_end - 0xC0000000), %esi
-	jge 3f
+#	# Only map the kernel
+#	cmpl $(_kernel_start - 0xC0000000), %esi
+#	jl 2f
+#	cmpl $(_end - 0xC0000000), %esi
+#	jge 3f
 
 	# Map physical address as "present, writable". Note that this maps
 	# .text and .rodata as writable. Mind security and map them as non-writable.
