@@ -1,9 +1,23 @@
-/* Decalre constants for the multiboot header. */
+/*
+KFS Kernel Entry Point.
+
+This file handles the transition from the bootloader (GRUB) enviroment
+to the High-Level C Kernel.
+
+Rationale for Higher Half:
+The kernel is linked to run at 3GB (0xC010000), but loaded by GRUB
+at physical 1MB (0x00100000). We must setup a temporary page table to
+translate virtual address to physical addresses before jumping to the
+C code, otherwise the CPU will fault when accessing symbols.
+*/
+
 .set ALIGN,	1<<0		/* align loaded modules on page boundaries. */
 .set MEMINFO,	1<<1		/* provide memory map */
 .set FLAGS,	ALIGN | MEMINFO	/* this is the Multiboot 'flag' field */
 .set MAGIC,	0x1BADB002	/* 'magic number' lets bootloader find the header */
 .set CHECKSUM,	-(MAGIC + FLAGS)/* checksum of above, to prove we are multiboot */
+.set KERNEL_VIRTUAL_BASE, 0xC0000000
+.set KERNEL_PAGE_NUMBER, (KERNEL_VIRTUAL_BASE >> 22)
 
 /*
 Declare a multiboot header that marks the program as a kernel. There are maginc
@@ -54,28 +68,33 @@ dosen't make sence to return from this function as the bootloader is gone.
 .global _start
 .type	_start, @function
 _start:
-	# Physical address of boot_page_table1.
-	movl $(boot_page_table1 - 0xC0000000), %edi
-	# First address to map is address 0.
+	/* LOAD PHYSICAL ADDRESSES
+	   Paginng is NOT enabled yet. We cannot access 'boot_page_table1' directly
+	   because the linker assumes it is at 0xC0... (Virtual).
+	   We must subtract KERNEL_VIRUTAL_BASE to obtain the physical address
+	   that the CPU can use right now.
+	*/
+	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE), %edi
+	/* Map the first 4MB of physical memory (Identity Mapping)
+	   This covers: VGA, Multiboot Info, GDT, and the Kernel code itself. */
 	movl $0, %esi
-	# Map 1023 pages. The 1024th will be the VGA text buffer.
 	movl $1023, %ecx
 
 1:
-	# Only map the kernel
-	cmpl $(_kernel_start - 0xC0000000), %esi
+	/* Map logic: Physical Address | Present (1) | Writable (2)
+	   Note: We map everythig as writable for now. In the future, .text
+	   should be Read-Only for security.
+	*/
+	cmpl $(_kernel_start - KERNEL_VIRTUAL_BASE), %esi
 	jl 2f
-	cmpl $(_end - 0xC0000000), %esi
+	cmpl $(_end - KERNEL_VIRTUAL_BASE), %esi
 	jge 3f
 
-	# Map physical address as "present, writable". Note that this maps
-	# .text and .rodata as writable. Mind security and map them as non-writable.
 	movl %esi, %edx
 	orl $0x003, %edx
 	movl %edx, (%edi)
 
 2:
-	# Size of page is 4096 bytes.
 	addl $4096, %esi
 	# Size of entries in boot_page_table1 is 4 bytes.
 	addl $4, %edi
@@ -83,27 +102,33 @@ _start:
 	loop 1b
 
 3:
-	# Map VGA video memory to 0xC03FF000 as "present, wirtable".
+	/* VGA MAPPGIN TRICK:
+	   Map the physical VGA buffer (0xB8000) to the last page of this table.
+	   Virtual Address: 0xC0000000 + (1023 * 4096) = 0xC03FF000.
+	*/
 	movl $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
 
 	/*
-	The page table is used at both page directory entry 0 (virtually form 0x0
-	to 0x3FFFFF) (thus identity mapping the kernel) and page directory entry
-	768 (virtually form 0xC0000000 to 0xC03FFFFF) (thus mapping it in the
-	higher half). The kernel is identity mapped because enablgin paging does
-	not change the next instruction, which continues to be physical. The CPU
-	would instead page fault if there was no identity mapping.
+	RECURSIVE / DOUBLE MAPPING:
+	1. Entry 0: Maps 0-4MB Virtual -> 0-4MB Physical.
+	REQUIRED because EIP is currently in low memory (0x001...).
+	If we don't do this, the very next instruction after enabling paging
+	will cause a Page Fault.
+	
+	2. Entry 786: Maps 3GB-3GB+4MB Virtual -> 0-4MB Physical
+	This is where the kernel "thinks" it lives.
 	*/
+	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - KERNEL_VIRTUAL_BASE + 0
+	movl $(boot_page_table1 - KERNEL_VIRTUAL_BASE + 0x003), boot_page_directory - KERNEL_VIRTUAL_BASE + 768 * 4
 
-	# Map the page table to both virtual address 0x00000000 and 0xC0000000.
-	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 0
-	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 768 * 4
-
-	# Set cr3 the address of the boot_page_directory.
-	movl $(boot_page_directory - 0xC0000000), %ecx
+	# Load Page Directory Physical Address into CR3
+	movl $(boot_page_directory - KERNEL_VIRTUAL_BASE), %ecx
 	movl %ecx, %cr3
 
-	# Enable paging and the write-protected bit.
+	/* ENABLE PAING:
+	Set PG (bit 31) in CR0
+	The CPU is now in Paging Mode, but EIP is still physically low.
+	*/
 	movl %cr0, %ecx
 	orl $0x80010000, %ecx
 	movl %ecx, %cr0
