@@ -16,12 +16,17 @@
 
 #include "paging.h"
 
+void	vmm_map_page()
+{
+	
+}
+
 void	init_paging()
 {
-	page_directory_t *pd = (page_directory_t *)pmm_alloc_page();
+	page_directory_t *pd = (page_directory_t *)pmm_map_page();
 	kmemset(pd, 0, 4096);
 
-	page_table_t *pt = (page_table_t *)pmm_alloc_page();
+	page_table_t *pt = (page_table_t *)pmm_map_page();
 	kmemset(pt, 0, 4096);
 
 	for (uint32_t i = 0; i < 1024; i++)

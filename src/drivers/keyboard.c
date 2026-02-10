@@ -109,6 +109,7 @@ static const char shift_kbdus[128] =
 	'0', '.', '6', 0, 0, 0, 0, 0
 };
 
+// Function to ensure that the shift_status variable is 0 and there is no garbage in the buffer
 void	init_keyboard()
 {
 	shift_status = 0;
