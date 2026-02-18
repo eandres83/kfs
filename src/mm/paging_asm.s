@@ -17,4 +17,4 @@ enable_paging:
 	mov %eax, %cr0
 	pop %ebp
 	ret
-	
+

@@ -2,18 +2,15 @@
 #include "multiboot.h"
 
 // Wrapper for pmm_alloc_page to request raw memory
-// void	*request_memory(size_t size)
-//{
-//	size_t 	num_pages;
-//	void	*ptr;
-//
-//	num_pages = (size + 4095) / 4096;
-//
-//	ptr = pmm_alloc_page();
-//	if (!ptr)
-//		return (NULL);
-//	return (ptr);
-//}
+void	*request_memory()
+{
+	void	*ptr;
+
+	ptr = pmm_map_page();
+	if (!ptr)
+		return (NULL);
+	return (ptr);
+}
 
 // Iterates through the list to find the firts free block that fits the size
 // Return NULL if no suitable block is found

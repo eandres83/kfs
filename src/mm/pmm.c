@@ -1,7 +1,8 @@
 #include <utils.h>
 #include "multiboot.h"
 
-#define MAX_PAGES 32768 #define PAGE_SIZE 4096
+#define MAX_PAGES 32768
+#define PAGE_SIZE 4096
 
 extern uint32_t _start;
 extern uint32_t _end;
@@ -11,14 +12,14 @@ static uint32_t pmm_bitmap[MAX_PAGES];
 static uint32_t total_ram_frames = 0;
 static uint32_t used_frames = 0;
 
-static void pmm_set_bit(uint32_t frame_idx)
+static inline void pmm_set_bit(uint32_t frame_idx)
 {
 	// frame_idx / 32 -> En que entero del array estoy
 	// frame_idx % 32 -> En que bit dentro de ese entero estoy
 	pmm_bitmap[frame_idx / 32] |= (1 << (frame_idx % 32));
 }
 
-static void pmm_unset_bit(uint32_t frame_idx)
+static inline void pmm_unset_bit(uint32_t frame_idx)
 {
 	pmm_bitmap[frame_idx / 32] &= ~(1 << (frame_idx % 32));
 }

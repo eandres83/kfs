@@ -2,7 +2,7 @@
 #include "drivers/keyboard.h"
 #include "drivers/vga.h"
 #include "../drivers/io.h"
-#include "gdt.h"
+#include "mm/gdt.h"
 
 #define BUFFER_SIZE 256
 
