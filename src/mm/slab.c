@@ -1,15 +1,34 @@
 #include "slab.h"
-#include "multiboot.h"
+
+static	uint32_t heap_ptr = 0xC0400000;
 
 // Wrapper for pmm_alloc_page to request raw memory
-void	*request_memory()
+void	*request_memory(size_t size)
 {
-	void	*ptr;
+	size_t total_size;
+	void * block_start_virt;
 
-	ptr = pmm_map_page();
-	if (!ptr)
-		return (NULL);
-	return (ptr);
+	// calcular cuantas paginas necesitas
+	total_size = (size + (PAGE_SIZE - 1)) / PAGE_SIZE;
+
+	// guardad el inicio del heap en una variable temporal para devolverla
+	block_start_virt = (void*)heap_ptr;
+
+	for (uint32_t i = 0; i < total_size; i++)
+	{
+		void *phys = pmm_map_page();
+		if (!phys)
+			return (kprintf("KERNEL PAINC\n"), NULL);
+
+		// mapeo la direccion fisica a la virtual actual
+		vmm_map_page(phys, (void *)heap_ptr);
+
+		// Avanza el puntero a la siguiente pagina
+		heap_ptr += PAGE_SIZE;
+	}
+
+	// devolver la direccion virtual inicial (que ahora apunta a memoria valida y contigua)
+	return (block_start_virt);
 }
 
 // Iterates through the list to find the firts free block that fits the size

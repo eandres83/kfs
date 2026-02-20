@@ -12,6 +12,7 @@
 
 #include <utils.h>
 #include <stdint.h>
+#include "vmm.h"
 
 // Describes a memory block (header). The payload follows immediately after.
 typedef struct s_block

@@ -4,7 +4,7 @@
 #include "drivers/vga.h"
 #include "drivers/keyboard.h"
 #include "mm/gdt.h"
-#include "mm/multiboot.h"
+#include "mm/pmm.h"
 #include "mm/vmm.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */

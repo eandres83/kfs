@@ -1,8 +1,10 @@
 #ifndef VMM_PTE_PDE_H
 #define VMM_PTE_PDE_H
 
-#include <utils.h>
-#include "multiboot.h"
+#include "vmm.h"
+
+typedef uint32_t pd_entry;
+typedef uint32_t pt_entry;
 
 enum PAGE_PTE_FLAGS
 {
@@ -19,9 +21,6 @@ enum PAGE_PTE_FLAGS
 	PTE_FRAME 		= 0x7FFFF000	// 1111111111111111111000000000000
 };
 
-// page table entry
-typedef uint32_t pt_entry;
-
 enum PAGE_PDE_FLAGS
 {
 	PDE_PRESENT		= 1,		// 0000000000000000000000000000001
@@ -37,23 +36,65 @@ enum PAGE_PDE_FLAGS
 	PDE_FRAME		= 0x7FFFF000	// 1111111111111111111000000000000
 };
 
-// page directory entry
-typedef uint32_t pd_entry;
+static inline void pt_entry_add_attrib(pt_entry *e, uint32_t attrib)
+{
+	*e |= attrib;
+}
 
-// page table function
-extern void pt_entry_add_attrib(pt_entry *e, uint32_t attrib);
-extern void pt_entry_del_attrib(pt_entry *e, uint32_t attrib);
-extern void pt_entry_set_frame(pt_entry *, uint32_t frame);
-extern bool pt_entry_is_present(pt_entry e);
-extern bool pt_entry_is_writable(pt_entry e);
-extern uint32_t pt_entry_frame(pt_entry e);
+static inline void pt_entry_del_attrib(pt_entry *e, uint32_t attrib)
+{
+	*e &= ~attrib;
+}
 
-// page directory functions
-extern void pd_entry_add_attrib(pd_entry *e, uint32_t attrib);
-extern void pd_entry_del_attrib(pd_entry *e, uint32_t attrib);
-extern void pd_entry_set_frame(pd_entry *e, uint32_t attrib);
-extern bool pd_entry_is_present(pd_entry e);
-extern bool pd_entry_is_writable(pd_entry e);
-extern bool pd_entry_is_user(pd_entry e);
+static inline void pt_entry_set_frame(pt_entry *e, uint32_t addr)
+{
+	*e = (*e & ~PTE_FRAME) | addr;
+}
+
+static inline bool pt_entry_is_present(pt_entry e)
+{
+	return (e & PTE_PRESENT);
+}
+
+static inline bool pt_entry_is_writable(pt_entry e)
+{
+	return (e & PTE_WRITABLE);
+}
+
+static inline bool pt_entry_frame(pt_entry e)
+{
+	return (e & PTE_FRAME);
+}
+
+// Page directory functions
+static inline void pd_entry_add_attrib(pd_entry *e, uint32_t attrib)
+{
+	*e |= attrib;
+}
+
+static inline void pd_entry_del_attrib(pd_entry *e, uint32_t attrib)
+{
+	*e &= ~attrib;
+}
+
+static inline void pd_entry_set_frame(pd_entry *e, uint32_t addr)
+{
+	*e = (*e & ~PDE_FRAME) | addr;
+}
+
+static inline bool pd_entry_is_present(pd_entry e)
+{
+	return (e & PDE_PRESENT);
+}
+
+static inline bool pd_entry_is_writable(pd_entry e)
+{
+	return (e & PDE_WRITABLE);
+}
+
+static inline bool pd_entry_is_user(pd_entry e)
+{
+	return (e & PDE_USER);
+}
 
 #endif

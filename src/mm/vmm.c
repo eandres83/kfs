@@ -22,7 +22,7 @@ bool	vmm_alloc_page(pt_entry *e)
 	p = pmm_map_page();
 	if (!p)
 		return (false);
-	pt_entry_set_frame(e, (uint32_t)p);
+	pt_entry_set_frame(e, (physical_address)p);
 	pt_entry_add_attrib(e, PTE_PRESENT);
 
 	return (true);
@@ -45,7 +45,7 @@ void	vmm_map_page(void *phys, void *virt)
 	page_directory *pd = _cur_directory;
 
 	// get page table
-	pd_entry *e = &pd->m_entries[PAGE_DIRECTORY_INDEX((uint32_t) virt)];
+	pd_entry *e = &pd->m_entries[PD_INDEX((uint32_t) virt)];
 	if ((*e & PTE_PRESENT) != PTE_PRESENT)
 	{
 		// page table not present, allocate it
@@ -55,18 +55,18 @@ void	vmm_map_page(void *phys, void *virt)
 		kmemset(table, 0, sizeof(page_table));
 
 		// create a new entry
-		pd_entry* entry = &pd->m_entries[PAGE_DIRECTORY_INDEX((uint32_t)virt)];
+		pd_entry* entry = &pd->m_entries[PD_INDEX((uint32_t)virt)];
 
 		pd_entry_add_attrib(entry, PDE_PRESENT);
 		pd_entry_add_attrib(entry, PDE_WRITABLE);
 		pd_entry_set_frame(entry, (uint32_t)table);
 	}
 	// get table
-	page_table *table = (page_table *)PAGE_GET_PHYSICAL_ADDRESS(e);
+	page_table *table = (page_table *)PAGE_PHYS_ADDRESS(e);
 	// get page
-	pt_entry *page = &table->m_entries[PAGE_TABLE_INDEX((uint32_t) virt)];
+	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t) virt)];
 
-	pt_entry_set_frame(page, (uint32_t)phys);
+	pt_entry_set_frame(page, (physical_address)phys);
 	pt_entry_add_attrib(page, PTE_PRESENT);
 }
 
@@ -91,7 +91,7 @@ void	vmm_initialize()
 		pt_entry_set_frame(&page, frame);
 
 		// add it to the page table
-		table2->m_entries[PAGE_TABLE_INDEX(virt)] = page;
+		table2->m_entries[PT_INDEX(virt)] = page;
 	}
 
 	// map 1mb to 3gb (where we are at)
@@ -101,7 +101,7 @@ void	vmm_initialize()
 		pt_entry_add_attrib(&page, PTE_PRESENT);
 		pt_entry_set_frame(&page, frame);
 
-		table->m_entries[PAGE_TABLE_INDEX(virt)] = page;
+		table->m_entries[PT_INDEX(virt)] = page;
 	}
 
 	// create defautl directory table
@@ -110,17 +110,17 @@ void	vmm_initialize()
 		return;
 	kmemset(dir, 0, sizeof(page_directory));
 
-	pd_entry *entry = &dir->m_entries[PAGE_DIRECTORY_INDEX(0xc0000000)];
+	pd_entry *entry = &dir->m_entries[PD_INDEX(0xc0000000)];
 	pd_entry_add_attrib(entry, PDE_PRESENT);
 	pd_entry_add_attrib(entry, PDE_WRITABLE);
-	pd_entry_set_frame(entry, (uint32_t)table);
+	pd_entry_set_frame(entry, (physical_address)table);
 
-	pd_entry *entry2 = &dir->m_entries[PAGE_DIRECTORY_INDEX(0x00000000)];
+	pd_entry *entry2 = &dir->m_entries[PD_INDEX(0x00000000)];
 	pd_entry_add_attrib(entry2, PDE_PRESENT);
 	pd_entry_add_attrib(entry2, PDE_WRITABLE);
-	pd_entry_set_frame(entry2, (uint32_t)table2);
+	pd_entry_set_frame(entry2, (physical_address)table2);
 
-	_cur_pdbr = (uint32_t)&dir->m_entries;
+	_cur_pdbr = (physical_address)&dir->m_entries;
 
 	// switch to our page directory
 	vmm_switch_pdirectory(dir);

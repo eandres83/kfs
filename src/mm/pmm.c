@@ -1,8 +1,5 @@
 #include <utils.h>
-#include "multiboot.h"
-
-#define MAX_PAGES 32768
-#define PAGE_SIZE 4096
+#include "pmm.h"
 
 extern uint32_t _start;
 extern uint32_t _end;

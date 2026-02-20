@@ -1,7 +1,10 @@
-#ifndef MULTIBOOT_H
-#define MULTIBOOT_H
+#ifndef PMM_H
+#define PMM_H
 
 #include <utils.h>
+
+#define MAX_PAGES 32768
+#define PAGE_SIZE 4096
 
 #define MULTIBOOT_MEMORY_AVAILABLE		1
 #define MULTIBOOT_MEMORY_RESERVED		2
