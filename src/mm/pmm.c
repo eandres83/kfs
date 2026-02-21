@@ -5,9 +5,9 @@ extern uint32_t _start;
 extern uint32_t _end;
 
 static uint32_t pmm_bitmap[MAX_PAGES];
+static uint32_t last_frame = 0;
 
 static uint32_t total_ram_frames = 0;
-static uint32_t used_frames = 0;
 
 static inline void pmm_set_bit(uint32_t frame_idx)
 {
@@ -77,13 +77,13 @@ void	init_pmm(multiboot_info_t *mboot_info)
 	kprintf("PMM Initialized. Total RAM Pages: %d\n", total_ram_frames);
 }
 
-// find the first free page in the bitmap
+// find the first free page in the bitmap (next-fit)
 void	*pmm_map_page()
 {
 	uint32_t	phys_address;
 	uint32_t	frame_idx;
 
-	for (uint32_t i = 0; i < MAX_PAGES; i++)
+	for (uint32_t i = last_frame; i < MAX_PAGES; i++)
 	{
 		// if page is full continue to the next one
 		if (pmm_bitmap[i] == 0xFFFFFFFF)
@@ -96,12 +96,13 @@ void	*pmm_map_page()
 				frame_idx = (i * 32) + j;
 
 				pmm_set_bit(frame_idx);
-				used_frames++;
 
 				phys_address = frame_idx * PAGE_SIZE;
 				return ((void *)phys_address);
 			}
 		}
+		if (last_frame >= MAX_PAGES)
+			last_frame = 0;
 	}
 
 	kprintf("PANIC: Out of memory\n");
@@ -117,10 +118,7 @@ void	pmm_free_page(void *p)
 	frame_idx = addr / PAGE_SIZE;
 
 	if (frame_idx < (MAX_PAGES * 32))
-	{
 		pmm_unset_bit(frame_idx);
-		used_frames--;
-	}
 	return ;
 }
 
