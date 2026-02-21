@@ -61,13 +61,34 @@ void	vmm_map_page(void *phys, void *virt)
 		pd_entry_add_attrib(entry, PDE_WRITABLE);
 		pd_entry_set_frame(entry, (uint32_t)table);
 	}
-	// get table
+	// get physical table
 	page_table *table = (page_table *)PAGE_PHYS_ADDRESS(e);
 	// get page
 	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t) virt)];
 
 	pt_entry_set_frame(page, (physical_address)phys);
 	pt_entry_add_attrib(page, PTE_PRESENT);
+}
+
+void	vmm_unmap_page(void *virt)
+{
+	page_directory *pd = _cur_directory;
+
+	// get current directory
+	pd_entry *e = &pd->m_entries[PD_INDEX((uint32_t)virt)];
+	if ((*e & PDE_PRESENT) != PDE_PRESENT)
+		return ;
+
+	// get table
+	page_table *table = (page_table *)PAGE_PHYS_ADDRESS(e);
+
+	// get page in table
+	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t)virt)];
+
+	// free page
+	vmm_free_page((void*)page);
+
+	vmm_reload_tlb(virt);
 }
 
 void	vmm_initialize()

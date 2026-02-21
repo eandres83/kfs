@@ -1,5 +1,16 @@
 #include "slab.h"
 
+// syscall munmap
+void	unrequest_memory(void *block, size_t size)
+{
+	for (uint32_t i = 0; i < size; i++)
+	{
+		vmm_unmap_page((void*)block);
+
+		(uint32_t)block += PAGE_SIZE;
+	}
+}
+
 // Remove a block form the LARGE zone list and return mamory to the OS.
 // 1. Unlinks the block from the global double-linked list
 // 2. Calculates the total size originally allocated (aligned to PAGE_SIZE)
@@ -22,10 +33,7 @@ static	void	free_large(t_block *block)
 	total_size = block->size + BLOCK_META_SIZE;
 	size = ((total_size + PAGE_SIZE -1) / PAGE_SIZE) * PAGE_SIZE;
 
-	(void)size;
-
-//	if (munmap((void *)block, size) == -1)
-//		return ;
+	unrequest_memory((void *)block, size);
 }
 
 // Merges the current block with its next neighbor

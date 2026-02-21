@@ -30,8 +30,10 @@ typedef struct page_directory
 
 extern void load_page_directory(uint32_t s);
 extern void enable_paging();
+extern void reload_tlb(void *virt);
 
 void	vmm_initialize();
 void	vmm_map_page(void *phys, void *virt);
+void	vmm_unmap_page(void *virt);
 
 #endif
