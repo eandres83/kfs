@@ -68,6 +68,9 @@ void	vmm_map_page(void *phys, void *virt)
 
 	pt_entry_set_frame(page, (physical_address)phys);
 	pt_entry_add_attrib(page, PTE_PRESENT);
+	pt_entry_add_attrib(page, PTE_WRITABLE);
+
+	reload_tlb(virt);
 }
 
 void	vmm_unmap_page(void *virt)

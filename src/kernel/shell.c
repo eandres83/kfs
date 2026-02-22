@@ -1,10 +1,44 @@
 #include <utils.h>
+#include <kmalloc.h>
 #include "drivers/keyboard.h"
 #include "drivers/vga.h"
 #include "../drivers/io.h"
 #include "mm/gdt.h"
 
 #define BUFFER_SIZE 256
+
+static	void	test_malloc_free()
+{
+	char *str1 = (char*)kmalloc(32);
+	if (str1)
+	{
+		str1[0] = 'H';
+		str1[1] = 'o';
+		str1[2] = 'l';
+		str1[3] = 'a';
+		str1[4] = '\n';
+
+		kprintf("Direccion: %p | Contenido: %s\n", str1, str1);
+	}
+
+	kprintf("Test SMALL (512)");
+	char *str2 = (char*)kmalloc(512);
+	kprintf("Direccion: %p\n", str2);
+ 
+	kprintf("Test LARGE (8192)");
+	char *str3 = (char*)kmalloc(8192);
+	kprintf("Direccion: %p\n", str3);
+
+	kprintf("Liberando memoria...\n");
+	kfree(str1);
+	kfree(str2);
+	kfree(str3);
+
+	kprintf("Reutilizar memoria (32 bytes)\n");
+	char *str4 = (char *)kmalloc(32);
+	kprintf("Nueva direccion: %p (Igual que la TINY)\n");
+	kfree(str4);
+}
 
 static	void	print_stack(void *stack_ptr, size_t lines)
 {
@@ -90,6 +124,10 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "clear") == 0)
 	{
 		terminal_initialize();
+	}
+	else if (kstrcmp(str, "testmalloc") == 0)
+	{
+		test_malloc_free();
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);

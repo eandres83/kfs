@@ -1,4 +1,4 @@
 target remote localhost:1234
-break vmm_switch_pdirectory
+break test_malloc_free
 continue
 
