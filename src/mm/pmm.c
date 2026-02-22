@@ -26,8 +26,14 @@ static	void	pmm_reserver_kernel(void)
 	uint32_t start_page;
 	uint32_t end_page;
 
-	start_page = ((uint32_t)&_start) / PAGE_SIZE;
-	end_page = ((uint32_t)&_end) / PAGE_SIZE;
+	uint32_t start_phys;
+	uint32_t end_phys;
+
+	start_phys = ((uint32_t)&_start) - 0xC0000000;
+	end_phys = ((uint32_t)&_end) - 0xC0000000;
+
+	start_page = start_phys / PAGE_SIZE;
+	end_page = end_phys / PAGE_SIZE;
 
 	for (uint32_t i = start_page; i <= end_page; i++)
 		pmm_set_bit(i);
@@ -71,6 +77,8 @@ void	init_pmm(multiboot_info_t *mboot_info)
 		entry = (multiboot_memory_map_t *)((uint32_t)entry + entry->size + sizeof(entry->size));
 	}
 
+	pmm_set_bit(0);
+
 	// protect the kernel
 	pmm_reserver_kernel();
 
@@ -105,8 +113,7 @@ void	*pmm_map_page()
 			last_frame = 0;
 	}
 
-	kprintf("PANIC: Out of memory\n");
-	return (NULL);
+	PANIC("Out of memory");
 }
 
 void	pmm_free_page(void *p)

@@ -18,7 +18,7 @@ void	*request_memory(size_t size)
 	{
 		void *phys = pmm_map_page();
 		if (!phys)
-			return (kprintf("KERNEL PAINC\n"), NULL);
+			PANIC("Out of memory");
 
 		// mapeo la direccion fisica a la virtual actual
 		vmm_map_page(phys, (void *)heap_ptr);

@@ -7,7 +7,7 @@ void	unrequest_memory(void *block, size_t size)
 	{
 		vmm_unmap_page((void*)block);
 
-		(uint32_t)block += PAGE_SIZE;
+		block = (void*)((uint32_t)block + PAGE_SIZE);
 	}
 }
 
@@ -31,7 +31,7 @@ static	void	free_large(t_block *block)
 
 	// Calculate original mmap size
 	total_size = block->size + BLOCK_META_SIZE;
-	size = ((total_size + PAGE_SIZE -1) / PAGE_SIZE) * PAGE_SIZE;
+	size = ((total_size + PAGE_SIZE -1) / PAGE_SIZE);
 
 	unrequest_memory((void *)block, size);
 }

@@ -5,7 +5,7 @@ page_directory	*_cur_directory = 0;
 
 uint32_t	_cur_pdbr = 0;
 
-inline bool vmm_switch_pdirectory(page_directory *dir)
+static bool vmm_switch_pdirectory(page_directory *dir)
 {
 	if (!dir)
 		return (false);
@@ -51,7 +51,7 @@ void	vmm_map_page(void *phys, void *virt)
 		// page table not present, allocate it
 		page_table *table = (page_table*)pmm_map_page();
 		if (!table)
-			return ;
+			PANIC("Failed to allocate new Page Table");
 		kmemset(table, 0, sizeof(page_table));
 
 		// create a new entry
@@ -88,7 +88,7 @@ void	vmm_unmap_page(void *virt)
 	// free page
 	vmm_free_page((void*)page);
 
-	vmm_reload_tlb(virt);
+	reload_tlb(virt);
 }
 
 void	vmm_initialize()
@@ -96,19 +96,22 @@ void	vmm_initialize()
 	// allocate default page table
 	page_table *table = (page_table *)pmm_map_page();
 	if (!table)
-		return;
+		PANIC("Failed to allocate new Page Table");
+
 	// allocate 3gb page table
 	page_table *table2 = (page_table *)pmm_map_page();
 	if (!table2)
-		return;
+		PANIC("Failed to allocate new Page Table");
+
 	// clear page table
 	kmemset(table, 0, sizeof(page_table));
-
+	kmemset(table2, 0, sizeof(page_table));
 	// 1st 4mb are identity mapped
 	for (uint32_t i = 0, frame = 0x0, virt = 0x0000000; i < 1024; i++, frame += 4096, virt += 4096)
 	{
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
+		pt_entry_add_attrib(&page, PTE_WRITABLE);
 		pt_entry_set_frame(&page, frame);
 
 		// add it to the page table
@@ -116,19 +119,27 @@ void	vmm_initialize()
 	}
 
 	// map 1mb to 3gb (where we are at)
-	for (uint32_t i = 0, frame = 0x100000, virt = 0xc0000000; i < 1024; i++, frame += 4096, virt += 4096)
+	for (uint32_t i = 0, frame = 0x0, virt = 0xc0000000; i < 1024; i++, frame += 4096, virt += 4096)
 	{
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
+		pt_entry_add_attrib(&page, PTE_WRITABLE);
 		pt_entry_set_frame(&page, frame);
 
 		table->m_entries[PT_INDEX(virt)] = page;
 	}
 
+	// mapear la ultima pagina de 3GB al buffer de video fisico
+	pt_entry vga_page = 0;
+	pt_entry_add_attrib((&vga_page), PTE_PRESENT);
+	pt_entry_add_attrib((&vga_page), PTE_WRITABLE);
+	pt_entry_set_frame(&vga_page, 0xB8000);
+	table->m_entries[PT_INDEX(0xC03FF000)] = vga_page;
+
 	// create defautl directory table
 	page_directory* dir = (page_directory*)pmm_map_page();
 	if (!dir)
-		return;
+		PANIC("Failed to allocate new Directory Table");
 	kmemset(dir, 0, sizeof(page_directory));
 
 	pd_entry *entry = &dir->m_entries[PD_INDEX(0xc0000000)];
