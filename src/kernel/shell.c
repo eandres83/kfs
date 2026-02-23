@@ -4,6 +4,8 @@
 #include "drivers/vga.h"
 #include "../drivers/io.h"
 #include "mm/gdt.h"
+#include "mm/pmm.h"
+#include "mm/vmm.h"
 
 #define BUFFER_SIZE 256
 
@@ -18,7 +20,7 @@ static	void	test_malloc_free()
 		str1[3] = 'a';
 		str1[4] = '\n';
 
-		kprintf("Direccion: %p | Contenido: %s\n", str1, str1);
+		kprintf("Direccion: %p | Contenido: %s", str1, str1);
 	}
 
 	kprintf("Test SMALL (512)");
@@ -34,10 +36,10 @@ static	void	test_malloc_free()
 	kfree(str2);
 	kfree(str3);
 
-	kprintf("Reutilizar memoria (32 bytes)\n");
-	char *str4 = (char *)kmalloc(32);
-	kprintf("Nueva direccion: %p (Igual que la TINY)\n");
-	kfree(str4);
+	kprintf("Test ksize\n");
+	void *ptr = kmalloc(20);
+	size_t size = ksize(ptr);
+	kprintf("size -> %d\n", size);
 }
 
 static	void	print_stack(void *stack_ptr, size_t lines)
@@ -125,9 +127,20 @@ static void	execute_command(char *str)
 	{
 		terminal_initialize();
 	}
-	else if (kstrcmp(str, "testmalloc") == 0)
+	else if (kstrcmp(str, "malloc_test") == 0)
 	{
+		terminal_setcolor(VGA_COLOR_RED);
 		test_malloc_free();
+		terminal_setcolor(VGA_COLOR_CYAN);
+	}
+	else if (kstrcmp(str, "meminfo") == 0)
+	{
+		meminfo();
+	}
+	else if (kstrcmp(str, "virt2phys") == 0)
+	{
+		// 0xC0400000, 0xC0100000
+		virt2phys(0xC04001a4);
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);

@@ -38,6 +38,7 @@ extern t_heap g_heap;
 void	kfree(void *ptr);
 void	*kmalloc(size_t size);
 void	*krealloc(void *ptr, size_t size);
+size_t	ksize(void *ptr);
 
 // Utils
 void	*request_memory(size_t size);

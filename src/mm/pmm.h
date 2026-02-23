@@ -58,5 +58,6 @@ typedef struct multiboot_info
 void	init_pmm(multiboot_info_t *mboot_info);
 void	*pmm_map_page();
 void	pmm_free_page(void *p);
+void	meminfo();
 
 #endif

@@ -158,3 +158,13 @@ t_block *handle_zone_allocation(t_block **head, size_t size, size_t max_size)
 	}
 	return (block);
 }
+
+size_t	ksize(void *ptr)
+{
+	t_block *block;
+
+	block = (t_block *)((char*)ptr - BLOCK_META_SIZE);
+
+	return (block->size);
+}
+

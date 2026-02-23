@@ -3,9 +3,9 @@
 
 void	panic(char *msg, const char *file, uint32_t line)
 {
+	terminal_setcolor(VGA_COLOR_RED);
 	asm volatile("cli");
 
-	terminal_setcolor(VGA_COLOR_RED);
 
 	terminal_initialize();
 

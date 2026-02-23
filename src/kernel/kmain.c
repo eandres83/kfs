@@ -51,39 +51,6 @@ static void	print_splash()
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 }
 
-static	void	test_malloc_free()
-{
-	char *str1 = (char*)kmalloc(32);
-	if (str1)
-	{
-		str1[0] = 'H';
-		str1[1] = 'o';
-		str1[2] = 'l';
-		str1[3] = 'a';
-		str1[4] = '\n';
-
-		kprintf("Direccion: %p | Contenido: %s\n", str1, str1);
-	}
-
-	kprintf("Test SMALL (512)");
-	char *str2 = (char*)kmalloc(512);
-	kprintf("Direccion: %p\n", str2);
- 
-	kprintf("Test LARGE (8192)");
-	char *str3 = (char*)kmalloc(8192);
-	kprintf("Direccion: %p\n", str3);
-
-	kprintf("Liberando memoria...\n");
-	kfree(str1);
-	kfree(str2);
-	kfree(str3);
-
-	kprintf("Reutilizar memoria (32 bytes)\n");
-	char *str4 = (char *)kmalloc(32);
-	kprintf("Nueva direccion: %p (Igual que la TINY)\n");
-	kfree(str4);
-}
-
 void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 {
 	/* Initialize terminal interface */
@@ -103,8 +70,6 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	init_keyboard();
-
-	test_malloc_free();
 
 	prompt();
 }

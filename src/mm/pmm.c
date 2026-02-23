@@ -129,3 +129,32 @@ void	pmm_free_page(void *p)
 	return ;
 }
 
+void	meminfo()
+{
+	uint32_t used_frames = 0;
+	uint32_t free_frames = 0;
+	uint32_t total_frames = total_ram_frames;
+
+	for (uint32_t i = 0; i < (total_frames / 32); i++)
+	{
+		for (uint32_t bit = 0; bit < 32; bit++)
+		{
+			if ((i * 32) + bit >= total_frames)
+				break;
+			if (pmm_bitmap[i] & (1 << bit))
+				used_frames++;
+			else
+				free_frames++;
+		}
+	}
+
+	uint32_t total_kb = (total_frames * PAGE_SIZE) / 1024;
+	uint32_t used_kb = (used_frames * PAGE_SIZE) / 1024;
+	uint32_t free_kb = (free_frames * PAGE_SIZE) / 1024;
+
+	kprintf("--- MEMORY INFO ---\n");
+	kprintf("Total RAM: %d KB (%d pages)\n", total_kb, total_frames);
+	kprintf("Used RAM : %d KB (%d pages)\n", used_kb, used_frames);
+	kprintf("Free RAM : %d KB (%d pages)\n", free_kb, free_frames);
+}
+
