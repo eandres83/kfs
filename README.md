@@ -1,94 +1,94 @@
-# KFS - Kernel From Scratch
+# KFS-3 - Memory Management
 
 ![Arch](https://img.shields.io/badge/arch-x86-lightgrey)
-![Kernel](https://img.shields.io/badge/kernel-Monolithic-red)
-![Language](https://img.shields.io/badge/language-C%20%2F%20Assembly-blue)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow)
+![Memory](https://img.shields.io/badge/memory-Paging%20%2F%20VMM-red)
+![Allocator](https://img.shields.io/badge/allocator-kmalloc-blue)
+![Status](https://img.shields.io/badge/milestone-completed-success)
 
 <br />
 <p align="center">
-  <h3 align="center">Writing a 32-bit Unix-like Operating System from scratch</h3>
+  <h3 align="center">Phase 3: The Sweet World of Memory</h3>
 </p>
 
 ## 🗣️ About The Project
 
-**KFS** is a comprehensive systems engineering project focused on building a fully functional Operating System kernel starting from bare metal. Unlike standard application development, this project requires managing every bit of hardware, memory, and CPU execution state manually.
+**KFS-3** introduces a complete memory management subsystem into the kernel. Following the x86 architecture specifications, this phase moves the kernel from raw physical memory access to a structured, paged virtual memory environment. 
 
-The goal is to progress from a simple bootloader to a multitasking system capable of running user-space shell programs, following the evolution of the **x86 architecture**.
+This update provides the necessary tools to allocate and free dynamic memory (`kmalloc` / `kfree`), handle kernel panics, and safely manage User vs. Kernel space memory boundaries.
 
----
-
-## 🗺️ Project Roadmap & Modules
-
-Development is divided into strict milestones (branches). This `main` branch contains the latest development snapshot.
-
-| Module | Focus | Status | Key Engineering Concepts |
-| :--- | :--- | :--- | :--- |
-| **[KFS-1](https://github.com/eandres83/kfs/tree/kfs-1)** | **Boot & I/O** | ✅ Completed | Multiboot, Stack Setup, VGA Driver, Polling I/O. |
-| **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | **GDT & Shell** | ✅ Completed | Memory Segmentation (GDT), Flat Model, Interactive Shell. |
-| **KFS-3** | **Interrupts** | 🚧 In Progress | IDT, ISRs, PIC Remapping, Keyboard IRQs. |
-| **KFS-4** | **Memory** | ⏳ Pending | Virtual Memory, Paging, Heap (kmalloc). |
-| **KFS-5** | **Processes** | ⏳ Pending | Multitasking, Scheduler, User Space. |
+### 🎯 Key Engineering Achievements
+- **Physical Memory Manager (PMM):** Implemented a bitmap-based system to track available and used 4KB memory frames based on the Multiboot memory map.
+- **Virtual Memory Manager (VMM):** Configured x86 Hardware Paging (Page Directories and Page Tables). The kernel now operates securely within its own virtual address space (Higher Half Kernel pattern).
+- **Dynamic Heap Allocator:** Developed a custom `kmalloc` / `kfree` algorithm using a slab/zone approach to manage memory blocks dynamically and prevent fragmentation.
+- **Kernel Panics:** Added graceful failure states (`panic.c`) to halt the CPU when encountering unrecoverable system errors.
+- **Debugging Tools (Bonus):** Expanded the interactive shell with advanced memory inspection commands like `meminfo`, `virt2phys`, and memory hex dumping.
 
 ---
 
-### 📂 Directory Structure
+## 🏗️ Memory Architecture
+
+The memory subsystem is divided into three abstraction layers:
+
+~~~mermaid
+graph TD
+    A["Physical Memory (RAM)"] -->|Tracked by Bitmap| PMM["PMM (Physical Memory Manager)"]
+    PMM -->|Provides 4KB Frames| VMM["VMM (Paging / MMU)"]
+    VMM -->|Maps Virtual to Physical| HEAP["Heap Allocator (kmalloc)"]
+    HEAP -->|Provides variable-sized chunks| KERNEL["Kernel Modules & Shell"]
+~~~
+
+### 1. PMM (Physical Memory Manager)
+Uses a bitmap array (`pmm_bitmap`) to represent the entire physical RAM. Each bit represents a 4KB frame. It parses the Multiboot Header to avoid overwriting reserved hardware zones or the kernel code itself.
+
+### 2. VMM (Virtual Memory Manager)
+Enables the `CR0` paging bit and manages the `CR3` register.
+* Uses a 32-bit two-level translation: **Page Directory (10 bits) -> Page Table (10 bits) -> Offset (12 bits)**.
+* Assigns proper Access Flags (Present, Writable, User/Supervisor) to enforce memory protection.
+* Contains TLB flushing logic (`invlpg`) to guarantee consistency.
+
+### 3. Dynamic Allocator (`kmalloc`)
+Built from scratch without `libc`. It splits the heap into optimized zones:
+* **Tiny & Small Zones:** For objects under 1024 bytes. Uses block-splitting and coalescing.
+* **Large Zone:** For objects > 1024 bytes, directly mapped to new pages.
+* Includes `krealloc` and `kfree` with memory defragmentation (coalescing neighbor blocks).
+
+---
+
+## 📂 Repository Structure (KFS-3 additions)
+
 ~~~text
 .
 ├── src/
-│   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── kernel/        # Core kernel logic (GDT, Shell, Main)
-│   ├── drivers/       # Hardware drivers (VGA, Keyboard, Serial)
-│   └── lib/           # Custom standard library (kprintf, strings, memory)
-├── include/           # System-wide header files
-├── linker.ld          # Memory layout definition (1MB load address)
-└── Makefile           # Build automation and QEMU integration
+│   ├── mm/
+│   │   ├── pmm.c            # Physical bitmap allocator
+│   │   ├── vmm.c            # Paging and Page Table management
+│   │   ├── paging_asm.s     # Assembly to load CR3 and enable CR0 paging
+│   │   ├── slab_malloc.c    # kmalloc implementation
+│   │   └── slab_free.c      # kfree implementation with block coalescing
+│   └── kernel/
+│       └── panic.c          # System halt and error tracing
+└── ...
 ~~~
 
 ---
 
-## 🚀 Current Capabilities (Main Branch)
+## 🚀 Usage & Debugging Commands
 
-Running the latest build allows you to:
-* **Interactive Shell:** A CLI environment supporting commands like `help`, `reboot`, `halt`, and `clear`.
-* **Memory Segmentation:** Custom **GDT** implementation enforcing a Flat Memory Model (Code/Data/Stack segments).
-* **Boot via GRUB:** Compliant with Multiboot specifications.
-* **Video Output:** Custom `kprintf` implementation writing to VGA `0xB8000`.
-* **Input:** PS/2 Keyboard driver handling Scancode Set 1.
-* **Library:** A minimalist C library implementation (`kmemset`, `kmemcpy`, `kstrcmp`) running without standard system headers.
+Compile and run the kernel in QEMU:
 
----
+~~~bash
+make run
+~~~
 
-## 🛠️ Installation & Usage
+### Memory Inspection Commands (Shell)
+This version includes special tools to debug the memory state in real-time:
 
-### ⚠️ Critical Requirement: Cross-Compiler
-You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
-
-* **Compiler:** `i686-elf-gcc`
-* **ASM:** `i686-elf-as`
-
-### Build Instructions
-
-1.  **Clone the repository:**
-    ~~~bash
-    git clone https://github.com/eandres83/kfs.git
-    cd kfs
-    ~~~
-
-2.  **Compile the Kernel:**
-    ~~~bash
-    make
-    ~~~
-
-3.  **Run the OS (QEMU):**
-    ~~~bash
-    make run
-    ~~~
-
-4.  **Debug (GDB Connection):**
-    ~~~bash
-    make debug
-    ~~~
+| Command | Description |
+| :--- | :--- |
+| **`meminfo`** | Prints total, used, and free RAM in KB and pages. |
+| **`malloc_test`** | Executes an allocation routine testing `kmalloc` / `kfree` across Tiny, Small, and Large boundaries. |
+| **`virt2phys`** | Translates a virtual address into its exact physical hardware address by walking the Page Tables. |
+| **`stack`** | Performs a live hex dump of the current kernel stack pointer. |
 
 ---
-*Author: Eleder Andres. "Where there is a shell, there is a way."*
+*Developed by Eleder Andres. KFS-3 Release.*
