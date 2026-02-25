@@ -8,9 +8,14 @@
 #define PAGES_PER_TABLE 1024
 #define TABLE_PER_DIR 	1024
 
-// define 1024 entries per table - 0x3ff -> 1023
+// Page Directory (10bits) -> Page Table (10bits) -> offset (12bits)
+// Bits 31 to 22	      21 to 12               11 to 0
+
+// Move 22 bits to the right to get 10 higher bits (directory)
 #define PD_INDEX(x) (((x) >> 22) & 0x3ff)
+// Move 12 bits to ignore the offset (table)
 #define PT_INDEX(x) (((x) >> 12) & 0x3ff)
+// sets the lowest 12 bits to 0 to ignore the offset and obtain the actual physical address
 #define PAGE_PHYS_ADDRESS(x) ((*x) & ~0xfff)
 
 typedef uint32_t virtual_addr;
