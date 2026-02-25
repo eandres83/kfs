@@ -26,8 +26,8 @@ Development is divided into strict milestones (branches). This `main` branch con
 | :--- | :--- | :--- | :--- |
 | **[KFS-1](https://github.com/eandres83/kfs/tree/kfs-1)** | **Boot & I/O** | ✅ Completed | Multiboot, Stack Setup, VGA Driver, Polling I/O. |
 | **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | **GDT & Shell** | ✅ Completed | Memory Segmentation (GDT), Flat Model, Interactive Shell. |
-| **KFS-3** | **Interrupts** | 🚧 In Progress | IDT, ISRs, PIC Remapping, Keyboard IRQs. |
-| **KFS-4** | **Memory** | ⏳ Pending | Virtual Memory, Paging, Heap (kmalloc). |
+| **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | **Memory** | ✅ Completed | Virtual Memory (Paging), PMM, Custom Heap (`kmalloc`), Panics. |
+| **KFS-4** | **Interrupts** | ⏳ Pending | IDT, ISRs, PIC Remapping, Hardware IRQs. |
 | **KFS-5** | **Processes** | ⏳ Pending | Multitasking, Scheduler, User Space. |
 
 ---
@@ -37,11 +37,12 @@ Development is divided into strict milestones (branches). This `main` branch con
 .
 ├── src/
 │   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── kernel/        # Core kernel logic (GDT, Shell, Main)
-│   ├── drivers/       # Hardware drivers (VGA, Keyboard, Serial)
-│   └── lib/           # Custom standard library (kprintf, strings, memory)
+│   ├── kernel/        # Core kernel logic (kmain, shell, panic)
+│   ├── mm/            # Memory Management (PMM, VMM, kmalloc/slab)
+│   ├── drivers/       # Hardware drivers (VGA, Keyboard, I/O)
+│   └── lib/           # Custom standard library (kprintf, strings)
 ├── include/           # System-wide header files
-├── linker.ld          # Memory layout definition (1MB load address)
+├── linker.ld          # Memory layout definition (Higher Half Kernel)
 └── Makefile           # Build automation and QEMU integration
 ~~~
 
@@ -50,12 +51,12 @@ Development is divided into strict milestones (branches). This `main` branch con
 ## 🚀 Current Capabilities (Main Branch)
 
 Running the latest build allows you to:
-* **Interactive Shell:** A CLI environment supporting commands like `help`, `reboot`, `halt`, and `clear`.
+* **Memory Management:** Full physical and virtual memory managers (x86 Paging) supporting isolation and a custom block-based Heap Allocator (`kmalloc`/`kfree`).
+* **Interactive Shell:** A CLI environment supporting commands and memory debugging tools (`malloc_test`, `virt2phys`, `meminfo`, `stack`).
 * **Memory Segmentation:** Custom **GDT** implementation enforcing a Flat Memory Model (Code/Data/Stack segments).
-* **Boot via GRUB:** Compliant with Multiboot specifications.
+* **Boot via GRUB:** Compliant with Multiboot specifications and initialized as a Higher-Half Kernel.
 * **Video Output:** Custom `kprintf` implementation writing to VGA `0xB8000`.
 * **Input:** PS/2 Keyboard driver handling Scancode Set 1.
-* **Library:** A minimalist C library implementation (`kmemset`, `kmemcpy`, `kstrcmp`) running without standard system headers.
 
 ---
 
