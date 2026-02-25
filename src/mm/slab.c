@@ -1,6 +1,12 @@
 #include "slab.h"
 
-static	uint32_t heap_ptr = 0xC0400000;
+static	uint32_t heap_ptr;
+
+void	init_kmalloc()
+{
+	heap_ptr = 0xC0400000;
+	kmemset(&g_heap, 0, sizeof(t_heap));
+}
 
 // Wrapper for pmm_alloc_page to request raw memory
 void	*request_memory(size_t size)

@@ -7,6 +7,7 @@
 #include "mm/gdt.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
+#include "mm/slab.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -65,6 +66,8 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 
 	init_gdt();
 	vmm_initialize();
+
+	init_kmalloc();
 
 	kprintf("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);

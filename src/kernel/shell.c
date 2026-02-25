@@ -11,6 +11,7 @@
 
 static	void	test_malloc_free()
 {
+	kprintf("Test SMALL\n");
 	char *str1 = (char*)kmalloc(32);
 	if (str1)
 	{
@@ -36,7 +37,7 @@ static	void	test_malloc_free()
 	kfree(str2);
 	kfree(str3);
 
-	kprintf("Test ksize\n");
+	kprintf("Test ksize\t");
 	void *ptr = kmalloc(20);
 	size_t size = ksize(ptr);
 	kprintf("size -> %d\n", size);
@@ -131,7 +132,7 @@ static void	execute_command(char *str)
 	{
 		terminal_setcolor(VGA_COLOR_RED);
 		test_malloc_free();
-		terminal_setcolor(VGA_COLOR_CYAN);
+		terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 	}
 	else if (kstrcmp(str, "meminfo") == 0)
 	{
@@ -140,7 +141,7 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "virt2phys") == 0)
 	{
 		// 0xC0400000, 0xC0100000
-		virt2phys(0xC04001a4);
+		virt2phys(0xC010010A);
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);

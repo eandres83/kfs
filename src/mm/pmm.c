@@ -62,6 +62,9 @@ static void	pmm_init_region(uint64_t addr, uint64_t len)
 
 void	init_pmm(multiboot_info_t *mboot_info)
 {
+	last_frame = 0;
+	total_ram_frames = 0;
+
 	// set everything to 1 for security
 	kmemset(pmm_bitmap, 0xFF, sizeof(pmm_bitmap));
 

@@ -1,4 +1,5 @@
 #include "slab.h"
+#include <kmalloc.h>
 
 // syscall munmap
 void	unrequest_memory(void *block, size_t size)

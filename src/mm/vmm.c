@@ -28,7 +28,7 @@ bool	vmm_alloc_page(pt_entry *e)
 	return (true);
 }
 
-void	vmm_free_page(pt_entry *e)
+static void	vmm_free_page(pt_entry *e)
 {
 	void *p;
 
@@ -192,6 +192,6 @@ void	virt2phys(uint32_t virt)
 		kprintf(" | WRITABLE");
 	if (*pte & PTE_USER)
 		kprintf(" | USER");
-	kprintf("\n----------------------\n");
+	kprintf("\n");
 }
 
