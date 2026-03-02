@@ -21,6 +21,18 @@ typedef struct idt_ptr_struct
 	uint32_t base;		// The address of the first element in out idt_entry_t array
 } __attribute__((packed)) idt_ptr_t;
 
+typedef struct registers
+{
+	uint32_t ds;		// Data segment selector
+	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha
+	uint32_t int_no, err_code; // Interrupt number and erro code
+	uint32_t eip, cs, eflags, useresp, ss; // pushed by the processor automatically
+} registers_t;
+
+void	init_idt();
+
+extern void isr_handler(registers_t *regs);
+
 extern void isr0();
 extern void isr1();
 extern void isr2();
