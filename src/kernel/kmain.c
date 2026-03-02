@@ -8,6 +8,7 @@
 #include "mm/pmm.h"
 #include "mm/vmm.h"
 #include "mm/slab.h"
+#include "arch/i386/idt.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -65,7 +66,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_pmm(boot_info);
 
 	init_gdt();
-//	init_idt();
+	init_idt();
 	vmm_initialize();
 
 	init_kmalloc();

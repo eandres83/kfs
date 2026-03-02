@@ -143,6 +143,10 @@ static void	execute_command(char *str)
 		// 0xC0400000, 0xC0100000
 		virt2phys(0xC010010A);
 	}
+	else if (kstrcmp(str, "interrupt") == 0)
+	{
+		asm volatile ("int $0xE");
+	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
 }
