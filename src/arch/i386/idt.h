@@ -2,6 +2,7 @@
 #define IDT_H
 
 #include <utils.h>
+#include "drivers/io.h"
 
 // interrupt gate
 typedef	struct idt_entry_struct
@@ -32,6 +33,7 @@ typedef struct registers
 void	init_idt();
 
 extern void isr_handler(registers_t *regs);
+extern void irq_handler(registers_t *regs);
 
 extern void isr0();
 extern void isr1();

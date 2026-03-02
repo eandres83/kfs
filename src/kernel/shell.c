@@ -145,7 +145,7 @@ static void	execute_command(char *str)
 	}
 	else if (kstrcmp(str, "interrupt") == 0)
 	{
-		asm volatile ("int $0xE");
+		asm volatile ("int $0x3");
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);

@@ -80,6 +80,32 @@ isr_common:
 
 	popa
 	add $8, %esp	# cleans up the pushed error code and pushed ISR number
-#	sti		# set interrupt flag
+	sti		# set interrupt flag
 	iret		# interrupt return
 
+irq_common:
+	pusha
+
+	mov %ds, %ax	# lower 16 bits of eax=ax
+	push %eax	# save teh ds
+
+	mov $0x10, %ax # kernel code segment
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+
+	push %esp	# pasa la pila (struct) como puntero C
+	call irq_common
+	add $4, %esp	# limpiar el parametro que acabo de empujar
+
+	pop %eax 	# reload the original ds
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+
+	popa
+	add $8, %esp	# cleans up the pushed error code and pushed ISR number
+	sti		# set interrupt flag
+	iret		# interrupt return

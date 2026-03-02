@@ -16,6 +16,25 @@ static void idt_set_gate(uint8_t num, uint32_t base, uint16_t seg, uint8_t flags
 
 void	init_idt()
 {
+	// pone los PICs en modo escucha
+	outb(0x20, 0x11);
+	outb(0xA0, 0x11);
+
+	// enviar el vector offset (el nuevo numero de inicio)
+	outb(0x21, 0x20);
+	outb(0xA1, 0x28);
+
+	// configurar la conexion entre master and slave
+	outb(0x21, 0x04);
+	outb(0xA1, 0x02);
+
+	// working on 8086/x86 normal
+	outb(0x21, 0x01);
+	outb(0xA1, 0x01);
+
+	outb(0x21, 0x00);
+	outb(0xA1, 0x00);
+
 	idt_ptr.limit = sizeof(idt_entry_t) * 256 -1;
 	idt_ptr.base = (uint32_t)&idt_entries;
 
@@ -60,5 +79,17 @@ void	init_idt()
 void	isr_handler(registers_t *regs)
 {
 	kprintf("recieved interrupt: %d\n", regs->int_no);
+}
+
+void	irq_handler(registers_t *regs)
+{
+	if (regs->int_no >= 40)
+	{
+		outb (0xA0, 0x20);
+	}
+
+	// send reset signal to master
+	outb(0x20, 0x20);
+
 }
 
