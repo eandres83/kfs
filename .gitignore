@@ -7,3 +7,4 @@
 .obj
 isodir
 .push.sh
+.gdbinit

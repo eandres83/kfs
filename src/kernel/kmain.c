@@ -9,6 +9,7 @@
 #include "mm/vmm.h"
 #include "mm/slab.h"
 #include "arch/i386/idt.h"
+#include "arch/i386/timer.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -75,7 +76,12 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	init_keyboard();
+	init_timer(100);
 
-	prompt();
+	asm volatile ("sti");
+	while (1)
+		asm volatile ("hlt");
+
+//	prompt();
 }
 
