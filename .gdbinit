@@ -1,4 +1,4 @@
 target remote localhost:1234
-break execute_command
+break keyboard_callback
 continue
 

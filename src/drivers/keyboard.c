@@ -1,6 +1,3 @@
-#include <stdint.h>
-#include <utils.h>
-#include "io.h"
 #include "keyboard.h"
 
 static int	shift_status = 0;
@@ -114,42 +111,35 @@ void	init_keyboard()
 {
 	shift_status = 0;
 
-	while (inb(0x64) & 0x1)
-		inb(0x60);
+	register_interrupt_handler(33, &keyboard_callback);
 }
 
-char	keyboard_read_char()
+void	keyboard_callback(registers_t *regs)
 {
-	// Read the port status, if the first bit is set means that it has info
-	uint8_t status = inb(0x64);
+	(void)regs;
+	uint8_t data = inb(0x60);
 
-	if (status & 0x01)
+	// 0x2A = Left shift Press, 0x36 = Right shift Prees
+	if (data == 0x2A || data == 0x36)
 	{
-		uint8_t data = inb(0x60);
-
-		// 0x2A = Left shift Press, 0x36 = Right shift Prees
-		if (data == 0x2A || data == 0x36)
-		{
-			shift_status = 1;
-			return (0);
-		}
-
-		// 0xAA = Left shift release, 0xB6 = Right shift release
-		if (data == 0xAA || data == 0xB6)
-		{
-			shift_status = 0;
-			return (0);
-		}
-
-		// Check if bit 7 is set
-		if (data & 0x80)
-			return (0);
-
-		if (!shift_status)
-			return (kbdus[data]);
-		else
-			return (shift_kbdus[data]);
+		shift_status = 1;
+		return ;
 	}
-	return (0);
+
+	// 0xAA = Left shift release, 0xB6 = Right shift release
+	if (data == 0xAA || data == 0xB6)
+	{
+		shift_status = 0;
+		return ;
+	}
+
+	// Check if bit 7 is set, release the key
+	if (data & 0x80)
+		return ;
+
+	if (!shift_status)
+		terminal_putchar(kbdus[data]);
+	else
+		terminal_putchar(shift_kbdus[data]);
 }
 
