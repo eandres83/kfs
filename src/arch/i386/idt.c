@@ -4,6 +4,13 @@ extern void idt_flush(uint32_t);
 
 idt_entry_t 	idt_entries[256];
 idt_ptr_t	idt_ptr;
+isr_t		interrupts[256];
+
+static char *error_msg[32] = {"Divide Error", "Debug Exception", "NMI Interrupt", "Breakpoint", "Overflow", "BOUND Range Exceeded",
+		"Invalid Opcode", "Device Not Available", "Double Fault", "Coprocessor Segment Overrun", "Invalid TSS",
+		"Segment Not Present", "Stack-Segment Fault", "General Protection", "Page Fault", "Inter reserved", 
+		"Math Fault", "Alignment Check", "Machine Check", "SIMD Floating-Point Exception", "Virtualization Exception",
+		"Control Protection Exception"};
 
 static void idt_set_gate(uint8_t num, uint32_t base, uint16_t seg, uint8_t flags)
 {
@@ -73,23 +80,58 @@ void	init_idt()
 	idt_set_gate(30, (uint32_t)isr30, 0x08, 0x8E);
 	idt_set_gate(31, (uint32_t)isr31, 0x08, 0x8E);
 
+	idt_set_gate(32, (uint32_t)irq0, 0x08, 0x8E);
+	idt_set_gate(33, (uint32_t)irq1, 0x08, 0x8E);
+	idt_set_gate(34, (uint32_t)irq2, 0x08, 0x8E);
+	idt_set_gate(35, (uint32_t)irq3, 0x08, 0x8E);
+	idt_set_gate(36, (uint32_t)irq4, 0x08, 0x8E);
+	idt_set_gate(37, (uint32_t)irq5, 0x08, 0x8E);
+	idt_set_gate(38, (uint32_t)irq6, 0x08, 0x8E);
+	idt_set_gate(39, (uint32_t)irq7, 0x08, 0x8E);
+	idt_set_gate(40, (uint32_t)irq8, 0x08, 0x8E);
+	idt_set_gate(41, (uint32_t)irq9, 0x08, 0x8E);
+	idt_set_gate(42, (uint32_t)irq10, 0x08, 0x8E);
+	idt_set_gate(43, (uint32_t)irq11, 0x08, 0x8E);
+	idt_set_gate(44, (uint32_t)irq12, 0x08, 0x8E);
+	idt_set_gate(45, (uint32_t)irq13, 0x08, 0x8E);
+	idt_set_gate(46, (uint32_t)irq14, 0x08, 0x8E);
+	idt_set_gate(47, (uint32_t)irq15, 0x08, 0x8E);
+
 	idt_flush((uint32_t)&idt_ptr);
 }
 
 void	isr_handler(registers_t *regs)
 {
-	kprintf("recieved interrupt: %d\n", regs->int_no);
+	kprintf("EAX: 0x%x, ECX: 0x%x, EDX: 0x%x, EBX: 0x%x\n", regs->eax, regs->ecx, regs->edx, regs->ebx);
+	kprintf("ESP: 0x%x, EBP: 0x%x, ESI: 0x%x, EDI: 0x%x\n", regs->esp, regs->ebp, regs->esi, regs->edi);
+	kprintf("EIP: 0x%x, CS: 0x%x, EFLAGS: 0x%x, err_code: %d\n", regs->eip, regs->cs, regs->eflags, regs->err_code);
+
+	if (regs->int_no < 32 && error_msg[regs->int_no] != NULL)
+		PANIC(error_msg[regs->int_no]);
+	else
+		PANIC("Critical External Interrupt\n");
 }
 
 void	irq_handler(registers_t *regs)
 {
+	// send EOI (End of Interrupt)
 	if (regs->int_no >= 40)
 	{
+		// send reset signal to slave
 		outb (0xA0, 0x20);
 	}
-
 	// send reset signal to master
 	outb(0x20, 0x20);
 
+	if (interrupts[regs->int_no] != 0)
+	{
+		isr_t action = interrupts[regs->int_no];
+		action(regs);
+	}
+}
+
+void	register_interrupt_handler(uint8_t n, isr_t action)
+{
+	interrupts[n] = action;
 }
 
