@@ -76,7 +76,9 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	init_keyboard();
-	init_timer(100);
+	init_timer(1000);
+
+	kprintf("KFS> ");
 
 	asm volatile ("sti");
 	while (1)
