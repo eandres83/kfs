@@ -1,95 +1,93 @@
-# KFS - Kernel From Scratch
+# KFS-4 - Interrupts & IDT
 
 ![Arch](https://img.shields.io/badge/arch-x86-lightgrey)
-![Kernel](https://img.shields.io/badge/kernel-Monolithic-red)
-![Language](https://img.shields.io/badge/language-C%20%2F%20Assembly-blue)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow)
+![Core](https://img.shields.io/badge/core-IDT%20%2F%20PIC-red)
+![Drivers](https://img.shields.io/badge/drivers-Interrupt--Driven-blue)
+![Status](https://img.shields.io/badge/milestone-completed-success)
 
 <br />
 <p align="center">
-  <h3 align="center">Writing a 32-bit Unix-like Operating System from scratch</h3>
+  <h3 align="center">Phase 4: Interrupts, Signals and Fun</h3>
 </p>
 
 ## 🗣️ About The Project
 
-**KFS** is a comprehensive systems engineering project focused on building a fully functional Operating System kernel starting from bare metal. Unlike standard application development, this project requires managing every bit of hardware, memory, and CPU execution state manually.
+**KFS-4** completely changes how the kernel interacts with the hardware. Previously, drivers like the keyboard had to be continuously checked via *polling*. Now, the kernel uses an **Interrupt-Driven Architecture**.
 
-The goal is to progress from a simple bootloader to a multitasking system capable of running user-space shell programs, following the evolution of the **x86 architecture**.
+By implementing the **Interrupt Descriptor Table (IDT)**, the CPU can now safely halt and wait for asynchronous hardware signals, handle division-by-zero errors gracefully, and establish the gateway for User-Space applications via Software Interrupts (System Calls).
 
----
-
-## 🗺️ Project Roadmap & Modules
-
-Development is divided into strict milestones (branches). This `main` branch contains the latest development snapshot.
-
-| Module | Focus | Status | Key Engineering Concepts |
-| :--- | :--- | :--- | :--- |
-| **[KFS-1](https://github.com/eandres83/kfs/tree/kfs-1)** | **Boot & I/O** | ✅ Completed | Multiboot, Stack Setup, VGA Driver, Polling I/O. |
-| **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | **GDT & Shell** | ✅ Completed | Memory Segmentation (GDT), Flat Model, Interactive Shell. |
-| **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | **Memory** | ✅ Completed | Virtual Memory (Paging), PMM, Custom Heap (`kmalloc`), Panics. |
-| **KFS-4** | **Interrupts** | ⏳ Pending | IDT, ISRs, PIC Remapping, Hardware IRQs. |
-| **KFS-5** | **Processes** | ⏳ Pending | Multitasking, Scheduler, User Space. |
+### 🎯 Key Engineering Achievements
+- **Interrupt Descriptor Table (IDT):** Created and loaded the 256-entry table via the `lidt` assembly instruction.
+- **CPU Exceptions (ISRs):** Registered the first 32 Interrupt Service Routines to catch hardware faults (Page Fault, Double Fault, General Protection Fault).
+- **8259 PIC Remapping:** Reprogrammed the Programmable Interrupt Controller (Master/Slave) to map IRQs to interrupt vectors `0x20` to `0x2F`, preventing conflicts with CPU exceptions.
+- **Hardware IRQs:** - **IRQ0 (PIT):** Configured the Programmable Interval Timer as the system clock.
+  - **IRQ1 (Keyboard):** Replaced polling with a true interrupt-driven PS/2 handler.
+- **Panic & Stack Traces:** Advanced error handling that cleans registers, dumps the execution state, and safely halts the CPU.
+- **Bonuses Achieved:**
+  - **Multi-Layout Keyboard:** Added dynamic support for both `US (QWERTY)` and `FR (AZERTY)` layouts.
+  - **Syscall Gateway:** Configured `INT 0x80` (ISR 128) as the standard software interrupt for future system calls (`sys_read`, `sys_write`).
 
 ---
 
-### 📂 Directory Structure
-~~~text
-.
-├── src/
-│   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── kernel/        # Core kernel logic (kmain, shell, panic)
-│   ├── mm/            # Memory Management (PMM, VMM, kmalloc/slab)
-│   ├── drivers/       # Hardware drivers (VGA, Keyboard, I/O)
-│   └── lib/           # Custom standard library (kprintf, strings)
-├── include/           # System-wide header files
-├── linker.ld          # Memory layout definition (Higher Half Kernel)
-└── Makefile           # Build automation and QEMU integration
+## 🏗️ Interrupt Architecture
+
+~~~mermaid
+graph TD
+    subgraph Hardware Layer
+        KBD["Keyboard (IRQ1)"] --> PIC
+        PIT["Timer (IRQ0)"] --> PIC
+    end
+    
+    subgraph Kernel Space
+        PIC["8259 PIC"] -->|Vector 0x20 - 0x2F| CPU
+        Software["Software (INT 0x80)"] --> CPU
+        CPU["x86 CPU"] -->|Checks| IDT["IDT (Interrupt Descriptor Table)"]
+        
+        IDT -->|0-31| ISRs["CPU Exceptions (Panic)"]
+        IDT -->|32-47| IRQs["IRQ Handlers (Drivers)"]
+        IDT -->|128| Syscalls["Syscall Dispatcher"]
+    end
 ~~~
 
 ---
 
-## 🚀 Current Capabilities (Main Branch)
+## 📂 Repository Structure (KFS-4 additions)
 
-Running the latest build allows you to:
-* **Memory Management:** Full physical and virtual memory managers (x86 Paging) supporting isolation and a custom block-based Heap Allocator (`kmalloc`/`kfree`).
-* **Interactive Shell:** A CLI environment supporting commands and memory debugging tools (`malloc_test`, `virt2phys`, `meminfo`, `stack`).
-* **Memory Segmentation:** Custom **GDT** implementation enforcing a Flat Memory Model (Code/Data/Stack segments).
-* **Boot via GRUB:** Compliant with Multiboot specifications and initialized as a Higher-Half Kernel.
-* **Video Output:** Custom `kprintf` implementation writing to VGA `0xB8000`.
-* **Input:** PS/2 Keyboard driver handling Scancode Set 1.
-
----
-
-## 🛠️ Installation & Usage
-
-### ⚠️ Critical Requirement: Cross-Compiler
-You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
-
-* **Compiler:** `i686-elf-gcc`
-* **ASM:** `i686-elf-as`
-
-### Build Instructions
-
-1.  **Clone the repository:**
-    ~~~bash
-    git clone https://github.com/eandres83/kfs.git
-    cd kfs
-    ~~~
-
-2.  **Compile the Kernel:**
-    ~~~bash
-    make
-    ~~~
-
-3.  **Run the OS (QEMU):**
-    ~~~bash
-    make run
-    ~~~
-
-4.  **Debug (GDB Connection):**
-    ~~~bash
-    make debug
-    ~~~
+~~~text
+.
+├── src/
+│   ├── arch/i386/
+│   │   ├── idt.c            # IDT initialization and PIC remapping
+│   │   ├── idt_asm.s        # Assembly wrappers for ISRs and IRQs
+│   │   ├── timer.c          # PIT (Programmable Interval Timer) logic
+│   │   └── syscall.c        # Int 0x80 Syscall dispatcher (Bonus)
+│   ├── drivers/
+│   │   └── keyboard.c       # Refactored to be interrupt-driven + Multi-layout
+│   └── kernel/
+│       └── panic.c          # Kernel panic handling and stack dumping
+└── ...
+~~~
 
 ---
-*Author: Eleder Andres. "Where there is a shell, there is a way."*
+
+## 🚀 Usage & Debugging Commands
+
+Compile and run the kernel in QEMU:
+
+~~~bash
+make run
+~~~
+
+### New Shell Commands (KFS-4)
+This version introduces new commands to test the interrupt subsystem:
+
+| Command | Description |
+| :--- | :--- |
+| **`interrupt`** | Forces a Software Breakpoint (`INT 3`) to test the IDT exception handler. |
+| **`layout us`** | Switches the keyboard map to US QWERTY (Bonus). |
+| **`layout fr`** | Switches the keyboard map to FR AZERTY (Bonus). |
+| **`test_syscall`** | Triggers `INT 0x80` with `EAX=4` to test the `sys_write` stub (Bonus). |
+| **`stack`** | Performs a live hex dump of the kernel stack, crucial for panic analysis. |
+
+---
+*Developed by Eleder Andres. KFS-4 Release.*
