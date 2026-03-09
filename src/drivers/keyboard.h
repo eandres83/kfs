@@ -15,5 +15,7 @@
 
 void	keyboard_callback(registers_t *regs);
 void	init_keyboard();
+void	shell_handle_keypress(char c);
+void	set_keyboard_layout(char *str);
 
 #endif
