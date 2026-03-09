@@ -8,6 +8,7 @@
 #include "mm/vmm.h"
 
 #define BUFFER_SIZE 256
+
 static char buffer[BUFFER_SIZE];
 static uint32_t index = 0;
 
@@ -156,6 +157,10 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "layout us") == 0)
 	{
 		set_keyboard_layout("us");
+	}
+	else if (kstrcmp(str, "test_syscall") == 0)
+	{
+		asm volatile ("int $0x80" : : "a"(4));
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
