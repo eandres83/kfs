@@ -1,8 +1,6 @@
 #include "vmm.h"
-#include "vmm_pte_pde.h"
 
 page_directory	*_cur_directory = 0;
-
 uint32_t	_cur_pdbr = 0;
 
 static bool vmm_switch_pdirectory(page_directory *dir)

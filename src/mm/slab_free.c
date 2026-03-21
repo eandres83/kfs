@@ -55,9 +55,15 @@ static	void	merge_block(t_block *block)
 static	void	coalising(t_block *block)
 {
 	if (block->next && block->next->free == 1)
-		merge_block(block);
+	{
+		if ((char*)block + BLOCK_META_SIZE + block->size == (char*)block->next)
+			merge_block(block);
+	}
 	if (block->prev && block->prev->free == 1)
-		merge_block(block->prev);
+	{
+		if ((char*)block->prev + BLOCK_META_SIZE + block->prev->size == (char*)block)
+			merge_block(block->prev);
+	}
 }
 
 // Releases the memory space pointed to by ptr

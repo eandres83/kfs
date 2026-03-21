@@ -61,7 +61,7 @@ static inline bool pt_entry_is_writable(pt_entry e)
 	return (e & PTE_WRITABLE);
 }
 
-static inline bool pt_entry_frame(pt_entry e)
+static inline uint32_t pt_entry_frame(pt_entry e)
 {
 	return (e & PTE_FRAME);
 }
