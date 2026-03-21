@@ -6,7 +6,7 @@ idt_entry_t 	idt_entries[256];
 idt_ptr_t	idt_ptr;
 isr_t		interrupts[256];
 
-static char *error_msg[32] = {"Divide Error", "Debug Exception", "NMI Interrupt", "Breakpoint", "Overflow", "BOUND Range Exceeded",
+static char *error_msg[22] = {"Divide Error", "Debug Exception", "NMI Interrupt", "Breakpoint", "Overflow", "BOUND Range Exceeded",
 		"Invalid Opcode", "Device Not Available", "Double Fault", "Coprocessor Segment Overrun", "Invalid TSS",
 		"Segment Not Present", "Stack-Segment Fault", "General Protection", "Page Fault", "Inter reserved", 
 		"Math Fault", "Alignment Check", "Machine Check", "SIMD Floating-Point Exception", "Virtualization Exception",
@@ -97,7 +97,7 @@ void	init_idt()
 	idt_set_gate(46, (uint32_t)irq14, 0x08, 0x8E);
 	idt_set_gate(47, (uint32_t)irq15, 0x08, 0x8E);
 
-	// set syscall gate
+	// set syscall gate, 0xEE ring 3
 	idt_set_gate(128, (uint32_t)isr128, 0x08, 0xEE);
 
 	idt_flush((uint32_t)&idt_ptr);
@@ -118,7 +118,7 @@ void	isr_handler(registers_t *regs)
 	kprintf("ESP: 0x%x, EBP: 0x%x, ESI: 0x%x, EDI: 0x%x\n", regs->esp, regs->ebp, regs->esi, regs->edi);
 	kprintf("EIP: 0x%x, CS: 0x%x, EFLAGS: 0x%x, err_code: %d\n", regs->eip, regs->cs, regs->eflags, regs->err_code);
 
-	if (regs->int_no < 32 && error_msg[regs->int_no] != NULL)
+	if (regs->int_no < 21 && error_msg[regs->int_no] != NULL)
 		PANIC(error_msg[regs->int_no]);
 	else
 		PANIC("Critical External Interrupt\n");
