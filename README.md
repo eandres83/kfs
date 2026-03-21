@@ -27,8 +27,8 @@ Development is divided into strict milestones (branches). This `main` branch con
 | **[KFS-1](https://github.com/eandres83/kfs/tree/kfs-1)** | **Boot & I/O** | ✅ Completed | Multiboot, Stack Setup, VGA Driver, Polling I/O. |
 | **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | **GDT & Shell** | ✅ Completed | Memory Segmentation (GDT), Flat Model, Interactive Shell. |
 | **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | **Memory** | ✅ Completed | Virtual Memory (Paging), PMM, Custom Heap (`kmalloc`), Panics. |
-| **KFS-4** | **Interrupts** | ⏳ Pending | IDT, ISRs, PIC Remapping, Hardware IRQs. |
-| **KFS-5** | **Processes** | ⏳ Pending | Multitasking, Scheduler, User Space. |
+| **[KFS-4](https://github.com/eandres83/kfs/tree/kfs-4)** | **Interrupts** | ✅ Completed | IDT, ISRs, PIC Remapping, Hardware IRQs, Syscall base. |
+| **KFS-5** | **Processes** | 🚧 In Progress | System Calls (Syscalls), Multitasking, Scheduler, User Space. |
 
 ---
 
@@ -36,6 +36,7 @@ Development is divided into strict milestones (branches). This `main` branch con
 ~~~text
 .
 ├── src/
+│   ├── arch/i386/     # Architecture-specific (IDT, PIC, Timer, Syscalls)
 │   ├── boot/          # Assembly entry points and Multiboot headers
 │   ├── kernel/        # Core kernel logic (kmain, shell, panic)
 │   ├── mm/            # Memory Management (PMM, VMM, kmalloc/slab)
@@ -51,12 +52,11 @@ Development is divided into strict milestones (branches). This `main` branch con
 ## 🚀 Current Capabilities (Main Branch)
 
 Running the latest build allows you to:
+* **Interrupt-Driven Architecture:** Complete x86 **IDT** implementation. Handles CPU exceptions, hardware interrupts (PIT timer, Keyboard), and software interrupts (`int 0x80`).
 * **Memory Management:** Full physical and virtual memory managers (x86 Paging) supporting isolation and a custom block-based Heap Allocator (`kmalloc`/`kfree`).
-* **Interactive Shell:** A CLI environment supporting commands and memory debugging tools (`malloc_test`, `virt2phys`, `meminfo`, `stack`).
+* **Interactive Shell:** A CLI environment supporting advanced commands (`malloc_test`, `virt2phys`, `meminfo`, `stack`, `layout`).
 * **Memory Segmentation:** Custom **GDT** implementation enforcing a Flat Memory Model (Code/Data/Stack segments).
 * **Boot via GRUB:** Compliant with Multiboot specifications and initialized as a Higher-Half Kernel.
-* **Video Output:** Custom `kprintf` implementation writing to VGA `0xB8000`.
-* **Input:** PS/2 Keyboard driver handling Scancode Set 1.
 
 ---
 
