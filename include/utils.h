@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+typedef int32_t ssize_t;
+
 #define PANIC(msg) panic(msg, __FILE__, __LINE__)
 
 // noreturn es para que el compilador sepa que el programa acaba siempre que se llama a esta funcion

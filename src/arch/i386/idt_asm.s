@@ -88,7 +88,7 @@ isr_common:
 	pusha
 
 	mov %ds, %ax	# lower 16 bits of eax=ax
-	push %eax	# save teh ds
+	push %eax	# save the ds
 
 	mov $0x10, %ax # kernel code segment
 	mov %ax, %ds

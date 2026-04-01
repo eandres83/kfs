@@ -114,6 +114,8 @@ void	isr_handler(registers_t *regs)
 		return ;
 	}
 
+	terminal_initialize();
+
 	kprintf("EAX: 0x%x, ECX: 0x%x, EDX: 0x%x, EBX: 0x%x\n", regs->eax, regs->ecx, regs->edx, regs->ebx);
 	kprintf("ESP: 0x%x, EBP: 0x%x, ESI: 0x%x, EDI: 0x%x\n", regs->esp, regs->ebp, regs->esi, regs->edi);
 	kprintf("EIP: 0x%x, CS: 0x%x, EFLAGS: 0x%x, err_code: %d\n", regs->eip, regs->cs, regs->eflags, regs->err_code);

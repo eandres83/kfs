@@ -1,18 +1,27 @@
 #include "arch/i386/idt.h"
 
-void	sys_write(registers_t *regs)
+ssize_t	sys_write(registers_t *regs)
 {
-	(void)regs;
-	kprintf("write syscall called\n");
+	if (regs->ebx != 1)
+	{
+		kprintf("Error: bad file descriptor\n");
+		return (-1);
+	}
+	const char *buf = (char*)regs->ecx;
+	size_t count = regs->edx;
+
+	terminal_write(buf, count);
+	return (count);
 }
 
-void	sys_read(registers_t *regs)
+ssize_t	sys_read(registers_t *regs)
 {
 	(void)regs;
 	kprintf("read syscall called\n");
+	return (-1);
 }
 
-static void	(*syscall[10])(registers_t*) =
+static ssize_t	(*syscall[10])(registers_t*) =
 {
 	[3] = sys_read,
 	[4] = sys_write
@@ -24,7 +33,7 @@ void 	syscall_callback(registers_t *regs)
 
 	// check if regs->eax (syscall number) exists
 	if (regs->eax < 10 && syscall[regs->eax] != NULL)
-		syscall[regs->eax](regs);
+		regs->eax = syscall[regs->eax](regs);
 	else
 		kprintf("Error: Syscall not implemented.\n");
 }

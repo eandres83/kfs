@@ -6,13 +6,14 @@
 #include "mm/gdt.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
+#include "task/task.h"
 
 #define BUFFER_SIZE 256
 
 static char buffer[BUFFER_SIZE];
 static uint32_t index = 0;
 
-static	void	test_malloc_free()
+void	test_malloc_free()
 {
 	kprintf("Test SMALL\n");
 	char *str1 = (char*)kmalloc(32);
@@ -161,6 +162,10 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "test_syscall") == 0)
 	{
 		asm volatile ("int $0x80" : : "a"(4));
+	}
+	else if (kstrcmp(str, "ring3") == 0)
+	{
+		test_ring3();
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
