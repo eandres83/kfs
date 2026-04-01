@@ -3,6 +3,8 @@
 struct gdt_entry_struct	*gdt = (struct gdt_entry_struct *)GDT_ADDRESS;
 struct gdt_ptr_struct 	gdt_ptr;
 
+static uint8_t tss_stack[4096];
+
 static void	gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
 {
 	// base address configuration
@@ -45,6 +47,17 @@ void	init_gdt()
 	// Entrada 6 User stack
 	gdt_set_gate(6, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 
+	kmemset(&gdt_ptr.tss, 0, sizeof(struct tss_entry));
+	gdt_ptr.tss.ss0 = 0x10; // kernel data segment
+	gdt_ptr.tss.esp0 = (uint32_t)tss_stack + 4096;
+
+	uint32_t base = (uint32_t)&gdt_ptr.tss;
+	uint32_t limit = sizeof(struct tss_entry) - 1;
+
+	// 0x89 TSS 32 bits type (1001)
+	gdt_set_gate(7, base, limit, 0x89, 0x00);
+
 	gdt_flush((uint32_t)&gdt_ptr);
+	tss_flush(0x38);
 }
 

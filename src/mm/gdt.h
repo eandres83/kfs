@@ -1,11 +1,12 @@
 #ifndef GDT_H
 #define GDT_H
 
-#define GDT_ENTRIES 7
+#define GDT_ENTRIES 8
 #define GDT_ADDRESS 0x00000800
 
 #include <utils.h>
 #include <stdint.h>
+#include "../task/task.h"
 
 struct gdt_entry_struct
 {
@@ -19,12 +20,14 @@ struct gdt_entry_struct
 
 struct	gdt_ptr_struct
 {
-	uint16_t	limit;
-	uint32_t	base;		// Direccion de memoria donde empieza GDT
+	uint16_t		limit;
+	uint32_t		base;	// Direccion de memoria donde empieza GDT
+	struct tss_entry	tss;
 } __attribute__((packed));
 
 void	init_gdt();
 
 extern void gdt_flush(uint32_t);
+extern void tss_flush(uint16_t);
 
 #endif

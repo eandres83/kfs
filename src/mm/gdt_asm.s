@@ -1,3 +1,4 @@
+.global tss_flush
 .global gdt_flush
 .global get_stack_pointer
 
@@ -20,5 +21,10 @@ gdt_flush:
 
 get_stack_pointer:
 	mov %esp, %eax
+	ret
+
+tss_flush:
+	mov 4(%esp), %ax
+	ltr %ax
 	ret
 
