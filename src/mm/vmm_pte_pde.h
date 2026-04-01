@@ -61,6 +61,26 @@ static inline bool pt_entry_is_writable(pt_entry e)
 	return (e & PTE_WRITABLE);
 }
 
+static inline bool pt_entry_is_user(pt_entry e)
+{
+	return (e & PTE_USER);
+}
+
+static inline bool pt_entry_is_accessed(pt_entry e)
+{
+	return (e & PTE_ACCESSED);
+}
+
+static inline bool pt_entry_is_dirty(pt_entry e)
+{
+	return (e & PTE_DIRTY);
+}
+
+static inline uint32_t pt_entry_is_frame(pt_entry e)
+{
+	return (e & PTE_FRAME);
+}
+
 static inline uint32_t pt_entry_frame(pt_entry e)
 {
 	return (e & PTE_FRAME);

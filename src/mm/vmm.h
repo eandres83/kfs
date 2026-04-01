@@ -19,7 +19,7 @@
 #define PAGE_PHYS_ADDRESS(x) ((*x) & ~0xfff)
 
 typedef uint32_t virtual_addr;
-typedef uint32_t physical_address;
+typedef uint32_t physical_addr;
 
 // page table
 typedef struct page_table

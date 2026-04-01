@@ -115,7 +115,6 @@ void	*pmm_map_page()
 		if (last_frame >= MAX_PAGES)
 			last_frame = 0;
 	}
-
 	PANIC("Out of memory");
 }
 
