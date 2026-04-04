@@ -37,7 +37,7 @@ static void	vmm_free_page(pt_entry *e)
 	pt_entry_del_attrib(e, PTE_PRESENT);
 }
 
-void	vmm_map_page(void *phys, void *virt)
+void	vmm_map_page(void *phys, void *virt, bool is_user)
 {
 	// get directory
 	page_directory *pd = _cur_directory;
@@ -57,6 +57,8 @@ void	vmm_map_page(void *phys, void *virt)
 
 		pd_entry_add_attrib(entry, PDE_PRESENT);
 		pd_entry_add_attrib(entry, PDE_WRITABLE);
+		if (is_user)
+			pd_entry_add_attrib(entry, PDE_USER);
 		pd_entry_set_frame(entry, (uint32_t)table);
 	}
 	// get physical table
@@ -67,6 +69,8 @@ void	vmm_map_page(void *phys, void *virt)
 	pt_entry_set_frame(page, (physical_addr)phys);
 	pt_entry_add_attrib(page, PTE_PRESENT);
 	pt_entry_add_attrib(page, PTE_WRITABLE);
+	if (is_user)
+		pt_entry_add_attrib(page, PTE_USER);
 
 	reload_tlb(virt);
 }
@@ -113,6 +117,7 @@ void	vmm_initialize()
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
 		pt_entry_add_attrib(&page, PTE_WRITABLE);
+		pt_entry_add_attrib(&page, PTE_USER);
 		pt_entry_set_frame(&page, frame);
 
 		// add it to the page table
@@ -125,6 +130,7 @@ void	vmm_initialize()
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
 		pt_entry_add_attrib(&page, PTE_WRITABLE);
+		pt_entry_add_attrib(&page, PTE_USER);
 		pt_entry_set_frame(&page, frame);
 
 		table->m_entries[PT_INDEX(virt)] = page;
@@ -146,11 +152,13 @@ void	vmm_initialize()
 	pd_entry *entry = &dir->m_entries[PD_INDEX(0xc0000000)];
 	pd_entry_add_attrib(entry, PDE_PRESENT);
 	pd_entry_add_attrib(entry, PDE_WRITABLE);
+	pd_entry_add_attrib(entry, PDE_USER);
 	pd_entry_set_frame(entry, (physical_addr)table);
 
 	pd_entry *entry2 = &dir->m_entries[PD_INDEX(0x00000000)];
 	pd_entry_add_attrib(entry2, PDE_PRESENT);
 	pd_entry_add_attrib(entry2, PDE_WRITABLE);
+	pd_entry_add_attrib(entry2, PDE_USER);
 	pd_entry_set_frame(entry2, (physical_addr)table2);
 
 	_cur_pdbr = (physical_addr)&dir->m_entries;
@@ -161,60 +169,6 @@ void	vmm_initialize()
 	enable_paging();
 }
 
-//static page_table *clone_table(page_table *src, uint32_t *phys)
-//{
-//	page_table *table = (page_table*)
-//
-//	kmemset(table, 0, sizeof(page_directory));
-//	for (uint32_t i = 0; i < 1024; i++)
-//	{
-//		if (!src->m_entries[i])
-//			continue ;
-//
-//		// alloc_frame function here
-//		(void)phys;
-//
-//		if (pt_entry_is_present(src->m_entries[i]))
-//			pt_entry_add_attrib(&table->m_entries[i], PTE_PRESENT);
-//		if (pt_entry_is_present(src->m_entries[i]))
-//			pt_entry_add_attrib(&table->m_entries[i], PTE_WRITABLE);
-//		if (pt_entry_is_user(src->m_entries[i]))
-//			pt_entry_add_attrib(&table->m_entries[i], PTE_USER);
-//		if (pt_entry_is_accessed(src->m_entries[i]))
-//			pt_entry_add_attrib(&table->m_entries[i], PTE_ACCESSED);
-//		if (pt_entry_is_dirty(src->m_entries[i]))
-//			pt_entry_add_attrib(&table->m_entries[i], PTE_DIRTY);
-//
-////		copy_page_physical(); // this is not implemented
-//	}
-//	return (table);
-//}
-//
-//page_directory *clone_directory(page_directory *src)
-//{
-//	uint32_t 	phys;
-//	page_directory	*kernel_directory;
-//
-//	page_directory *dir = (page_directory *)pmm_map_page();
-//	if (!dir)
-//		PANIC("Failed to allocate new Page Directory");
-//	kmemset(dir, 0, sizeof(page_directory));
-//
-//	kernel_directory = _cur_directory;
-//
-//	for (uint32_t i = 0; i < 1024; i++)
-//	{
-//		if (!src->m_entries[i])
-//			continue ;
-//		if (kernel_directory->m_entries[i] == src->m_entries[i])
-//			dir->m_entries[i] = src->m_entries[i];
-//		else
-//			dir->m_entries[i] = clone_table(src->m_entries[i], &phys);
-//	}
-//	return (dir);
-//}
-
-// funct temp to test
 void	virt2phys(uint32_t virt)
 {
 	page_directory *pd = _cur_directory;

@@ -6,7 +6,13 @@
 
 #include <utils.h>
 #include <stdint.h>
-#include "../task/task.h"
+
+struct tss_entry
+{
+	uint32_t prev_tss;	// The previous TSS
+	uint32_t esp0;		// The stack pointer to load when changing
+	uint32_t ss0;		// The stack segment to load when changing
+} __attribute__((packed));
 
 struct gdt_entry_struct
 {
@@ -26,6 +32,8 @@ struct	gdt_ptr_struct
 } __attribute__((packed));
 
 void	init_gdt();
+
+void set_kernel_stack(uint32_t stack);
 
 extern void gdt_flush(uint32_t);
 extern void tss_flush(uint16_t);

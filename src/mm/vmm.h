@@ -38,7 +38,7 @@ extern void enable_paging();
 extern void reload_tlb(void *virt);
 
 void	vmm_initialize();
-void	vmm_map_page(void *phys, void *virt);
+void	vmm_map_page(void *phys, void *virt, bool is_user);
 void	vmm_unmap_page(void *virt);
 void	virt2phys(uint32_t virt);
 

@@ -61,3 +61,8 @@ void	init_gdt()
 	tss_flush(0x38);
 }
 
+void set_kernel_stack(uint32_t stack)
+{
+	gdt_ptr.tss.esp0 = stack;
+}
+

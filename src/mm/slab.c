@@ -27,7 +27,7 @@ void	*request_memory(size_t size)
 			PANIC("Out of memory");
 
 		// mapeo la direccion fisica a la virtual actual
-		vmm_map_page(phys, (void *)heap_ptr);
+		vmm_map_page(phys, (void *)heap_ptr, false);
 
 		// Avanza el puntero a la siguiente pagina
 		heap_ptr += PAGE_SIZE;
