@@ -10,6 +10,7 @@
 #include "mm/slab.h"
 #include "arch/i386/idt.h"
 #include "arch/i386/timer.h"
+#include "task/task.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -81,6 +82,8 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kprintf("KFS> ");
 
 	asm volatile ("sti");
+	iniciar_multitarea();
+
 	while (1)
 		asm volatile ("hlt");
 

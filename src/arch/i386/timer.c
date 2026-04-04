@@ -1,14 +1,13 @@
-#include "arch/i386/timer.h"
+#include "timer.h"
 
 uint32_t tick = 0;
 
-static void timer_callback(registers_t *regs)
+void timer_callback(registers_t *regs)
 {
 	(void)regs;
 	tick++;
-//	terminal_writestring("Tick: ");
-//	kputnbr(tick, 10);
-//	terminal_putchar('\n');
+
+	yield();
 }
 
 void	init_timer(uint32_t hz_value)

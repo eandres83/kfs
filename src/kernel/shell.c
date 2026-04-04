@@ -6,7 +6,6 @@
 #include "mm/gdt.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
-#include "task/task.h"
 
 #define BUFFER_SIZE 256
 
@@ -162,10 +161,6 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "test_syscall") == 0)
 	{
 		asm volatile ("int $0x80" : : "a"(4));
-	}
-	else if (kstrcmp(str, "ring3") == 0)
-	{
-		test_ring3();
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);

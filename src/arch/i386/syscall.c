@@ -29,7 +29,7 @@ static ssize_t	(*syscall[10])(registers_t*) =
 
 void 	syscall_callback(registers_t *regs)
 {
-	kprintf("Syscall %d requested!\n", regs->eax);
+//	kprintf("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
 	if (regs->eax < 10 && syscall[regs->eax] != NULL)

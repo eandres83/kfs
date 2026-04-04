@@ -1,6 +1,9 @@
 #include "task.h"
 
+struct context *scheduler_context;
 struct tss_entry *tss;
+proc_t process[64];
+proc_t *current_process;
 
 int32_t mi_user_write_syscall(char *str, size_t len)
 {
@@ -11,22 +14,102 @@ int32_t mi_user_write_syscall(char *str, size_t len)
 	return (ret);
 }
 
-void	mi_funcion()
+void start_user_process();
+
+void create_process(proc_t *proc, void (*function)())
 {
-	char *mensaje = "Hola desde el ring 3 via syscall\n";
+	proc->kstack = (char*)kmalloc(4096);
+	if (!proc->kstack)
+		return ;
+	// calcular el top stack
+	char *stack_top = proc->kstack + 4096;
+	// restar 1 struct context para que quede justo el tamano exacto
+	proc->context = (struct context *)stack_top - 1;
 
-	mi_user_write_syscall(mensaje, kstrlen(mensaje));
+	proc->context->edi = 0;
+	proc->context->esi = 0;
+	proc->context->ebx = 0;
+	proc->context->ebp = 0;
 
-	while (1);
+	// donde tiene que saltar la CPU al hacer el ret
+	proc->user_eip = (char*)function;
+	proc->context->eip = (uint32_t)start_user_process;
+	proc->state = RUNNABLE;
 }
 
-void test_ring3()
+void scheduler()
 {
-	void *user_stack = kmalloc(4096);
+	while (1)
+	{
+		for (int i = 0; i < 64; i++)
+		{
+			if (process[i].state == RUNNABLE)
+			{
+				char *top_stack = process[i].kstack + 4096;
+				set_kernel_stack((uint32_t)top_stack);
+				process[i].state = RUNNING;
+				current_process = &process[i];
+				swtch(&scheduler_context, process[i].context);
+			}
+		}
+	}
+}
 
-	uint32_t stack_top = (uint32_t)user_stack + 4096;
+void start_user_process()
+{
+	void *phys_stack = pmm_map_page();
+	uint32_t offset = (current_process - process) * 4096;
+	void *virt_stack = (void *)(0xBFFFF000 - offset);
+	vmm_map_page(phys_stack, virt_stack, true);
+	if (!virt_stack)
+		return ;
+	char		*top_stack = (char*)virt_stack + 4096;
+	uint32_t	entry_point = (uint32_t)(size_t)current_process->user_eip;
 
-	kprintf("Saltando al ring 3\n");
-	jump_to_usermode((uint32_t)mi_funcion, stack_top);
+	jump_to_usermode(entry_point, (uint32_t)top_stack);
+}
+
+void proceso_A()
+{
+	char *letra = "A";
+	while (1)
+	{
+		mi_user_write_syscall(letra, 1);
+		for (volatile int i = 0; i < 1000000; i++);
+	}
+}
+
+void proceso_B()
+{
+	char *letra = "B";
+	while (1)
+	{
+		mi_user_write_syscall(letra, 1);
+		for (volatile int i = 0; i < 1000000; i++);
+	}
+}
+
+void iniciar_multitarea()
+{
+	kmemset(process, 0, sizeof(process));
+
+	create_process(&process[0], proceso_A);
+	create_process(&process[1], proceso_B);
+
+	kprintf("Scheduler ahora\n");
+	scheduler();
+}
+
+void yield()
+{
+	for (int i = 0; i < 64; i++)
+	{
+		if (process[i].state == RUNNING)
+		{
+			process[i].state = RUNNABLE;
+			swtch(&process[i].context, scheduler_context);
+			return ;
+		}
+	}
 }
 

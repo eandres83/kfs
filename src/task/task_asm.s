@@ -1,4 +1,5 @@
 .global jump_to_usermode
+.global swtch
 
 jump_to_usermode:
 	cli
@@ -20,4 +21,24 @@ jump_to_usermode:
 	push %ecx	# EIP la direccion de memoria donde queremos saltar
 
 	iret
+
+swtch:
+	mov 4(%esp), %eax # %eax = struct context **old
+	mov 8(%esp), %edx # %edx = struct context *new_proc
+
+	push %ebp
+	push %ebx
+	push %esi
+	push %edi
+
+	mov %esp, (%eax) # guardamos el %esp actual dentro de la variable a la que apunta %eax (*old = esp)
+
+	mov %edx, %esp # cargamos el nuevo %esp que estaba en %edx (esp = new_proc
+
+	pop %edi
+	pop %esi
+	pop %ebx
+	pop %ebp
+
+	ret
 
