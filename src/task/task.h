@@ -1,5 +1,5 @@
-#ifndef PROCESS_H
-#define PROCESS_H
+#ifndef TASK_H
+#define TASK_H
 
 #include <utils.h>
 #include <kmalloc.h>
@@ -24,22 +24,15 @@ typedef struct proc
 	char		*kstack;
 	char		*user_stack;
 	char		*user_eip;
+	void		*pd;
 	enum procstate	state;
 	struct proc 	*parent;
 	struct context	*context;
 } proc_t;
 
-struct tss_entry
-{
-	uint32_t prev_tss;	// The previous TSS
-	uint32_t esp0;		// The stack pointer to load when changing
-	uint32_t ss0;		// The stack segment to load when changing
-} __attribute__((packed));
-
 extern void jump_to_usermode(uint32_t entry_point, uint32_t user_stack);
 extern void swtch(struct context **old, struct context *new_proc);
 
-void test_ring3();
 void iniciar_multitarea();
 void yield();
 

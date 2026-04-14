@@ -1,11 +1,7 @@
 #include "task.h"
 
-struct context *scheduler_context;
-struct tss_entry *tss;
-proc_t process[64];
-proc_t *current_process;
-
-int32_t mi_user_write_syscall(char *str, size_t len)
+// temporal solo para testear procesos
+static int32_t mi_user_write_syscall(char *str, size_t len)
 {
 	int32_t ret;
 
@@ -14,13 +10,55 @@ int32_t mi_user_write_syscall(char *str, size_t len)
 	return (ret);
 }
 
-void start_user_process();
+static void proceso_A()
+{
+	char *letra = "A";
+	while (1)
+	{
+		mi_user_write_syscall(letra, 1);
+		for (volatile int i = 0; i < 1000000; i++);
+	}
+}
+
+static void proceso_B()
+{
+	char *letra = "B";
+	while (1)
+	{
+		mi_user_write_syscall(letra, 1);
+		for (volatile int i = 0; i < 1000000; i++);
+	}
+}
+// ---------------------------------------------------------
+
+struct context *scheduler_context;
+struct tss_entry *tss;
+proc_t process[64];
+proc_t *current_process;
+
+void start_user_process()
+{
+	void *phys_stack = pmm_map_page();
+	void *virt_stack = (void *)(0xBFFFF000);
+	vmm_map_page(phys_stack, virt_stack, true);
+	if (!virt_stack)
+		return ;
+	char	*top_stack = (char*)virt_stack + 4096;
+	uint32_t entry_point = (uint32_t)(size_t)current_process->user_eip;
+
+	jump_to_usermode(entry_point, (uint32_t)top_stack);
+}
 
 void create_process(proc_t *proc, void (*function)())
 {
+	// create kernel stack for a process
 	proc->kstack = (char*)kmalloc(4096);
 	if (!proc->kstack)
 		return ;
+
+	// request page directory
+	create_memory_process(proc);
+
 	// calcular el top stack
 	char *stack_top = proc->kstack + 4096;
 	// restar 1 struct context para que quede justo el tamano exacto
@@ -33,6 +71,7 @@ void create_process(proc_t *proc, void (*function)())
 
 	// donde tiene que saltar la CPU al hacer el ret
 	proc->user_eip = (char*)function;
+	// create user stack
 	proc->context->eip = (uint32_t)start_user_process;
 	proc->state = RUNNABLE;
 }
@@ -49,43 +88,10 @@ void scheduler()
 				set_kernel_stack((uint32_t)top_stack);
 				process[i].state = RUNNING;
 				current_process = &process[i];
+				vmm_load_process_directory(process[i].pd);
 				swtch(&scheduler_context, process[i].context);
 			}
 		}
-	}
-}
-
-void start_user_process()
-{
-	void *phys_stack = pmm_map_page();
-	uint32_t offset = (current_process - process) * 4096;
-	void *virt_stack = (void *)(0xBFFFF000 - offset);
-	vmm_map_page(phys_stack, virt_stack, true);
-	if (!virt_stack)
-		return ;
-	char		*top_stack = (char*)virt_stack + 4096;
-	uint32_t	entry_point = (uint32_t)(size_t)current_process->user_eip;
-
-	jump_to_usermode(entry_point, (uint32_t)top_stack);
-}
-
-void proceso_A()
-{
-	char *letra = "A";
-	while (1)
-	{
-		mi_user_write_syscall(letra, 1);
-		for (volatile int i = 0; i < 1000000; i++);
-	}
-}
-
-void proceso_B()
-{
-	char *letra = "B";
-	while (1)
-	{
-		mi_user_write_syscall(letra, 1);
-		for (volatile int i = 0; i < 1000000; i++);
 	}
 }
 
