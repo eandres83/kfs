@@ -25,7 +25,7 @@ void	init_gdt()
 	gdt_ptr.limit = (sizeof(struct gdt_entry_struct) * GDT_ENTRIES) - 1;
 	gdt_ptr.base = (uint32_t)gdt;
 
-	// Escribir en GDT, lo primero todo NULL
+	// gdt entry = 8 bytes
 	gdt_set_gate(0, 0, 0, 0, 0);
 //	gdt_set_gate(0, 0xDEADBEEF, 0x4242, 0, 0);
 

@@ -2,14 +2,13 @@
 #define GDT_H
 
 #define GDT_ENTRIES 8
-#define GDT_ADDRESS 0x00000800
+#define GDT_ADDRESS 0xc0000800
 
 #include <utils.h>
 #include <stdint.h>
 
 struct tss_entry
 {
-	uint32_t prev_tss;	// The previous TSS
 	uint32_t esp0;		// The stack pointer to load when changing
 	uint32_t ss0;		// The stack segment to load when changing
 } __attribute__((packed));
