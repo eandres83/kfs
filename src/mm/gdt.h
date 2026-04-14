@@ -9,6 +9,7 @@
 
 struct tss_entry
 {
+	uint32_t nothing;	// variable to respect the offset expected by the CPU (prev_tss)
 	uint32_t esp0;		// The stack pointer to load when changing
 	uint32_t ss0;		// The stack segment to load when changing
 } __attribute__((packed));
