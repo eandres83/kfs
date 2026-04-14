@@ -1,16 +1,13 @@
 #include "vmm.h"
+#include "task/task.h"
 
-page_directory	*_cur_directory = 0;
-uint32_t	_cur_pdbr = 0;
+static page_directory	*_cur_directory = (page_directory*)0xFFFFF000;
 
-static bool vmm_switch_pdirectory(page_directory *dir)
+void	vmm_load_process_directory(void *pd)
 {
-	if (!dir)
-		return (false);
-
-	_cur_directory = dir;
-	load_page_directory(_cur_pdbr);
-	return (true);
+	if (!pd)
+		return ;
+	load_page_directory((uint32_t)pd);
 }
 
 bool	vmm_alloc_page(pt_entry *e)
@@ -37,6 +34,23 @@ static void	vmm_free_page(pt_entry *e)
 	pt_entry_del_attrib(e, PTE_PRESENT);
 }
 
+static void	vmm_remove_mapping(void *virt)
+{
+	page_directory *pd = _cur_directory;
+	pd_entry *e = &pd->m_entries[PD_INDEX((uint32_t)virt)];
+
+	if ((*e & PDE_PRESENT) != PDE_PRESENT)
+		return ;
+
+	page_table *table = (page_table*)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
+	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t)virt)];
+
+	pt_entry_del_attrib(page, PTE_PRESENT);
+	pt_entry_set_frame(page, 0);
+
+	reload_tlb(virt);
+}
+
 void	vmm_map_page(void *phys, void *virt, bool is_user)
 {
 	// get directory
@@ -50,7 +64,6 @@ void	vmm_map_page(void *phys, void *virt, bool is_user)
 		page_table *table = (page_table*)pmm_map_page();
 		if (!table)
 			PANIC("Failed to allocate new Page Table");
-		kmemset(table, 0, sizeof(page_table));
 
 		// create a new entry
 		pd_entry* entry = &pd->m_entries[PD_INDEX((uint32_t)virt)];
@@ -60,9 +73,12 @@ void	vmm_map_page(void *phys, void *virt, bool is_user)
 		if (is_user)
 			pd_entry_add_attrib(entry, PDE_USER);
 		pd_entry_set_frame(entry, (uint32_t)table);
+
+		page_table *virt_table = (page_table*)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
+		kmemset(virt_table, 0, sizeof(page_table));
 	}
 	// get physical table
-	page_table *table = (page_table *)PAGE_PHYS_ADDRESS(e);
+	page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
 	// get page
 	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t) virt)];
 
@@ -85,7 +101,7 @@ void	vmm_unmap_page(void *virt)
 		return ;
 
 	// get table
-	page_table *table = (page_table *)PAGE_PHYS_ADDRESS(e);
+	page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
 
 	// get page in table
 	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t)virt)];
@@ -149,11 +165,10 @@ void	vmm_initialize()
 		PANIC("Failed to allocate new Page Directory");
 	kmemset(dir, 0, sizeof(page_directory));
 
-	pd_entry *entry = &dir->m_entries[PD_INDEX(0xc0000000)];
-	pd_entry_add_attrib(entry, PDE_PRESENT);
-	pd_entry_add_attrib(entry, PDE_WRITABLE);
-	pd_entry_add_attrib(entry, PDE_USER);
-	pd_entry_set_frame(entry, (physical_addr)table);
+	pd_entry *recursive_entry = &dir->m_entries[1023];
+	pd_entry_set_frame(recursive_entry, (physical_addr)dir);
+	pd_entry_add_attrib(recursive_entry, PDE_PRESENT);
+	pd_entry_add_attrib(recursive_entry, PDE_WRITABLE);
 
 	pd_entry *entry2 = &dir->m_entries[PD_INDEX(0x00000000)];
 	pd_entry_add_attrib(entry2, PDE_PRESENT);
@@ -161,12 +176,43 @@ void	vmm_initialize()
 	pd_entry_add_attrib(entry2, PDE_USER);
 	pd_entry_set_frame(entry2, (physical_addr)table2);
 
-	_cur_pdbr = (physical_addr)&dir->m_entries;
+	pd_entry *entry_kernel = &dir->m_entries[PD_INDEX(0xC0000000)];
+	pd_entry_add_attrib(entry_kernel, PDE_PRESENT);
+	pd_entry_add_attrib(entry_kernel, PDE_WRITABLE);
+	pd_entry_add_attrib(entry_kernel, PDE_USER);
+	pd_entry_set_frame(entry_kernel, (physical_addr)table);
 
-	// switch to our page directory
-	vmm_switch_pdirectory(dir);
+	// cargra el nuevo directory to cr3
+	load_page_directory((uint32_t)dir);
 
 	enable_paging();
+}
+
+void create_memory_process(struct proc *proc)
+{
+	// get page directory
+	void *phys = pmm_map_page();
+	if (!phys)
+		return ;
+	void *virt = (void*)0xBFFFF000;
+	vmm_map_page(phys, virt, false);
+
+	page_directory *dir_virt = (page_directory*)virt;
+	kmemset(dir_virt, 0, (sizeof(uint32_t) * 768));
+
+	for (int i = 768; i < 1023; i++)
+	{
+		dir_virt->m_entries[i] = _cur_directory->m_entries[i];
+	}
+
+	// recursive paging
+	pd_entry *recursive_entry = &dir_virt->m_entries[1023];
+	pd_entry_set_frame(recursive_entry, (physical_addr)phys);
+	pd_entry_add_attrib(recursive_entry, PDE_PRESENT);
+	pd_entry_add_attrib(recursive_entry, PDE_WRITABLE);
+
+	proc->pd = phys;
+	vmm_remove_mapping(virt);
 }
 
 void	virt2phys(uint32_t virt)
@@ -178,7 +224,7 @@ void	virt2phys(uint32_t virt)
 	if (!pd_entry_is_present(*pde))
 		return ;
 
-	page_table *table = (page_table*)PAGE_PHYS_ADDRESS(pde);
+	page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
 
 	pt_entry *pte = &table->m_entries[PT_INDEX(virt)];
 	kprintf("Page Table Entry (PTE) Index: %d\n", PT_INDEX(virt));
