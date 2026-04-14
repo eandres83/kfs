@@ -21,6 +21,8 @@ typedef struct proc
 {
 	uint32_t	id;
 	uint32_t	pid;
+	uint32_t	uid;
+	uint32_t	exit_status;
 	char		*kstack;
 	char		*user_stack;
 	char		*user_eip;
@@ -35,5 +37,8 @@ extern void swtch(struct context **old, struct context *new_proc);
 
 void iniciar_multitarea();
 void yield();
+
+// syscall
+void exit_process(uint32_t status);
 
 #endif

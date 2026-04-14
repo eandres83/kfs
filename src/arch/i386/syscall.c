@@ -1,4 +1,5 @@
 #include "arch/i386/idt.h"
+#include "task/task.h"
 
 ssize_t	sys_write(registers_t *regs)
 {
@@ -21,10 +22,20 @@ ssize_t	sys_read(registers_t *regs)
 	return (-1);
 }
 
-static ssize_t	(*syscall[10])(registers_t*) =
+ssize_t sys_exit(registers_t *regs)
+{
+	exit_process(regs->ebx);
+	// medida de seguridad por si llegase hasta aqui
+	while (1)
+		asm volatile ("hlt");
+	return (1); // nunca va a llegar
+}
+
+static ssize_t	(*syscall[100])(registers_t*) =
 {
 	[3] = sys_read,
-	[4] = sys_write
+	[4] = sys_write,
+	[60] = sys_exit
 };
 
 void 	syscall_callback(registers_t *regs)
@@ -32,7 +43,7 @@ void 	syscall_callback(registers_t *regs)
 //	kprintf("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
-	if (regs->eax < 10 && syscall[regs->eax] != NULL)
+	if (regs->eax < 100 && syscall[regs->eax] != NULL)
 		regs->eax = syscall[regs->eax](regs);
 	else
 		kprintf("Error: Syscall not implemented.\n");

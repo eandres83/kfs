@@ -31,10 +31,27 @@ static void proceso_B()
 }
 // ---------------------------------------------------------
 
+static uint32_t next_pid = 1;
 struct context *scheduler_context;
 struct tss_entry *tss;
 proc_t process[64];
 proc_t *current_process;
+
+static proc_t *find_process()
+{
+	for (int i = 0; i < 64; i++)
+	{
+		if (process[i].state == UNUSED)
+		{
+			process[i].state = EMBRYO;
+			process[i].id = i;
+			process[i].uid = 0; // root process
+			process[i].pid = next_pid++;
+			return (&process[i]);
+		}
+	}
+	return (NULL);
+}
 
 void start_user_process()
 {
@@ -49,8 +66,11 @@ void start_user_process()
 	jump_to_usermode(entry_point, (uint32_t)top_stack);
 }
 
-void create_process(proc_t *proc, void (*function)())
+void create_process(void (*function)())
 {
+	proc_t *proc = find_process();
+	if (proc == NULL)
+		return ;
 	// create kernel stack for a process
 	proc->kstack = (char*)kmalloc(4096);
 	if (!proc->kstack)
@@ -99,8 +119,8 @@ void iniciar_multitarea()
 {
 	kmemset(process, 0, sizeof(process));
 
-	create_process(&process[0], proceso_A);
-	create_process(&process[1], proceso_B);
+	create_process(proceso_A);
+	create_process(proceso_B);
 
 	kprintf("Scheduler ahora\n");
 	scheduler();
@@ -117,5 +137,12 @@ void yield()
 			return ;
 		}
 	}
+}
+
+void exit_process(uint32_t status)
+{
+	current_process->state = ZOMBIE;
+	current_process->exit_status = status;
+	scheduler();
 }
 
