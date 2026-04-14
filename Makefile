@@ -57,7 +57,7 @@ run:
 	qemu-system-i386 -kernel $(NAME) -curses
 
 debug:
-	qemu-system-i386 -kernel $(NAME) -curses -s -S -d int -no-reboot -M smm=off
+	qemu-system-i386 -kernel $(NAME) -curses -s -S -d int,cpu_reset -no-reboot
 
 re: fclean all
 
