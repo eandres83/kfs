@@ -80,10 +80,9 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_timer(1000);
 
 	kprintf("KFS> ");
-
-	asm volatile ("sti");
 	iniciar_multitarea();
 
+	asm volatile ("sti");
 	while (1)
 		asm volatile ("hlt");
 
