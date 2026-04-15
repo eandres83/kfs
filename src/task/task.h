@@ -39,6 +39,8 @@ void iniciar_multitarea();
 void yield();
 
 // syscall
-void exit_process(uint32_t status);
+void 	exit_process(uint32_t status);
+ssize_t	wait(uint32_t *status);
+ssize_t getuid();
 
 #endif

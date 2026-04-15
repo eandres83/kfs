@@ -143,6 +143,43 @@ void exit_process(uint32_t status)
 {
 	current_process->state = ZOMBIE;
 	current_process->exit_status = status;
+	if (current_process->parent && current_process->parent->state == SLEEPING)
+		current_process->parent->state = RUNNABLE;
 	scheduler();
+}
+
+ssize_t wait(uint32_t *status)
+{
+	while (1)
+	{
+		bool child = false;
+		uint32_t tmp_pid;
+	
+		for (int i = 0; i < 64; i ++)
+		{
+			if (process[i].parent == current_process)
+			{
+				child = true;
+				if (process[i].state == ZOMBIE)
+				{
+					*status = process[i].exit_status;
+					tmp_pid = process[i].pid;
+					kfree(process[i].kstack);
+					pmm_free_page(process[i].pd);
+					kmemset(&process[i], 0, sizeof(proc_t));
+					return (tmp_pid);
+				}
+			}
+		}
+		if (child == false)
+			return (-1);
+		current_process->state = SLEEPING;
+		yield();
+	}
+}
+
+ssize_t getuid()
+{
+	return (current_process->uid);
 }
 

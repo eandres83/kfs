@@ -31,11 +31,25 @@ ssize_t sys_exit(registers_t *regs)
 	return (1); // nunca va a llegar
 }
 
-static ssize_t	(*syscall[100])(registers_t*) =
+ssize_t sys_wait(registers_t *regs)
+{
+	wait(&regs->ebx);
+	return (regs->ebx);
+}
+
+ssize_t sys_getuid(registers_t *regs)
+{
+	(void)regs;
+	return (getuid());
+}
+
+static ssize_t	(*syscall[200])(registers_t*) =
 {
 	[3] = sys_read,
 	[4] = sys_write,
-	[60] = sys_exit
+	[60] = sys_exit,
+	[61] = sys_wait,
+	[102] = sys_getuid
 };
 
 void 	syscall_callback(registers_t *regs)
@@ -43,7 +57,7 @@ void 	syscall_callback(registers_t *regs)
 //	kprintf("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
-	if (regs->eax < 100 && syscall[regs->eax] != NULL)
+	if (regs->eax < 200 && syscall[regs->eax] != NULL)
 		regs->eax = syscall[regs->eax](regs);
 	else
 		kprintf("Error: Syscall not implemented.\n");
