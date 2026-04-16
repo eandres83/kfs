@@ -19,6 +19,8 @@ struct context
 
 typedef struct proc
 {
+	// id es inutili, no la uso porque no utilizo aceso directo a
+	// procesos de array, comprobar si la uso antes de entregar
 	uint32_t	id;
 	uint32_t	pid;
 	uint32_t	uid;
@@ -42,5 +44,6 @@ void yield();
 void 	exit_process(uint32_t status);
 ssize_t	wait(uint32_t *status);
 ssize_t getuid();
+ssize_t fork();
 
 #endif

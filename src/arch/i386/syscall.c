@@ -43,10 +43,17 @@ ssize_t sys_getuid(registers_t *regs)
 	return (getuid());
 }
 
+ssize_t sys_fork(registers_t *regs)
+{
+	(void)regs;
+	return (fork());
+}
+
 static ssize_t	(*syscall[200])(registers_t*) =
 {
 	[3] = sys_read,
 	[4] = sys_write,
+	[57] = sys_fork,
 	[60] = sys_exit,
 	[61] = sys_wait,
 	[102] = sys_getuid

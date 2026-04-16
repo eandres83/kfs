@@ -46,6 +46,6 @@ void	virt2phys(uint32_t virt);
 struct proc;
 void	create_memory_process(struct proc *proc);
 void	vmm_load_process_directory(void *pd);
-
+void 	copy_parent_memory(struct proc *proc);
 
 #endif

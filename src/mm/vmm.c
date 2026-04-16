@@ -188,13 +188,79 @@ void	vmm_initialize()
 	enable_paging();
 }
 
+void copy_parent_memory(struct proc *proc)
+{
+	create_memory_process(proc);
+	page_directory *dir = _cur_directory;
+
+	void *virt1 = (void*)0xFFBFE000;
+	vmm_map_page(proc->pd, virt1, false);
+	page_directory *pd_chil = (page_directory*)virt1;
+
+	for (int i = 0; i < 767; i++)
+	{
+		if (pd_entry_is_present(dir->m_entries[i]))
+		{
+			if (!pd_entry_is_present(pd_chil->m_entries[i]))
+			{
+				void *phys = pmm_map_page();
+				if (!phys)
+					return ;
+				void *virt2 = (void*)0xFFBFF000;
+				vmm_map_page(phys, virt2, false);
+				kmemset(virt2, 0, sizeof(page_table));
+				vmm_remove_mapping(virt2);
+
+				pd_entry_set_frame(&pd_chil->m_entries[i], (uint32_t)phys);
+				pd_entry_add_attrib(&pd_chil->m_entries[i], PDE_PRESENT);
+				pd_entry_add_attrib(&pd_chil->m_entries[i], PDE_WRITABLE);
+				pd_entry_add_attrib(&pd_chil->m_entries[i], PDE_USER);
+			}
+			physical_addr tabla_fisica_hijo = pt_entry_frame(pd_chil->m_entries[i]);
+			void *virt3 = (void*)0xFFBFD000;
+			vmm_map_page((void*)tabla_fisica_hijo, virt3, false);
+			page_table *tabla_hijo = (page_table*)virt3;
+
+			page_table *pt_parent = (page_table*)(0xFFC00000 + (i * 4096));
+			for (int j = 0; j < 1024; j++)
+			{
+				if (pt_entry_is_present(pt_parent->m_entries[j]))
+				{
+					void *phys = pmm_map_page();
+					if (!phys)
+						return ;
+					void *virt4 = (void*)0xFFBFC000;
+					vmm_map_page(phys, virt4, false);
+
+					// reconstruir la direccion virtual donde esta la info del padre
+					uint32_t dir_ind = i << 22;
+					uint32_t tab_ind = j << 12;
+					uint32_t src = dir_ind | tab_ind;
+					kmemcpy(virt4, (void*)src, 4096);
+					vmm_remove_mapping(virt4);
+
+					pt_entry nueva_entrada = 0;
+					pt_entry_set_frame(&nueva_entrada, (uint32_t)phys);
+					pt_entry_add_attrib(&nueva_entrada, PTE_PRESENT);
+					pt_entry_add_attrib(&nueva_entrada, PTE_WRITABLE);
+					pt_entry_add_attrib(&nueva_entrada, PTE_USER);
+
+					tabla_hijo->m_entries[j] = nueva_entrada;
+				}
+			}
+			vmm_remove_mapping(virt3);
+		}
+	}
+	vmm_remove_mapping(virt1);
+}
+
 void create_memory_process(struct proc *proc)
 {
 	// get page directory
 	void *phys = pmm_map_page();
 	if (!phys)
 		return ;
-	void *virt = (void*)0xBFFFF000;
+	void *virt = (void*)0xFFBFF000;
 	vmm_map_page(phys, virt, false);
 
 	page_directory *dir_virt = (page_directory*)virt;

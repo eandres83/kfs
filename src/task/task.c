@@ -139,6 +139,32 @@ void yield()
 	}
 }
 
+// syscall for process
+
+ssize_t fork()
+{
+	for (int i = 0; i < 64; i++)
+	{
+		if (process[i].state ==  UNUSED)
+		{
+			process[i].parent = current_process;
+			process[i].pid = next_pid++;
+			process[i].kstack = kmalloc(4096);
+			if (!process[i].kstack)
+				return (-1);
+			kmemcpy(process[i].kstack, current_process->kstack, 4096);
+			size_t res = (char*)current_process->context - (char*)current_process->kstack;
+			process[i].kstack += res;
+			// copy pd parent to child process
+			copy_parent_memory(&process[i]);
+			process[i].state = RUNNABLE;
+
+			return (process[i].pid);
+		}
+	}
+	return (-1);
+}
+
 void exit_process(uint32_t status)
 {
 	current_process->state = ZOMBIE;
@@ -155,7 +181,7 @@ ssize_t wait(uint32_t *status)
 		bool child = false;
 		uint32_t tmp_pid;
 	
-		for (int i = 0; i < 64; i ++)
+		for (int i = 0; i < 64; i++)
 		{
 			if (process[i].parent == current_process)
 			{
