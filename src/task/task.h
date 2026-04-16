@@ -26,6 +26,8 @@ typedef struct proc
 	uint32_t	pid;
 	uint32_t	uid;
 	uint32_t	exit_status;
+	uint32_t	signals;
+	uint32_t	signal_handlers[32];
 	char		*kstack;
 	char		*user_stack;
 	char		*user_eip;
@@ -40,11 +42,14 @@ extern void swtch(struct context **old, struct context *new_proc);
 
 void iniciar_multitarea();
 void yield();
+void find_signal(registers_t *regs);
 
 // syscall
 void 	exit_process(uint32_t status);
 ssize_t	wait(uint32_t *status);
 ssize_t getuid();
 ssize_t fork(registers_t *regs);
+ssize_t kill(uint32_t pid, uint32_t signal);
+ssize_t signal(uint32_t signum, void (*function));
 
 #endif

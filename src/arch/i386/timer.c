@@ -5,8 +5,9 @@ uint32_t tick = 0;
 
 void timer_callback(registers_t *regs)
 {
-	(void)regs;
 	tick++;
+	if (regs->cs == 0x23)
+		find_signal(regs);
 
 	yield();
 }

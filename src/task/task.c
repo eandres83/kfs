@@ -209,8 +209,59 @@ ssize_t wait(uint32_t *status)
 	}
 }
 
+ssize_t signal(uint32_t signum, void (*function))
+{
+	if (signum >= 32)
+		return (-1);
+	current_process->signal_handlers[signum] = function;
+	return (0);
+}
+
+ssize_t kill(uint32_t pid, uint32_t signal)
+{
+	if (pid == 0)
+		return (-1);
+	for (int i = 0; i < 64; i++)
+	{
+		if (process[i].pid == pid)
+		{
+			process[i].signals |= (1 << signal);
+			return (0);
+		}
+	}
+	return (-1);
+}
+
 ssize_t getuid()
 {
 	return (current_process->uid);
+}
+
+void find_signal(registers_t *regs)
+{
+	if (current_process->signals != 0)
+	{
+		for (int i = 0; i < 31; i++)
+		{
+			if (current_process->signals & (1 << i))
+			{
+				current_process->signals &= ~(1 << i);
+				void *handler = (void*)current_process->signal_handlers[i];
+				if (handler == NULL)
+				{
+					if (i == 9)
+						exit_process(0);
+				}
+				else
+				{
+					regs->useresp -= 4;
+					uint32_t *pila_user = (uint32_t*)regs->useresp;
+					*pila_user = regs->eip;
+					regs->eip = (uint32_t)handler;
+					break;
+				}
+			}
+		}
+	}
 }
 
