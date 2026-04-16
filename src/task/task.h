@@ -3,8 +3,9 @@
 
 #include <utils.h>
 #include <kmalloc.h>
-#include "../mm/vmm.h"
-#include "../mm/gdt.h"
+#include "mm/vmm.h"
+#include "mm/gdt.h"
+#include "arch/i386/idt.h"
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
@@ -44,6 +45,6 @@ void yield();
 void 	exit_process(uint32_t status);
 ssize_t	wait(uint32_t *status);
 ssize_t getuid();
-ssize_t fork();
+ssize_t fork(registers_t *regs);
 
 #endif

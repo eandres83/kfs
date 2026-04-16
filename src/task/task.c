@@ -141,7 +141,7 @@ void yield()
 
 // syscall for process
 
-ssize_t fork()
+ssize_t fork(registers_t *regs)
 {
 	for (int i = 0; i < 64; i++)
 	{
@@ -153,12 +153,17 @@ ssize_t fork()
 			if (!process[i].kstack)
 				return (-1);
 			kmemcpy(process[i].kstack, current_process->kstack, 4096);
-			size_t res = (char*)current_process->context - (char*)current_process->kstack;
-			process[i].kstack += res;
+			uint32_t offset_context = (uint32_t)current_process->context - (uint32_t)current_process->kstack;
+			process[i].context = (struct context*)(process[i].kstack + offset_context);
 			// copy pd parent to child process
 			copy_parent_memory(&process[i]);
-			process[i].state = RUNNABLE;
 
+			// calcular offset para saber donde esta la estructura
+			uint32_t offset_regs = (uint32_t)regs - (uint32_t)current_process->kstack;
+			registers_t *hijo_regs = (registers_t*)(process[i].kstack + offset_regs);
+			hijo_regs->eax = 0;
+
+			process[i].state = RUNNABLE;
 			return (process[i].pid);
 		}
 	}

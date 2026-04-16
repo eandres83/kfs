@@ -45,8 +45,7 @@ ssize_t sys_getuid(registers_t *regs)
 
 ssize_t sys_fork(registers_t *regs)
 {
-	(void)regs;
-	return (fork());
+	return (fork(regs));
 }
 
 static ssize_t	(*syscall[200])(registers_t*) =
