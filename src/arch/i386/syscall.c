@@ -58,6 +58,17 @@ ssize_t sys_signal(registers_t *regs)
 	return (signal(regs->ebx, (void (*)())regs->ecx));
 }
 
+// tmp solo para kfs-5 borrar
+ssize_t sys_sendmsg(registers_t *regs)
+{
+	return (sendmsg(regs->ebx, (char*)regs->ecx, regs->edx));
+}
+
+ssize_t sys_recvmsg(registers_t *regs)
+{
+	return (recvmsg((char*)regs->ebx, regs->ecx));
+}
+
 static ssize_t	(*syscall[200])(registers_t*) =
 {
 	[1] = sys_exit,
@@ -67,7 +78,9 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[7] = sys_wait,
 	[24] = sys_getuid,
 	[37] = sys_kill,
-	[48] = sys_signal
+	[48] = sys_signal,
+	[100] = sys_sendmsg,
+	[101] = sys_recvmsg
 };
 
 void 	syscall_callback(registers_t *regs)

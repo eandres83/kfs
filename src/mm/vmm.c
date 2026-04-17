@@ -1,6 +1,10 @@
 #include "vmm.h"
 #include "task/task.h"
 
+// tmp for test kfs-5
+extern uint32_t _user_start;
+extern uint32_t _user_end;
+
 static page_directory	*_cur_directory = (page_directory*)0xFFFFF000;
 
 void	vmm_load_process_directory(void *pd)
@@ -133,7 +137,6 @@ void	vmm_initialize()
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
 		pt_entry_add_attrib(&page, PTE_WRITABLE);
-		pt_entry_add_attrib(&page, PTE_USER);
 		pt_entry_set_frame(&page, frame);
 
 		// add it to the page table
@@ -146,7 +149,9 @@ void	vmm_initialize()
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
 		pt_entry_add_attrib(&page, PTE_WRITABLE);
-		pt_entry_add_attrib(&page, PTE_USER);
+		// tmp for kfs-5
+		if (virt >= (uint32_t)&_user_start && virt < (uint32_t)&_user_end)
+			pt_entry_add_attrib(&page, PTE_USER);
 		pt_entry_set_frame(&page, frame);
 
 		table->m_entries[PT_INDEX(virt)] = page;
@@ -194,10 +199,10 @@ void copy_parent_memory(struct proc *proc)
 	page_directory *dir = _cur_directory;
 
 	void *virt1 = (void*)0xFFBFE000;
-	vmm_map_page(proc->pd, virt1, false);
+	vmm_map_page(proc->pd, virt1, true);
 	page_directory *pd_chil = (page_directory*)virt1;
 
-	for (int i = 0; i < 767; i++)
+	for (int i = 0; i < 768; i++)
 	{
 		if (pd_entry_is_present(dir->m_entries[i]))
 		{
@@ -207,7 +212,7 @@ void copy_parent_memory(struct proc *proc)
 				if (!phys)
 					return ;
 				void *virt2 = (void*)0xFFBFF000;
-				vmm_map_page(phys, virt2, false);
+				vmm_map_page(phys, virt2, true);
 				kmemset(virt2, 0, sizeof(page_table));
 				vmm_remove_mapping(virt2);
 
@@ -218,7 +223,7 @@ void copy_parent_memory(struct proc *proc)
 			}
 			physical_addr tabla_fisica_hijo = pt_entry_frame(pd_chil->m_entries[i]);
 			void *virt3 = (void*)0xFFBFD000;
-			vmm_map_page((void*)tabla_fisica_hijo, virt3, false);
+			vmm_map_page((void*)tabla_fisica_hijo, virt3, true);
 			page_table *tabla_hijo = (page_table*)virt3;
 
 			page_table *pt_parent = (page_table*)(0xFFC00000 + (i * 4096));
@@ -230,7 +235,7 @@ void copy_parent_memory(struct proc *proc)
 					if (!phys)
 						return ;
 					void *virt4 = (void*)0xFFBFC000;
-					vmm_map_page(phys, virt4, false);
+					vmm_map_page(phys, virt4, true);
 
 					// reconstruir la direccion virtual donde esta la info del padre
 					uint32_t dir_ind = i << 22;
@@ -261,7 +266,7 @@ void create_memory_process(struct proc *proc)
 	if (!phys)
 		return ;
 	void *virt = (void*)0xFFBFF000;
-	vmm_map_page(phys, virt, false);
+	vmm_map_page(phys, virt, true);
 
 	page_directory *dir_virt = (page_directory*)virt;
 	kmemset(dir_virt, 0, (sizeof(uint32_t) * 768));

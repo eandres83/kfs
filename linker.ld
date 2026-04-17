@@ -34,6 +34,22 @@ SECTIONS
 		*(.data)
 	}
 
+	. = ALIGN(4K);
+	_user_start = .;
+
+	.user_text ALIGN(4K) : AT(ADDR(.user_text) - 0xC0000000)
+	{
+		*(.user_text)
+	}
+
+	.user_data ALIGN(4K) : AT(ADDR(.user_data) - 0xC0000000)
+	{
+		*(.user_data)
+	}
+
+	. = ALIGN(4K);
+	_user_end = .;
+
 	/* Read-write data (uninitialized) and stack */
 	.bss ALIGN(4K) : AT(ADDR(.data) - 0xC0000000)
 	{
