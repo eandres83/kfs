@@ -1,34 +1,37 @@
 #include "task.h"
 
-// temporal solo para testear procesos
-static int32_t mi_user_write_syscall(char *str, size_t len)
-{
-	int32_t ret;
-
-	asm volatile("int $0x80" : "=a" (ret) : "a" (4), "b" (1), "c" (str), "d" (len) : "memory");
-
-	return (ret);
-}
-
-static void proceso_A()
-{
-	char *letra = "A";
-	while (1)
-	{
-		mi_user_write_syscall(letra, 1);
-		for (volatile int i = 0; i < 1000000; i++);
-	}
-}
-
-static void proceso_B()
-{
-	char *letra = "B";
-	while (1)
-	{
-		mi_user_write_syscall(letra, 1);
-		for (volatile int i = 0; i < 1000000; i++);
-	}
-}
+//__attribute__((section(".user_data"))) char letra_A[] = "A";
+//__attribute__((section(".user_data"))) char letra_B[] = "B";
+//
+//// temporal solo para testear procesos
+//__attribute__((section(".user_text"))) static int32_t mi_user_write_syscall(char *str, size_t len)
+//{
+//	int32_t ret;
+//
+//	asm volatile("int $0x80" : "=a" (ret) : "a" (4), "b" (1), "c" (str), "d" (len) : "memory");
+//
+//	return (ret);
+//}
+//
+//__attribute__((section(".user_text"))) static void proceso_A()
+//{
+////	char *letra = "A";
+//	while (1)
+//	{
+//		mi_user_write_syscall(letra_A, 1);
+//		for (volatile int i = 0; i < 1000000; i++);
+//	}
+//}
+//
+//__attribute__((section(".user_text"))) static void proceso_B()
+//{
+////	char *letra = "B";
+//	while (1)
+//	{
+//		mi_user_write_syscall(letra_B, 1);
+//		for (volatile int i = 0; i < 1000000; i++);
+//	}
+//}
 // ---------------------------------------------------------
 
 static uint32_t next_pid = 1;
@@ -60,10 +63,10 @@ void start_user_process()
 	vmm_map_page(phys_stack, virt_stack, true);
 	if (!virt_stack)
 		return ;
-	char	*top_stack = (char*)virt_stack + 4096;
+	current_process->user_stack = (char*)virt_stack + 4096;
 	uint32_t entry_point = (uint32_t)(size_t)current_process->user_eip;
 
-	jump_to_usermode(entry_point, (uint32_t)top_stack);
+	jump_to_usermode(entry_point, (uint32_t)current_process->user_stack);
 }
 
 void create_process(void (*function)())
@@ -93,6 +96,25 @@ void create_process(void (*function)())
 	proc->user_eip = (char*)function;
 	// create user stack
 	proc->context->eip = (uint32_t)start_user_process;
+
+	proc->mmap_count = 0;
+	// tmp
+	proc->msg = kmalloc(sizeof(struct msg));
+	if (!proc->msg)
+		return ;
+	proc->msg->max_buffer = 4096;
+	proc->msg->write_index = 0;
+	proc->msg->read_index = 0;
+	proc->msg->buffer = kmalloc(4096);
+	if (!proc->msg->buffer)
+		return ;
+	proc->text_start = 0;
+	proc->text_end = 0;
+	proc->data_start = 0;
+	proc->data_end = 0;
+	proc->bss_start = 0;
+	proc->bss_end = 0;
+
 	proc->state = RUNNABLE;
 }
 
@@ -104,12 +126,14 @@ void scheduler()
 		{
 			if (process[i].state == RUNNABLE)
 			{
+				asm volatile ("cli");
 				char *top_stack = process[i].kstack + 4096;
 				set_kernel_stack((uint32_t)top_stack);
 				process[i].state = RUNNING;
 				current_process = &process[i];
 				vmm_load_process_directory(process[i].pd);
 				swtch(&scheduler_context, process[i].context);
+				asm volatile ("sti");
 			}
 		}
 	}
@@ -119,8 +143,10 @@ void iniciar_multitarea()
 {
 	kmemset(process, 0, sizeof(process));
 
-	create_process(proceso_A);
-	create_process(proceso_B);
+//	create_process(proceso_A);
+//	create_process(proceso_B);
+
+	create_process(proceso_test_syscall);
 
 	kprintf("Scheduler ahora\n");
 	scheduler();
@@ -128,15 +154,19 @@ void iniciar_multitarea()
 
 void yield()
 {
-	for (int i = 0; i < 64; i++)
-	{
-		if (process[i].state == RUNNING)
-		{
-			process[i].state = RUNNABLE;
-			swtch(&process[i].context, scheduler_context);
-			return ;
-		}
-	}
+	if (current_process->state == RUNNING)
+		current_process->state = RUNNABLE;
+
+	swtch(&current_process->context, scheduler_context);
+}
+
+void kill_process(char *motivo)
+{
+	
+	kprintf("\n[Kernel] Porceso PID %d asesinado por exception: %s \n",
+		current_process->pid, motivo);
+	kill(current_process->pid, 9);
+	exit_process(139);
 }
 
 // syscall for process
@@ -153,8 +183,6 @@ ssize_t fork(registers_t *regs)
 			if (!process[i].kstack)
 				return (-1);
 			kmemcpy(process[i].kstack, current_process->kstack, 4096);
-			uint32_t offset_context = (uint32_t)current_process->context - (uint32_t)current_process->kstack;
-			process[i].context = (struct context*)(process[i].kstack + offset_context);
 			// copy pd parent to child process
 			copy_parent_memory(&process[i]);
 
@@ -163,11 +191,82 @@ ssize_t fork(registers_t *regs)
 			registers_t *hijo_regs = (registers_t*)(process[i].kstack + offset_regs);
 			hijo_regs->eax = 0;
 
+			uint32_t *reg_ptr = (uint32_t*)hijo_regs -1;
+			*reg_ptr = (uint32_t)hijo_regs;
+			process[i].context = (struct context*)reg_ptr - 1;
+
+			process[i].context->edi = 0;
+			process[i].context->esi = 0;
+			process[i].context->ebx = 0;
+			process[i].context->ebp = 0;
+			process[i].context->eip = (uint32_t)fork_child_exit;
+
+			process[i].user_stack = (char*)hijo_regs;
+
+			process[i].msg = kmalloc(sizeof(struct msg));
+			if (!process[i].msg)
+				return (-1);
+			process[i].msg->max_buffer = 4096;
+			process[i].msg->write_index = 0;
+			process[i].msg->read_index = 0;
+			process[i].msg->buffer = kmalloc(4096);
+			if (!process[i].msg->buffer)
+				return (-1);
+
+			for (int s = 0; s < 32; s++)
+				process[i].signal_handlers[s] = current_process->signal_handlers[s];
+
+			for (int a = 0; a < 32; a++)
+				process[i].mmap_allocation[a] = current_process->mmap_allocation[a];
+			process[i].mmap_count = current_process->mmap_count;
 			process[i].state = RUNNABLE;
 			return (process[i].pid);
 		}
 	}
 	return (-1);
+}
+
+ssize_t mmap()
+{
+	int index = -1;
+	for (int i = 0; i < 32; i++)
+	{
+		if (current_process->mmap_allocation[i] == 0)
+		{
+			index = i;
+			break;
+		}
+	}
+	if (index == -1)
+		return (-1);
+
+	uint32_t virt_addr = 0x40000000 + (current_process->mmap_count * 4096);
+
+	void *phys_addr = pmm_map_page();
+	if (!phys_addr)
+		return (-1);
+	vmm_map_page(phys_addr, (void*)virt_addr, true);
+
+	current_process->mmap_allocation[index] = virt_addr;
+	current_process->mmap_count++;
+
+	return ((ssize_t)virt_addr);
+}
+
+ssize_t munmap(void *addr)
+{
+	vmm_unmap_page(addr);
+
+	for (int i = 0; i < 32; i++)
+	{
+		if (current_process->mmap_allocation[i] == (uint32_t)addr)
+		{
+			current_process->mmap_allocation[i] = 0;
+			current_process->mmap_count--;
+			break;
+		}
+	}
+	return (0);
 }
 
 void exit_process(uint32_t status)
@@ -176,7 +275,8 @@ void exit_process(uint32_t status)
 	current_process->exit_status = status;
 	if (current_process->parent && current_process->parent->state == SLEEPING)
 		current_process->parent->state = RUNNABLE;
-	scheduler();
+
+	swtch(&current_process->context, scheduler_context);
 }
 
 ssize_t wait(uint32_t *status)
@@ -193,10 +293,20 @@ ssize_t wait(uint32_t *status)
 				child = true;
 				if (process[i].state == ZOMBIE)
 				{
-					*status = process[i].exit_status;
+					if (status != NULL)
+						*status = process[i].exit_status;
 					tmp_pid = process[i].pid;
-					kfree(process[i].kstack);
-					pmm_free_page(process[i].pd);
+					if (process[i].kstack)
+						kfree(process[i].kstack);
+					if (process[i].msg != NULL && process[i].msg->buffer != NULL)
+						kfree(process[i].msg->buffer);
+					if (process[i].pd)
+						pmm_free_page(process[i].pd);
+					for (int a = 0; a < 32; a++)
+					{
+						if (process[i].mmap_allocation[a] != 0)
+							munmap((void*)process[i].mmap_allocation[a]);
+					}
 					kmemset(&process[i], 0, sizeof(proc_t));
 					return (tmp_pid);
 				}
@@ -213,7 +323,7 @@ ssize_t signal(uint32_t signum, void (*function))
 {
 	if (signum >= 32)
 		return (-1);
-	current_process->signal_handlers[signum] = function;
+	current_process->signal_handlers[signum] = (uint32_t)function;
 	return (0);
 }
 
@@ -263,5 +373,64 @@ void find_signal(registers_t *regs)
 			}
 		}
 	}
+}
+
+// temp solo para kfs-5
+ssize_t sendmsg(uint32_t pid, char *msg, uint32_t len)
+{
+	for (int i = 0; i < 64; i ++)
+	{
+		if (process[i].pid == pid)
+		{
+			asm volatile ("cli");
+			size_t byte_used = (process[i].msg->write_index - process[i].msg->read_index + 4096) % 4096;
+			size_t free_size = 4095 - byte_used;
+			if (free_size < len)
+			{
+				asm volatile ("sti");
+				return (-1);
+			}
+			size_t space_until_end = 4096 - process[i].msg->write_index;
+			if (len <= space_until_end)
+				kmemcpy((char*)process[i].msg->buffer + process[i].msg->write_index, msg, len);
+			else
+			{
+				kmemcpy((char*)process[i].msg->buffer + process[i].msg->write_index, msg, space_until_end);
+				kmemcpy((char*)process[i].msg->buffer, msg + space_until_end, len - space_until_end);
+			}
+			process[i].msg->write_index = (process[i].msg->write_index + len) % 4096;
+			asm volatile ("sti");
+			return (len);
+		}
+	}
+	return (-1);
+}
+
+ssize_t recvmsg(char *dest, size_t len)
+{
+	asm volatile ("cli");
+	if (current_process->msg->read_index == current_process->msg->write_index)
+		return (0);
+
+	size_t ready_to_read = (current_process->msg->write_index - current_process->msg->read_index + 4096) % 4096;
+	size_t min;
+	if (ready_to_read > len)
+		min = len;
+	else
+		min = ready_to_read;
+	size_t space_until_end = 4096 - current_process->msg->read_index;
+
+	if (min <= space_until_end)
+		kmemcpy(dest, (char*)current_process->msg->buffer + current_process->msg->read_index, min);
+	else
+	{
+		kmemcpy(dest, (char*)current_process->msg->buffer + current_process->msg->read_index, space_until_end);
+		kmemcpy(dest + space_until_end, (char*)current_process->msg->read_index, min - space_until_end);
+	}
+	
+	current_process->msg->read_index = (current_process->msg->read_index + min) % 4096;
+
+	asm volatile ("sti");
+	return (min);
 }
 

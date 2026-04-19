@@ -58,6 +58,17 @@ ssize_t sys_signal(registers_t *regs)
 	return (signal(regs->ebx, (void (*)())regs->ecx));
 }
 
+ssize_t sys_mmap(registers_t *regs)
+{
+	(void)regs;
+	return (mmap());
+}
+
+ssize_t sys_munmap(registers_t *regs)
+{
+	return (munmap((void*)regs->ebx));
+}
+
 // tmp solo para kfs-5 borrar
 ssize_t sys_sendmsg(registers_t *regs)
 {
@@ -79,6 +90,8 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[24] = sys_getuid,
 	[37] = sys_kill,
 	[48] = sys_signal,
+	[90] = sys_mmap,
+	[91] = sys_munmap,
 	[100] = sys_sendmsg,
 	[101] = sys_recvmsg
 };

@@ -202,7 +202,7 @@ void copy_parent_memory(struct proc *proc)
 	vmm_map_page(proc->pd, virt1, true);
 	page_directory *pd_chil = (page_directory*)virt1;
 
-	for (int i = 0; i < 768; i++)
+	for (int i = 1; i < 768; i++)
 	{
 		if (pd_entry_is_present(dir->m_entries[i]))
 		{

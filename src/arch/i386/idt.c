@@ -1,4 +1,5 @@
 #include "idt.h"
+#include "task/task.h"
 
 extern void idt_flush(uint32_t);
 
@@ -6,7 +7,7 @@ idt_entry_t 	idt_entries[256];
 idt_ptr_t	idt_ptr;
 isr_t		interrupts[256];
 
-static char *error_msg[22] = {"Divide Error", "Debug Exception", "NMI Interrupt", "Breakpoint", "Overflow", "BOUND Range Exceeded",
+static char *error_msg[22] = {"Divide Error", "Debug Exception", "NMI Interrupt", "Breakpoint", "Overflow", "Out of Bounds",
 		"Invalid Opcode", "Device Not Available", "Double Fault", "Coprocessor Segment Overrun", "Invalid TSS",
 		"Segment Not Present", "Stack-Segment Fault", "General Protection", "Page Fault", "Inter reserved", 
 		"Math Fault", "Alignment Check", "Machine Check", "SIMD Floating-Point Exception", "Virtualization Exception",
@@ -111,6 +112,15 @@ void	isr_handler(registers_t *regs)
 	{
 		isr_t action = interrupts[regs->int_no];
 		action(regs);
+		return ;
+	}
+
+	if ((regs->cs & 3) == 3)
+	{
+		char *motivo = "Unknown Exception";
+		if (regs->int_no < 22)
+			motivo = error_msg[regs->int_no];
+		kill_process(motivo);
 		return ;
 	}
 

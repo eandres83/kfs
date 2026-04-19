@@ -1,5 +1,6 @@
 .global jump_to_usermode
 .global swtch
+.global fork_child_exit
 
 jump_to_usermode:
 	cli
@@ -41,4 +42,20 @@ swtch:
 	pop %ebp
 
 	ret
+
+fork_child_exit:
+	pop %esp
+
+	pop %eax
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+
+	popa
+
+	add $8, %esp
+
+	sti
+	iret
 
