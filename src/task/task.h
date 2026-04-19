@@ -78,5 +78,6 @@ ssize_t munmap(void *addr);
 ssize_t sendmsg(uint32_t pid, char *msg, uint32_t len);
 ssize_t recvmsg(char *dest, size_t len);
 __attribute__((section(".user_text"))) void proceso_test_syscall();
+ssize_t test_mmap_present(void *addr);
 
 #endif

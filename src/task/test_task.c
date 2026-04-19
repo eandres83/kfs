@@ -11,6 +11,29 @@ __attribute__((section(".user_data"))) char ipc_msg[] = "Hola Hijo, soy tu Padre
 __attribute__((section(".user_data"))) char ipc_hijo_espera[] = "Hijo: Esperando mensaje...\n";
 __attribute__((section(".user_data"))) char ipc_hijo_recibe[] = "Hijo: RECIBIDO -> ";
 __attribute__((section(".user_data"))) char ipc_padre_fin[] = "Padre: Test IPC superado con exito.\n";
+__attribute__((section(".user_data"))) char msg_mmap[] = "Syscall mmap called.\n";
+__attribute__((section(".user_data"))) char msg_munmap[] = "Syscall munmap called.\n";
+
+__attribute__((section(".user_text"))) int32_t test_mi_mmap(void *addr)
+{
+	int32_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (190), "b" (addr) : "memory");
+	return (ret);
+}
+
+__attribute__((section(".user_text"))) int32_t mi_mmap()
+{
+	int32_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (90) : "memory");
+	return (ret);
+}
+
+__attribute__((section(".user_text"))) int32_t mi_munmap(void *addr)
+{
+	int32_t ret;
+	asm volatile("int $0x80" : "=a" (ret) :  "a" (91), "b" (addr) : "memory");
+	return (ret);
+}
 
 __attribute__((section(".user_text"))) int32_t mi_sendmsg(uint32_t pid, char *msg, uint32_t len)
 {
@@ -152,6 +175,12 @@ __attribute__((section(".user_text"))) void proceso_test_syscall()
 	// el hijo
 	if (pid == 0)
 	{
+//		mi_write(msg_mmap, sizeof(msg_mmap) - 1);
+		void *addr = (void*)mi_mmap();
+		test_mi_mmap(addr);
+//		mi_write(msg_munmap, sizeof(msg_munmap) - 1);
+		mi_munmap(addr);
+		test_mi_mmap(addr);
 		mi_write(msg_hijo1, sizeof(msg_hijo1) - 1);
 		mi_exit(42);
 	}
@@ -184,7 +213,7 @@ __attribute__((section(".user_text"))) void proceso_test_syscall()
 	while(1)
 	{
 		mi_write(".", 1);
-		for (volatile int i = 0; i < 50000000; i++);
+		for (int volatile i = 0; i < 50000000; i++);
 	}
 }
 

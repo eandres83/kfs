@@ -80,6 +80,11 @@ ssize_t sys_recvmsg(registers_t *regs)
 	return (recvmsg((char*)regs->ebx, regs->ecx));
 }
 
+ssize_t test_mmap(registers_t *regs)
+{
+	return (test_mmap_present((void*)regs->ebx));
+}
+
 static ssize_t	(*syscall[200])(registers_t*) =
 {
 	[1] = sys_exit,
@@ -93,7 +98,8 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[90] = sys_mmap,
 	[91] = sys_munmap,
 	[100] = sys_sendmsg,
-	[101] = sys_recvmsg
+	[101] = sys_recvmsg,
+	[190] = test_mmap
 };
 
 void 	syscall_callback(registers_t *regs)

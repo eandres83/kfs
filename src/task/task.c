@@ -226,6 +226,38 @@ ssize_t fork(registers_t *regs)
 	return (-1);
 }
 
+static void	vmm_unmap(void *virt)
+{
+	page_directory *pd = (page_directory*)0xFFFFF000;
+
+	// get current directory
+	pd_entry *e = &pd->m_entries[PD_INDEX((uint32_t)virt)];
+	if ((*e & PDE_PRESENT) != PDE_PRESENT)
+		return ;
+
+	// get table
+	page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
+
+	// get page in table
+	pt_entry *page = &table->m_entries[PT_INDEX((uint32_t)virt)];
+
+	if (pt_entry_is_present(*page))
+		kprintf("Page is present\n");
+	else
+		kprintf("Page is not present\n");
+
+	// free page
+//	vmm_free_page((void*)page);
+
+//	reload_tlb(virt);
+}
+
+ssize_t test_mmap_present(void *addr)
+{
+	vmm_unmap(addr);
+	return (0);
+}
+
 ssize_t mmap()
 {
 	int index = -1;
