@@ -12,20 +12,6 @@ __attribute__((section(".user_data"))) char ipc_hijo_espera[] = "Hijo: Esperando
 __attribute__((section(".user_data"))) char ipc_hijo_recibe[] = "Hijo: RECIBIDO -> ";
 __attribute__((section(".user_data"))) char ipc_padre_fin[] = "Padre: Test IPC superado con exito.\n";
 
-__attribute__((section(".user_text"))) int32_t mi_sendmsg(uint32_t pid, char *msg, uint32_t len)
-{
-	int32_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (100), "b" (pid), "c" (msg), "d" (len) : "memory");
-	return (ret);
-}
-
-__attribute__((section(".user_text"))) int32_t mi_recvmsg(char *dest, size_t len)
-{
-	int32_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (101), "b" (dest), "c" (len) : "memory");
-	return (ret);
-}
-
 __attribute__((section(".user_text"))) int32_t mi_write(char *str, size_t len)
 {
 	int32_t ret;

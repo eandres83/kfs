@@ -271,8 +271,6 @@ ssize_t wait(uint32_t *status)
 					tmp_pid = process[i].pid;
 					if (process[i].kstack)
 						kfree(process[i].kstack);
-					if (process[i].msg != NULL && process[i].msg->buffer != NULL)
-						kfree(process[i].msg->buffer);
 					if (process[i].pd)
 						pmm_free_page(process[i].pd);
 					for (int a = 0; a < 32; a++)
