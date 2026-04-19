@@ -18,14 +18,6 @@ struct context
 	uint32_t eip;
 };
 
-struct msg
-{
-	uint32_t	max_buffer;
-	uint32_t	write_index;
-	uint32_t	read_index;
-	void		*buffer;
-};
-
 typedef struct proc
 {
 	// id es inutil, no la uso porque no utilizo aceso directo a
@@ -45,14 +37,6 @@ typedef struct proc
 	enum procstate	state;
 	struct proc 	*parent;
 	struct context	*context;
-	// tmp
-	struct msg	*msg;
-	uint32_t	text_start;
-	uint32_t	text_end;
-	uint32_t	data_start;
-	uint32_t	data_end;
-	uint32_t	bss_start;
-	uint32_t	bss_end;
 } proc_t;
 
 extern void jump_to_usermode(uint32_t entry_point, uint32_t user_stack);

@@ -98,23 +98,6 @@ void create_process(void (*function)())
 	proc->context->eip = (uint32_t)start_user_process;
 
 	proc->mmap_count = 0;
-	// tmp
-	proc->msg = kmalloc(sizeof(struct msg));
-	if (!proc->msg)
-		return ;
-	proc->msg->max_buffer = 4096;
-	proc->msg->write_index = 0;
-	proc->msg->read_index = 0;
-	proc->msg->buffer = kmalloc(4096);
-	if (!proc->msg->buffer)
-		return ;
-	proc->text_start = 0;
-	proc->text_end = 0;
-	proc->data_start = 0;
-	proc->data_end = 0;
-	proc->bss_start = 0;
-	proc->bss_end = 0;
-
 	proc->state = RUNNABLE;
 }
 
@@ -202,16 +185,6 @@ ssize_t fork(registers_t *regs)
 			process[i].context->eip = (uint32_t)fork_child_exit;
 
 			process[i].user_stack = (char*)hijo_regs;
-
-			process[i].msg = kmalloc(sizeof(struct msg));
-			if (!process[i].msg)
-				return (-1);
-			process[i].msg->max_buffer = 4096;
-			process[i].msg->write_index = 0;
-			process[i].msg->read_index = 0;
-			process[i].msg->buffer = kmalloc(4096);
-			if (!process[i].msg->buffer)
-				return (-1);
 
 			for (int s = 0; s < 32; s++)
 				process[i].signal_handlers[s] = current_process->signal_handlers[s];
@@ -373,64 +346,5 @@ void find_signal(registers_t *regs)
 			}
 		}
 	}
-}
-
-// temp solo para kfs-5
-ssize_t sendmsg(uint32_t pid, char *msg, uint32_t len)
-{
-	for (int i = 0; i < 64; i ++)
-	{
-		if (process[i].pid == pid)
-		{
-			asm volatile ("cli");
-			size_t byte_used = (process[i].msg->write_index - process[i].msg->read_index + 4096) % 4096;
-			size_t free_size = 4095 - byte_used;
-			if (free_size < len)
-			{
-				asm volatile ("sti");
-				return (-1);
-			}
-			size_t space_until_end = 4096 - process[i].msg->write_index;
-			if (len <= space_until_end)
-				kmemcpy((char*)process[i].msg->buffer + process[i].msg->write_index, msg, len);
-			else
-			{
-				kmemcpy((char*)process[i].msg->buffer + process[i].msg->write_index, msg, space_until_end);
-				kmemcpy((char*)process[i].msg->buffer, msg + space_until_end, len - space_until_end);
-			}
-			process[i].msg->write_index = (process[i].msg->write_index + len) % 4096;
-			asm volatile ("sti");
-			return (len);
-		}
-	}
-	return (-1);
-}
-
-ssize_t recvmsg(char *dest, size_t len)
-{
-	asm volatile ("cli");
-	if (current_process->msg->read_index == current_process->msg->write_index)
-		return (0);
-
-	size_t ready_to_read = (current_process->msg->write_index - current_process->msg->read_index + 4096) % 4096;
-	size_t min;
-	if (ready_to_read > len)
-		min = len;
-	else
-		min = ready_to_read;
-	size_t space_until_end = 4096 - current_process->msg->read_index;
-
-	if (min <= space_until_end)
-		kmemcpy(dest, (char*)current_process->msg->buffer + current_process->msg->read_index, min);
-	else
-	{
-		kmemcpy(dest, (char*)current_process->msg->buffer + current_process->msg->read_index, space_until_end);
-		kmemcpy(dest + space_until_end, (char*)current_process->msg->read_index, min - space_until_end);
-	}
-	
-	current_process->msg->read_index = (current_process->msg->read_index + min) % 4096;
-
-	asm volatile ("sti");
-	return (min);
 }
 
