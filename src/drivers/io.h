@@ -29,4 +29,11 @@ static inline uint8_t inb(uint16_t port)
 	return (ret);
 }
 
+static inline uint16_t inw(uint16_t port)
+{
+	uint16_t res;
+	asm volatile ("inw %1, %0" : "=a" (res) : "Nd" (port));
+	return (res);
+}
+
 #endif
