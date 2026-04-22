@@ -23,6 +23,7 @@ struct vfs_node
 	uint32_t	inode;
 	uint32_t	links; // hard-links
 	uint32_t	rights;
+	void		*fs_info;
 	enum types	type;
 	struct ops	*ops; // punteros a las func basicas
 	struct vfs_node *father;
