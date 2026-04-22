@@ -11,6 +11,7 @@
 #include "arch/i386/idt.h"
 #include "arch/i386/timer.h"
 #include "task/task.h"
+#include "fs/ext2/ext2.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -23,7 +24,7 @@
 #endif
 
 extern uint32_t	get_stack_pointer();
-extern void	prompt();
+//extern void	prompt();
 
 static void	print_splash()
 {
@@ -77,10 +78,12 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	init_keyboard();
-	init_timer(1000);
+//	init_timer(1000);
+
+	init_ext2();
 
 	kprintf("KFS> ");
-	iniciar_multitarea();
+//	iniciar_multitarea();
 
 	asm volatile ("sti");
 	while (1)

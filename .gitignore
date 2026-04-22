@@ -1,3 +1,5 @@
+.swp
+disk.img
 .gdbinit
 *.a
 *.o

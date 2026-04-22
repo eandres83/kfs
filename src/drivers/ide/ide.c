@@ -6,6 +6,7 @@
 
 static void	ide_wait()
 {
+//	kprintf("Status: 0x%x\n", inb(0x1F7));
 	uint8_t data = inb(0x1F7);
 	while ((data & 0x80) != 0 || (data & 0x40) == 0)
 		data = inb(0x1F7);
@@ -14,6 +15,9 @@ static void	ide_wait()
 // lba28 -> logical block addressing for data sector on a storage device
 void	ide_read_sector(uint32_t lba, uint8_t *buffer)
 {
+	// 0xE0 for the master
+	outb(0x1F6, 0xE0 | (lba >> 24 & 0x0F));
+
 	ide_wait();
 
 	outb(0x1F2, 0x01); // cuantos sectore leer
@@ -21,9 +25,6 @@ void	ide_read_sector(uint32_t lba, uint8_t *buffer)
 	outb(0x1F3, lba);
 	outb(0x1F4, lba >> 8);
 	outb(0x1F5, lba >> 16);
-
-	// 0xE0 for the master
-	outb(0x1F6, 0xE0 | (lba >> 24 & 0x0F));
 
 	// read sectors command
 	outb(0x1F7, 0x20);
@@ -38,6 +39,8 @@ void	ide_read_sector(uint32_t lba, uint8_t *buffer)
 
 void 	ide_write_sector(uint32_t lba, uint8_t *buffer)
 {
+	outb(0x1F6, 0xE0 | (lba >> 24 & 0x0F));
+
 	ide_wait();
 
 	outb(0x1F2, 0x01);
@@ -45,8 +48,6 @@ void 	ide_write_sector(uint32_t lba, uint8_t *buffer)
 	outb(0x1F3, lba);
 	outb(0x1F4, lba >> 8);
 	outb(0x1F5, lba >> 16);
-
-	outb(0x1F6, 0xE0 | (lba >> 24 & 0x0F));
 
 	outb(0x1F7, 0x30);
 

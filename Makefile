@@ -54,7 +54,7 @@ iso: $(NAME)
 	@echo "kfs.iso created"
 
 run:
-	qemu-system-i386 -kernel $(NAME) -curses
+	qemu-system-i386 -kernel $(NAME) -curses -drive file=disk.img,format=raw,if=ide
 
 debug:
 	qemu-system-i386 -kernel $(NAME) -curses -s -S -d int,cpu_reset -no-reboot
