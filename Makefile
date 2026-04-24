@@ -9,6 +9,9 @@ CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 
 LDFLAGS = -T linker.ld
 
+DISK_IMG = disk.img
+FS_DIR = rootfs
+
 NAME = kernel.bin
 
 BUILD_DIR = .obj
@@ -19,7 +22,7 @@ SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i38
 OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SRCS_C)) \
 	$(patsubst src/%.s, $(BUILD_DIR)/%.o, $(SRCS_S))
 
-all: $(NAME)
+all: $(DISK_IMG) $(NAME)
 
 $(NAME): $(OBJS)
 	@echo "Linking kernel..."
@@ -39,7 +42,7 @@ $(BUILD_DIR)/%.o: src/%.s
 clean:
 	rm -rf $(BUILD_DIR)
 
-fclean: clean
+fclean: clean clean-disk
 	rm -f $(NAME)
 	rm -f kfs.iso
 	rm -rf isodir
@@ -52,6 +55,17 @@ iso: $(NAME)
 	@echo '}' >> isodir/boot/grub/grub.cfg
 	@grub-mkrescue -o kfs.iso isodir
 	@echo "kfs.iso created"
+
+$(DISK_IMG):
+	@echo "Creating a temporary directory structure"
+	@mkdir -p $(FS_DIR)/home/kfs
+	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
+	@~/genext2fs/genext2fs -d $(FS_DIR) $(DISK_IMG)
+	@rm -rf $(FS_DIR)
+	@echo "$(DISK_IMG) listo!"
+
+clean-disk:
+	rm -rf $(DISK_IMG)
 
 run:
 	qemu-system-i386 -kernel $(NAME) -curses -drive file=disk.img,format=raw,if=ide
