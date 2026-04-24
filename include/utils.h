@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <kmalloc.h>
 
 typedef int32_t ssize_t;
 
@@ -19,6 +20,8 @@ void	*kmemset(void *dest, int c, size_t n);
 void	kputnbr(long long n, int base);
 void	kprintf(const char *format, ...);
 int	kstrcmp(const char *s1, const char *s2);
-char	*kstrcpy(char *dest, const char src);
+char	*kstrcpy(char *dest, const char *src);
+size_t	kstrlcpy(char *dest, const char *src, size_t size);
+char 	**ksplit(const char *str, char c);
 
 #endif

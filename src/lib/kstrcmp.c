@@ -8,7 +8,7 @@ int	kstrcmp(const char *s1, const char *s2)
 
 	i = 0;
 	if (!str1)
-		return (1);
+		return (-1);
 
 	while (str1[i] || str2[i])
 	{
