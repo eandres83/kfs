@@ -2,6 +2,6 @@
 #layout regs
 
 target remote localhost:1234
-break execute_command
+break ext2_finddir
 continue
 

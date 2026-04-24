@@ -54,6 +54,15 @@ static void	print_splash()
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 }
 
+void	cat()
+{
+	char *path = "/home/kfs/texto.txt";
+	struct vfs_node *node = get_vfs_node_path(path);
+	if (node == NULL || node->type != VFS_FILE)
+		return ;
+	node->ops->read(node);
+}
+
 void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 {
 	/* Initialize terminal interface */
@@ -82,6 +91,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_ext2();
 
 	kprintf("KFS> ");
+	cat();
 //	iniciar_multitarea();
 
 	asm volatile ("sti");

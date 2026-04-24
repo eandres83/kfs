@@ -6,6 +6,7 @@ struct vfs_node *vfs = NULL;
 // /home/eandres/Documents/kfs/src/fs/vfs/vfs.c
 struct vfs_node *get_vfs_node_path(char *path)
 {
+	kprintf("Llamando a get_vfs_node_path para conseguir el split\n");
 	char **word = ksplit(path, '/');
 	if (!word)
 		return (NULL);
@@ -22,6 +23,7 @@ struct vfs_node *get_vfs_node_path(char *path)
 			return (kprintf("Error: No such file or directory\n"), double_free(word), NULL);
 	}
 	double_free(word);
+	kprintf("Saliendo de get_vfs_node_path\n");
 	return (current_node);
 }
 

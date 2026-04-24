@@ -93,15 +93,17 @@ static	struct vfs_node *create_node(struct vfs_node *dir_node, struct ext2_dir_e
 
 char *ext2_read(struct vfs_node *dir_node)
 {
+	kprintf("EXT2_READ called\n");
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
 
 	uint32_t nb_block = inode->lower_size / fs_info->size_block;
 	if ((inode->lower_size % fs_info->size_block) > 0)
 		nb_block++;
-	char *buffer = (char*)kmalloc(inode->lower_size);
+	char *buffer = (char*)kmalloc(inode->lower_size + 1);
 	if (!buffer)
 		return (kfree(inode), NULL);
+	buffer[inode->lower_size] = '\0';
 	uint32_t bytes_read = 0;
 	for (int i = 0; i < (int)nb_block; i++)
 	{
@@ -139,7 +141,17 @@ struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name)
 			char buf[256] = {0};
 			kmemcpy(buf, dir_entry->name, dir_entry->name_len);
 			if (kstrcmp(buf, name) == 0)
-				return (kfree(block), kfree(inode), create_node(dir_node, dir_entry));
+			{
+				struct vfs_node *res = create_node(dir_node, dir_entry);
+				kfree(block);
+				kfree(inode);
+				return (res);
+			}
+		}
+		if (dir_entry->entry_size == 0)
+		{
+			kprintf("Error en entry_size == 0\n");
+			break;
 		}
 		bytes_read += dir_entry->entry_size;
 		dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
@@ -164,6 +176,11 @@ void ext2_readdir(struct vfs_node *dir_node)
 		if (dir_entry->inode != 0)
 			create_node(dir_node, dir_entry);
 
+		if (dir_entry->entry_size == 0)
+		{
+			kprintf("Erorr en entry_size == 0\n");
+			break;
+		}
 		bytes_read += dir_entry->entry_size;
 		dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
 	}

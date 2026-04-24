@@ -56,17 +56,19 @@ char **ksplit(const char *s, char c)
 	char **tab;
 	char *next_word;
 	size_t next_word_len;
+	size_t	number_words;
 	size_t i;
 
 	if (!s)
 		return (NULL);
-	tab = (char **)kmalloc(sizeof(char *) * (nb_words(s, c) + 1));
+	number_words = nb_words(s, c);
+	tab = (char **)kmalloc(sizeof(char *) * (number_words + 1));
 	if (!tab)
 		return (NULL);
 	i = 0;
 	next_word = (char*)s;
 	next_word_len = 0;
-	while (i < nb_words(s, c))
+	while (i < number_words)
 	{
 		get_next_word(&next_word, &next_word_len, c);
 		tab[i] = (char*)kmalloc(sizeof(char) * (next_word_len + 1));

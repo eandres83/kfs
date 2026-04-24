@@ -57,7 +57,7 @@ run:
 	qemu-system-i386 -kernel $(NAME) -curses -drive file=disk.img,format=raw,if=ide
 
 debug:
-	qemu-system-i386 -kernel $(NAME) -curses -s -S -d int,cpu_reset -no-reboot
+	qemu-system-i386 -kernel $(NAME) -curses -hda disk.img -s -S -d int,cpu_reset -no-reboot
 
 re: fclean all
 
