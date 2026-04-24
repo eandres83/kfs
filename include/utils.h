@@ -23,5 +23,7 @@ int	kstrcmp(const char *s1, const char *s2);
 char	*kstrcpy(char *dest, const char *src);
 size_t	kstrlcpy(char *dest, const char *src, size_t size);
 char 	**ksplit(const char *str, char c);
+void	double_free(char **str);
+size_t	kstrncmp(const char *s1, const char *s2, size_t n);
 
 #endif
