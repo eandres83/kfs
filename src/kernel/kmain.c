@@ -4,13 +4,11 @@
 #include <stdint.h>
 #include "drivers/vga.h"
 #include "drivers/keyboard.h"
-#include "mm/gdt.h"
-#include "mm/pmm.h"
-#include "mm/vmm.h"
-#include "mm/slab.h"
 #include "arch/i386/idt.h"
 #include "arch/i386/timer.h"
+#include "mm/slab.h"
 #include "task/task.h"
+#include "fs/vfs/vfs.h"
 #include "fs/ext2/ext2.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
@@ -80,6 +78,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_keyboard();
 //	init_timer(1000);
 
+	init_vfs();
 	init_ext2();
 
 	kprintf("KFS> ");

@@ -4,17 +4,9 @@
 #include <utils.h>
 #include "drivers/io.h"
 
-enum types { VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPOINT };
+extern struct vfs_node *vfs;
 
-struct ops
-{
-	void (*read)();
-	void (*write)();
-	void (*open)();
-	void (*close)();
-	void (*readdir)();
-	void (*finddir)();
-};
+enum types { VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPOINT, VFS_UNKNOWN };
 
 struct vfs_node
 {
@@ -31,5 +23,18 @@ struct vfs_node
 	struct vfs_node *next_to_kin; // siguiente nodo del hijo
 	struct vfs_node *master; // info del nodo
 };
+
+struct ops
+{
+	char *(*read) (struct vfs_node *);
+	void (*write) (struct vfs_node *);
+	void (*open) (struct vfs_node *);
+	void (*close) (struct vfs_node *);
+	void (*readdir) (struct vfs_node *);
+	struct vfs_node *(*finddir) (struct vfs_node *, char *);
+};
+
+void init_vfs();
+struct vfs_node *get_vfs_node_path(char *path);
 
 #endif

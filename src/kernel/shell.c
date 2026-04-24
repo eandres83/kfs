@@ -6,6 +6,7 @@
 #include "mm/gdt.h"
 #include "mm/pmm.h"
 #include "mm/vmm.h"
+#include "fs/vfs/vfs.h"
 
 #define BUFFER_SIZE 256
 
@@ -161,6 +162,14 @@ static void	execute_command(char *str)
 	else if (kstrcmp(str, "test_syscall") == 0)
 	{
 		asm volatile ("int $0x80" : : "a"(4));
+	}
+	else if (kstrncmp(str, "cat", 3) == 0)
+	{
+		char *path = str + 4;
+		struct vfs_node *node = get_vfs_node_path(path);
+		if (node == NULL || node->type != VFS_FILE)
+			return ;
+		node->ops->read(node);
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
