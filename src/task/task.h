@@ -6,6 +6,7 @@
 #include "mm/vmm.h"
 #include "mm/gdt.h"
 #include "arch/i386/idt.h"
+#include "fs/vfs/vfs.h"
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
@@ -33,10 +34,12 @@ typedef struct proc
 	char		*kstack;
 	char		*user_stack;
 	char		*user_eip;
+	char		pwd[256];
 	void		*pd;
 	enum procstate	state;
 	struct proc 	*parent;
 	struct context	*context;
+	struct vfs_node	*vfs;
 } proc_t;
 
 extern void jump_to_usermode(uint32_t entry_point, uint32_t user_stack);
@@ -57,6 +60,10 @@ ssize_t kill(uint32_t pid, uint32_t signal);
 ssize_t signal(uint32_t signum, void (*function));
 ssize_t mmap();
 ssize_t munmap(void *addr);
+
+// helper for fs
+struct vfs_node *get_current_node();
+char	*get_current_pwd();
 
 // temp para kfs-5 borrar
 __attribute__((section(".user_text"))) void proceso_test_syscall();

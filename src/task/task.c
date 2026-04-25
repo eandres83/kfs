@@ -97,6 +97,11 @@ void create_process(void (*function)())
 	// create user stack
 	proc->context->eip = (uint32_t)start_user_process;
 
+	kmemset(proc->pwd, 0, 256);
+	kstrcpy(proc->pwd, "/");
+
+	proc->vfs = vfs;
+
 	proc->mmap_count = 0;
 	proc->state = RUNNABLE;
 }
@@ -193,6 +198,8 @@ ssize_t fork(registers_t *regs)
 				process[i].mmap_allocation[a] = current_process->mmap_allocation[a];
 			process[i].mmap_count = current_process->mmap_count;
 			process[i].state = RUNNABLE;
+			process[i].vfs = current_process->vfs;
+			kstrcpy(process[i].pwd, current_process->pwd);
 			return (process[i].pid);
 		}
 	}
@@ -344,5 +351,16 @@ void find_signal(registers_t *regs)
 			}
 		}
 	}
+}
+
+// helper function por fs
+struct vfs_node *get_current_node()
+{
+	return (current_process->vfs);
+}
+
+char *get_current_pwd()
+{
+	return (current_process->pwd);
 }
 
