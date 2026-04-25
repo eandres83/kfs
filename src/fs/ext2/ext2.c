@@ -61,6 +61,7 @@ static	struct vfs_node *create_node(struct vfs_node *dir_node, struct ext2_dir_e
 		return (NULL);
 
 	kmemcpy(new_node->name, dir_entry->name, dir_entry->name_len);
+	new_node->name[dir_entry->name_len + 1] = '\0';
 
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *child_inode = read_inode(fs_info, dir_entry->inode);

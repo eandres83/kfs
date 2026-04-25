@@ -10,7 +10,11 @@ struct vfs_node *get_vfs_node_path(char *path)
 	if (!word)
 		return (NULL);
 
-	struct vfs_node *current_node = vfs;
+	struct vfs_node *current_node;
+	if (path[0] == '/')
+		current_node = vfs;
+	else
+		current_node = get_current_node();
 	for (int i = 0; word[i] != NULL; i++)
 	{
 		if (kstrlen(word[i]) <= 0)
@@ -18,8 +22,8 @@ struct vfs_node *get_vfs_node_path(char *path)
 		current_node = current_node->ops->finddir(current_node, word[i]);
 		if (current_node == 0x0)
 			return (kprintf("Error: No such file or directory\n"), double_free(word), NULL);
-		if (current_node->type != VFS_FILE && word[i + 1] == NULL)
-			return (kprintf("Error: %s: Is a directory\n", path), double_free(word), NULL);
+		if (current_node->type != VFS_DIRECTORY && word[i + 1] != NULL)
+			return (kprintf("Error: Not a directory\n"), double_free(word), NULL);
 //		kprintf("Buscando '%s' dentro de nodo actual (tipo: %d)\n", word[i], current_node->type);
 	}
 	double_free(word);
@@ -34,6 +38,7 @@ void init_vfs()
 
 	kmemset(vfs, 0, sizeof(struct vfs_node));
 	vfs->name[0] = '/';
+	vfs->name[1] = '\0';
 	vfs->size = 0;
 	vfs->inode = 0;
 	vfs->links = 0;
