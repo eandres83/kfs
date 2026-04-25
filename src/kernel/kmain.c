@@ -54,14 +54,19 @@ static void	print_splash()
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 }
 
-void	cat()
-{
-	char *path = "/home/kfs/texto.txt";
-	struct vfs_node *node = get_vfs_node_path(path);
-	if (node == NULL || node->type != VFS_FILE)
-		return ;
-	node->ops->read(node);
-}
+//void	cat()
+//{
+//	char *path = "/home/kfs/";
+//	struct vfs_node *node = get_vfs_node_path(path);
+//	if (node == NULL || node->type != VFS_FILE)
+//		return ;
+//	char *conten = node->ops->read(node);
+//	if (conten != NULL)
+//	{
+//		kprintf("el contenido del cat = %s", conten);
+//		kfree(conten);
+//	}
+//}
 
 void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 {
@@ -91,7 +96,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_ext2();
 
 	kprintf("KFS> ");
-	cat();
+//	cat();
 //	iniciar_multitarea();
 
 	asm volatile ("sti");

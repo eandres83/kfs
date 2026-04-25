@@ -2,6 +2,6 @@
 #layout regs
 
 target remote localhost:1234
-break ext2_finddir
+break get_vfs_node_path
 continue
 

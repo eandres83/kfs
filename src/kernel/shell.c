@@ -163,14 +163,19 @@ static void	execute_command(char *str)
 	{
 		asm volatile ("int $0x80" : : "a"(4));
 	}
-//	else if (kstrncmp(str, "cat", 3) == 0)
-//	{
-//		char *path = str + 4;
-//		struct vfs_node *node = get_vfs_node_path(path);
-//		if (node == NULL || node->type != VFS_FILE)
-//			return ;
-//		node->ops->read(node);
-//	}
+	else if (kstrncmp(str, "cat", 3) == 0)
+	{
+		char *path = str + 4;
+		struct vfs_node *node = get_vfs_node_path(path);
+		if (node == NULL || node->type != VFS_FILE)
+			return ;
+		char *res = node->ops->read(node);
+		if (res != NULL)
+		{
+			kprintf("%s", res);
+			kfree(res);
+		}
+	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
 }

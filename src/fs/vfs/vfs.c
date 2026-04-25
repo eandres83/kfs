@@ -6,7 +6,6 @@ struct vfs_node *vfs = NULL;
 // /home/eandres/Documents/kfs/src/fs/vfs/vfs.c
 struct vfs_node *get_vfs_node_path(char *path)
 {
-	kprintf("Llamando a get_vfs_node_path para conseguir el split\n");
 	char **word = ksplit(path, '/');
 	if (!word)
 		return (NULL);
@@ -16,14 +15,14 @@ struct vfs_node *get_vfs_node_path(char *path)
 	{
 		if (kstrlen(word[i]) <= 0)
 			continue;
-		if (current_node->type != VFS_DIRECTORY && word[i + 1] != NULL)
-			return (kprintf("Error: Not a directory\n"), double_free(word), NULL);
-		current_node = current_node->ops->finddir(vfs, word[i]);
-		if (current_node == NULL)
+		current_node = current_node->ops->finddir(current_node, word[i]);
+		if (current_node == 0x0)
 			return (kprintf("Error: No such file or directory\n"), double_free(word), NULL);
+		if (current_node->type != VFS_FILE && word[i + 1] == NULL)
+			return (kprintf("Error: %s: Is a directory\n", path), double_free(word), NULL);
+//		kprintf("Buscando '%s' dentro de nodo actual (tipo: %d)\n", word[i], current_node->type);
 	}
 	double_free(word);
-	kprintf("Saliendo de get_vfs_node_path\n");
 	return (current_node);
 }
 
@@ -33,6 +32,7 @@ void init_vfs()
 	if (!vfs)
 		return ;
 
+	kmemset(vfs, 0, sizeof(struct vfs_node));
 	vfs->name[0] = '/';
 	vfs->size = 0;
 	vfs->inode = 0;

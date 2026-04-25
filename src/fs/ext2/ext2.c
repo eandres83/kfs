@@ -22,18 +22,6 @@ struct ext2_fs_info
 	uint32_t		bgdt_block;
 };
 
-static void add_type(struct vfs_node *dir, uint8_t type)
-{
-	if (type == 0)
-		dir->type = VFS_UNKNOWN;
-	else if (type == 1)
-		dir->type = VFS_FILE;
-	else if (type == 2)
-		dir->type = VFS_DIRECTORY;
-	else if (type == 4)
-		dir->type = VFS_BLOCK_DEVICE;
-}
-
 static char *ext2_read_block(uint32_t nb_block, struct ext2_fs_info *fs_info)
 {
 	uint8_t *buffer = kmalloc(fs_info->size_block);
@@ -56,7 +44,7 @@ static struct ext2_inode *read_inode(struct ext2_fs_info *fs_info, uint32_t num_
 	if (!buffer)
 		return (NULL);
 
-	uint32_t internal_offset = size % fs_info->size_block;
+	uint32_t internal_offset = offset % fs_info->size_block;
 	struct ext2_inode *temp_inode = (struct ext2_inode*)(buffer + internal_offset);
 	struct ext2_inode *safe_inode = kmalloc(sizeof(struct ext2_inode));
 	if (!safe_inode)
@@ -71,14 +59,32 @@ static	struct vfs_node *create_node(struct vfs_node *dir_node, struct ext2_dir_e
 	struct vfs_node *new_node = kmalloc(sizeof(struct vfs_node));
 	if (!new_node)
 		return (NULL);
-	kstrcpy(new_node->name, dir_entry->name);
-	add_type(new_node, dir_entry->type);
-	if (new_node->type == VFS_FILE)
-		new_node->ops = NULL;
+
+	kmemcpy(new_node->name, dir_entry->name, dir_entry->name_len);
+
+	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
+	struct ext2_inode *child_inode = read_inode(fs_info, dir_entry->inode);
+
+	if ((child_inode->type_permisi & 0xF000) == 0x4000)
+		new_node->type = VFS_DIRECTORY;
+	else if ((child_inode->type_permisi & 0xF000) == 0x8000)
+		new_node->type = VFS_FILE;
 	else
-		new_node->ops = dir_node->ops;
+	{
+		if (dir_entry->type == 2)
+			new_node->type = VFS_DIRECTORY;
+		else if (dir_entry->type == 1)
+			new_node->type = VFS_FILE;
+		else
+			new_node->type = VFS_UNKNOWN;
+	}
+	kfree(child_inode);
+
+	new_node->ops = dir_node->ops;
 	new_node->inode = dir_entry->inode;
 	new_node->father = dir_node;
+	new_node->fs_info = dir_node->fs_info;
+
 	if (dir_node->children == NULL)
 		dir_node->children = new_node;
 	else
@@ -93,7 +99,6 @@ static	struct vfs_node *create_node(struct vfs_node *dir_node, struct ext2_dir_e
 
 char *ext2_read(struct vfs_node *dir_node)
 {
-	kprintf("EXT2_READ called\n");
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
 
@@ -178,7 +183,7 @@ void ext2_readdir(struct vfs_node *dir_node)
 
 		if (dir_entry->entry_size == 0)
 		{
-			kprintf("Erorr en entry_size == 0\n");
+			kprintf("Error en entry_size == 0\n");
 			break;
 		}
 		bytes_read += dir_entry->entry_size;
@@ -194,6 +199,7 @@ void init_ext2()
 	if (!fs_info)
 		return ;
 
+	kmemset(fs_info, 0, sizeof(struct ext2_fs_info));
 	fs_info->sb = kmalloc(sizeof(struct ext2_sb));
 	if (!fs_info->sb)
 		return ;
@@ -205,6 +211,9 @@ void init_ext2()
 	kmemcpy(fs_info->sb, buffer, sizeof(struct ext2_sb));
 	if (fs_info->sb->magic_nb == 0xef53)
 		kprintf("El numero -> %x\n", fs_info->sb->magic_nb);
+
+	if (fs_info->sb->version_major == 0)
+		fs_info->sb->inode_size = 128;
 
 	// primero calcular la posicion del lba dependiendo del tamano de los bloques
 	// que depende del tamano del hard disk
@@ -227,6 +236,7 @@ void init_ext2()
 	// montar ext2 :)
 	vfs->ops = &ext2_ops;
 	vfs->fs_info = fs_info;
+	vfs->inode = 2;
 
 	kfree(buffer2);
 }

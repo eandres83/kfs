@@ -6,7 +6,7 @@
 
 extern struct vfs_node *vfs;
 
-enum types { VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPOINT, VFS_UNKNOWN };
+enum types { VFS_UNKNOWN, VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPOINT};
 
 struct vfs_node
 {

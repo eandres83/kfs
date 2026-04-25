@@ -60,6 +60,8 @@ $(DISK_IMG):
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
+	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/file.txt
+	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/file.txt
 	@~/genext2fs/genext2fs -d $(FS_DIR) $(DISK_IMG)
 	@rm -rf $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
