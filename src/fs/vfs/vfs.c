@@ -22,8 +22,6 @@ struct vfs_node *get_vfs_node_path(char *path)
 		current_node = current_node->ops->finddir(current_node, word[i]);
 		if (current_node == 0x0)
 			return (kprintf("Error: No such file or directory\n"), double_free(word), NULL);
-		if (current_node->type != VFS_DIRECTORY && word[i + 1] != NULL)
-			return (kprintf("Error: Not a directory\n"), double_free(word), NULL);
 //		kprintf("Buscando '%s' dentro de nodo actual (tipo: %d)\n", word[i], current_node->type);
 	}
 	double_free(word);

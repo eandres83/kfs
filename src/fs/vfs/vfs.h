@@ -12,7 +12,7 @@ enum types { VFS_UNKNOWN, VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPO
 
 struct vfs_node
 {
-	char		name[256];
+	char		name[126];
 	uint32_t	size;	// tamano en bytes
 	uint32_t	inode;
 	uint32_t	links; // hard-links

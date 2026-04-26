@@ -168,22 +168,15 @@ static void	execute_command(char *str)
 	{
 		char *path = str + 4;
 		cat(path);
-//		struct vfs_node *node = get_vfs_node_path(path);
-//		if (node == NULL || node->type != VFS_FILE)
-//			return ;
-//		char *res = node->ops->read(node);
-//		if (res != NULL)
-//		{
-//			kprintf("%s", res);
-//			kfree(res);
-//		}
 	}
-//	else if (kstrncmp(str, "cd", 2) == 0)
-//	{
-//		char *path = str + 3;
-//	}
 	else if (kstrcmp(str, "pwd") == 0)
 		pwd();
+	else if (kstrncmp(str, "cd", 2) == 0)
+	{
+		char *path = str + 3;
+		kprintf("el path -> %s\n", path);
+		cd(path);
+	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
 }

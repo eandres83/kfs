@@ -2,7 +2,6 @@ CC = i686-elf-gcc
 AS = i686-elf-as
 
 INCLUDES = -I include -I src
-
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs $(INCLUDES)
@@ -59,6 +58,7 @@ iso: $(NAME)
 $(DISK_IMG):
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs
+	@mkdir -p $(FS_DIR)/home/kfs/fs $(FS_DIR)/home/kfs/task $(FS_DIR)/home/kfs/kernel
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/file.txt
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/file.txt

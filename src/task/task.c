@@ -100,7 +100,7 @@ void create_process(void (*function)())
 	kmemset(proc->pwd, 0, 256);
 	kstrcpy(proc->pwd, "/");
 
-	proc->vfs = vfs;
+	proc->node = vfs;
 
 	proc->mmap_count = 0;
 	proc->state = RUNNABLE;
@@ -198,7 +198,7 @@ ssize_t fork(registers_t *regs)
 				process[i].mmap_allocation[a] = current_process->mmap_allocation[a];
 			process[i].mmap_count = current_process->mmap_count;
 			process[i].state = RUNNABLE;
-			process[i].vfs = current_process->vfs;
+			process[i].node = current_process->node;
 			kstrcpy(process[i].pwd, current_process->pwd);
 			return (process[i].pid);
 		}
@@ -354,13 +354,33 @@ void find_signal(registers_t *regs)
 }
 
 // helper function por fs
+void	set_current_process()
+{
+	current_process = kmalloc(sizeof(proc_t));
+	current_process->node = vfs;
+	kmemset(current_process->pwd, 0, 256);
+	current_process->pwd[0] = '/';
+	current_process->pwd[1] = '\0';
+}
+
 struct vfs_node *get_current_node()
 {
-	return (current_process->vfs);
+	return (current_process->node);
 }
 
 char *get_current_pwd()
 {
 	return (current_process->pwd);
+}
+
+void set_new_node(struct vfs_node *new_node)
+{
+	current_process->node = new_node;
+}
+
+void set_new_pwd(char *path)
+{
+	kmemset(current_process->pwd, 0, 256);
+	kstrcpy(current_process->pwd, path);
 }
 

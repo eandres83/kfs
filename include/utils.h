@@ -25,6 +25,7 @@ size_t	kstrlcpy(char *dest, const char *src, size_t size);
 char 	**ksplit(const char *str, char c);
 void	double_free(char **str);
 size_t	kstrncmp(const char *s1, const char *s2, size_t n);
-char 	*kstrlcat(char *dest, const char *str, size_t size);
+char 	*kstrcat(char *dest, const char *str);
+size_t	kstrrchr(const char *str, int c);
 
 #endif

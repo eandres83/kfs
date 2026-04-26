@@ -2,6 +2,6 @@
 #layout regs
 
 target remote localhost:1234
-break cat
+break command.c:35
 continue
 

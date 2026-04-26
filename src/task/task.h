@@ -39,7 +39,7 @@ typedef struct proc
 	enum procstate	state;
 	struct proc 	*parent;
 	struct context	*context;
-	struct vfs_node	*vfs;
+	struct vfs_node	*node;
 } proc_t;
 
 extern void jump_to_usermode(uint32_t entry_point, uint32_t user_stack);
@@ -64,6 +64,10 @@ ssize_t munmap(void *addr);
 // helper for fs
 struct vfs_node *get_current_node();
 char	*get_current_pwd();
+void	set_new_node(struct vfs_node *new_node);
+void	set_new_pwd(char *pwd);
+
+void	set_current_process();
 
 // temp para kfs-5 borrar
 __attribute__((section(".user_text"))) void proceso_test_syscall();
