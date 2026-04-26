@@ -4,7 +4,9 @@
 void	cat(char *path)
 {
 	struct vfs_node *node = get_vfs_node_path(path);
-	if (node != NULL && node->type != VFS_FILE)
+	if (node == 0x0)
+		return ;
+	if (node->type != VFS_FILE)
 	{
 		kprintf("Error: Not a file\n");
 		return ;
