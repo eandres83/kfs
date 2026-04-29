@@ -58,11 +58,15 @@ iso: $(NAME)
 $(DISK_IMG):
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs
-	@mkdir -p $(FS_DIR)/home/kfs/fs $(FS_DIR)/home/kfs/task $(FS_DIR)/home/kfs/kernel
+	@mkdir -p $(FS_DIR)/home/kfs/fs
+	@mkdir -p $(FS_DIR)/etc
+	@echo -n "root:root1\neandres:1234\nfuck:ioan" > $(FS_DIR)/etc/passwd
+	@mkdir -p $(FS_DIR)/sys
+	@mkdir -p $(FS_DIR)/var
+	@mkdir -p $(FS_DIR)/dev
+	@mkdir -p $(FS_DIR)/proc
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
-	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/file.txt
-	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/file.txt
-	@~/genext2fs/genext2fs -d $(FS_DIR) $(DISK_IMG)
+	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) $(DISK_IMG)
 	@rm -rf $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
 

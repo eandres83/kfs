@@ -27,7 +27,7 @@ void cd(char *path)
 	char new_pwd[256];
 	kmemset(new_pwd, 0, 256);
 	kstrcpy(new_pwd, get_current_pwd());
-	if (kstrcmp(path, "..") == 0 || kstrcmp(path, "../") == 0)
+	if (kstrncmp(path, "..", 2) == 0 || kstrncmp(path, "../", 3) == 0)
 	{
 		node = get_current_node();
 		if (node->father == NULL)
@@ -37,10 +37,7 @@ void cd(char *path)
 			new_pwd[kstrlen(new_pwd) - 1] = '\0';
 		size_t cut = kstrrchr(new_pwd, '/');
 		if (cut == 0)
-		{
-			new_pwd[0] = '/';
-			new_pwd[1] = '\0';
-		}
+			kstrcpy(new_pwd, "/");
 		else
 			new_pwd[cut] = '\0';
 		set_new_pwd(new_pwd);
@@ -70,5 +67,29 @@ void pwd()
 {
 	char *pwd = get_current_pwd();
 	kprintf("%s\n", pwd);
+}
+
+bool login(char *user_buffer, char *passwd_buffer)
+{
+	struct vfs_node *node = get_vfs_node_path("/etc/passwd");
+	if (node == 0x0)
+		return (kprintf("Error: cat not read /etc/passwd :(\n"), false);
+	char *user = node->ops->read(node);
+	char **lines = ksplit(user, '\n');
+	if (!lines)
+		return (kprintf("Error: malloc failed :(\n"), false);
+
+	for (int i = 0; lines[i] != NULL; i++)
+	{
+		char buff[128] = {0};
+		size_t user_len = kstrchr(lines[i], ':');
+		kstrlcpy(buff, lines[i], user_len + 1);
+		char *passwd = lines[i] + user_len + 1;
+
+		if ((kstrcmp(user_buffer, buff) == 0) && (kstrcmp(passwd_buffer, passwd) == 0))
+			return (true);
+	}
+	double_free(lines);
+	return (false);
 }
 
