@@ -1,6 +1,6 @@
 #include <utils.h>
 
-size_t	kstrrchr(const char *str, int c)
+size_t	kstrrchr(const char *str, char c)
 {
 	size_t	len;
 
