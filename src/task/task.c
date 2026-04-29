@@ -359,8 +359,7 @@ void	set_current_process()
 	current_process = kmalloc(sizeof(proc_t));
 	current_process->node = vfs;
 	kmemset(current_process->pwd, 0, 256);
-	current_process->pwd[0] = '/';
-	current_process->pwd[1] = '\0';
+	kstrcpy(current_process->pwd, "/");
 }
 
 struct vfs_node *get_current_node()

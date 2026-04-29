@@ -12,6 +12,8 @@
 #define BUFFER_SIZE 256
 
 static char buffer[BUFFER_SIZE];
+static char user_buffer[BUFFER_SIZE];
+static char passwd_buffer[BUFFER_SIZE];
 static uint32_t index = 0;
 
 void	test_malloc_free()
@@ -174,8 +176,23 @@ static void	execute_command(char *str)
 	else if (kstrncmp(str, "cd", 2) == 0)
 	{
 		char *path = str + 3;
-		kprintf("el path -> %s\n", path);
 		cd(path);
+	}
+	else if (kstrncmp(str, "create", 6) == 0)
+	{
+		str[kstrlen(str)] = '\n';
+		char *file_name = str + 7;
+
+		int i;
+		char name[124] = {0};
+		for (i = 0; file_name[i] != ' '; i++)
+			name[i] = file_name[i];
+		char *content = file_name + i + 1;
+
+		
+		size_t ret = vfs->ops->write(get_current_node(), content, name);
+		if (ret == 0)
+			kprintf("Error: ");
 	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
@@ -190,12 +207,36 @@ void	shell_handle_keypress(char c)
 		if (c == '\n')
 		{
 			terminal_putchar('\n');
-			buffer[index] = '\0';
-			execute_command(buffer);
-
+			if (sys_state == LOGIN_MODE)
+			{
+				user_buffer[index] = '\0';
+				sys_state = PASSWD_MODE;
+				kprintf("PASSWORD> ");
+			}
+			else if (sys_state == PASSWD_MODE)
+			{
+				passwd_buffer[index] = '\0';
+				if (!(login(user_buffer, passwd_buffer)))
+				{
+					kmemset(user_buffer, 0, BUFFER_SIZE);
+					kmemset(passwd_buffer, 0, BUFFER_SIZE);
+					sys_state = LOGIN_MODE;
+					kprintf("LOGIN> ");
+				}
+				else
+				{
+					sys_state = SHELL_MODE;
+					kprintf("KFS> ");
+				}
+			}
+			else
+			{
+				buffer[index] = '\0';
+				execute_command(buffer);
+				kmemset(buffer, 0, BUFFER_SIZE);
+				kprintf("KFS> ");
+			}
 			index = 0;
-			kmemset(buffer, 0, BUFFER_SIZE);
-			kprintf("KFS> ");
 		}
 		else if (c == '\b')
 		{
@@ -211,9 +252,19 @@ void	shell_handle_keypress(char c)
 		{
 			if (index < BUFFER_SIZE - 1)
 			{
-				buffer[index] = c;
-				index++;
+				if (sys_state == LOGIN_MODE)
+					user_buffer[index] = c;
+				else if (sys_state == PASSWD_MODE)
+				{
+					passwd_buffer[index] = c;
+					terminal_putchar('*');
+					index++;
+					return ;
+				}
+				else
+					buffer[index] = c;
 				terminal_putchar(c);
+				index++;
 			}
 		}
 	}

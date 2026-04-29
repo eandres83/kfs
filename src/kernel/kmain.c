@@ -10,6 +10,7 @@
 #include "task/task.h"
 #include "fs/vfs/vfs.h"
 #include "fs/ext2/ext2.h"
+#include "kernel/command.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -21,8 +22,8 @@
 #error "This code needs to be compiled with a ix86-elf compiler"
 #endif
 
+enum system_state sys_state = LOGIN_MODE;
 extern uint32_t	get_stack_pointer();
-//extern void	prompt();
 
 static void	print_splash()
 {
@@ -74,7 +75,6 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 
 	kprintf("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
 	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
-
 	
 	init_keyboard();
 //	init_timer(1000);
@@ -83,8 +83,9 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	set_current_process();
 	init_ext2();
 
-	kprintf("KFS> ");
-//	cat();
+	kprintf("LOGIN> ");
+//	login();
+
 //	iniciar_multitarea();
 
 	asm volatile ("sti");
