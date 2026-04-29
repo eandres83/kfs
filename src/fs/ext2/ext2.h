@@ -84,6 +84,7 @@ struct ext2_dir_entry
 	uint8_t		type;
 	char		name[256];
 }__attribute__((packed));
+// 8 bytes + name_len
 
 void init_ext2();
 

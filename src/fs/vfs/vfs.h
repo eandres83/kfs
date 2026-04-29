@@ -29,7 +29,7 @@ struct vfs_node
 struct ops
 {
 	char *(*read) (struct vfs_node *);
-	void (*write) (struct vfs_node *);
+	size_t (*write) (struct vfs_node *, char *, char *);
 	void (*open) (struct vfs_node *);
 	void (*close) (struct vfs_node *);
 	void (*readdir) (struct vfs_node *);
