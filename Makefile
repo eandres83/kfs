@@ -15,7 +15,9 @@ NAME = kernel.bin
 
 BUILD_DIR = .obj
 
-SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard src/kernel/*.c) $(wildcard src/lib/*.c) $(wildcard src/mm/*.c) $(wildcard src/arch/i386/*.c) $(wildcard src/task/*.c) $(wildcard src/fs/ext2/*.c) $(wildcard src/fs/vfs/*.c)
+SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard src/kernel/*.c) \
+	$(wildcard src/lib/*.c) $(wildcard src/mm/*.c) $(wildcard src/arch/i386/*.c) $(wildcard src/task/*.c) \
+	$(wildcard src/fs/ext2/*.c) $(wildcard src/fs/vfs/*.c) $(wildcard src/fs/*.c) 
 SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i386/*.s) $(wildcard src/task/*.s)
 
 OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SRCS_C)) \
@@ -60,13 +62,20 @@ $(DISK_IMG):
 	@mkdir -p $(FS_DIR)/home/kfs
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
-	@echo -n "root:root1\neandres:1234\nfuck:ioan" > $(FS_DIR)/etc/passwd
+	@echo -n "root:root1\neandres:1234\nfuck:oian\n1:1\n" > $(FS_DIR)/etc/passwd
 	@mkdir -p $(FS_DIR)/sys
 	@mkdir -p $(FS_DIR)/var
 	@mkdir -p $(FS_DIR)/dev
 	@mkdir -p $(FS_DIR)/proc
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
-	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) $(DISK_IMG)
+	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) part.img
+	@dd if=/dev/zero of=$(DISK_IMG) bs=1M count=10 status=none
+	@parted -s $(DISK_IMG) mklabel msdos
+	@parted -s $(DISK_IMG) mkpart primary ext2 1MiB 25%
+	@parted -s $(DISK_IMG) mkpart primary ext2 25% 50%
+	@parted -s $(DISK_IMG) mkpart primary ext2 50% 75%
+	@parted -s $(DISK_IMG) mkpart primary ext2 75% 100%
+	@dd if=part.img of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
 	@rm -rf $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
 
