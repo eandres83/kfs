@@ -5,6 +5,7 @@
 #include <kmalloc.h>
 #include "drivers/ide/ide.h"
 #include "fs/vfs/vfs.h"
+#include "fs/mbr.h"
 
 // superblock data struct
 struct ext2_sb
@@ -86,6 +87,6 @@ struct ext2_dir_entry
 }__attribute__((packed));
 // 8 bytes + name_len
 
-void init_ext2();
+void	ext2_mount_device(struct vfs_node *node, uint32_t nb_partition);
 
 #endif

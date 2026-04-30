@@ -48,5 +48,7 @@ void init_vfs()
 	vfs->children = NULL;
 	vfs->next_to_kin = NULL;
 	vfs->master = NULL;
+
+	ext2_mount_device(vfs, 0);
 }
 

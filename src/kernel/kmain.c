@@ -81,10 +81,8 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 
 	init_vfs();
 	set_current_process();
-	init_ext2();
 
 	kprintf("LOGIN> ");
-//	login();
 
 //	iniciar_multitarea();
 

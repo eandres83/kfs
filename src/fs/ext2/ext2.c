@@ -21,11 +21,13 @@ struct ext2_fs_info
 	uint32_t		size_block;
 	uint32_t		sectores_per_block;
 	uint32_t		bgdt_block;
+	uint32_t		lba_offset; // offset if have partition
 };
 
 static void ext2_write_block(uint32_t nb_block, struct ext2_fs_info *fs_info, char *str)
 {
 	uint32_t lba = nb_block * fs_info->sectores_per_block;
+	lba += fs_info->lba_offset;
 	for (int i = 0; i < (int)fs_info->sectores_per_block; i++)
 		ide_write_sector(lba + i, (uint8_t*)&str[512 * i]);
 }
@@ -36,6 +38,7 @@ static char *ext2_read_block(uint32_t nb_block, struct ext2_fs_info *fs_info)
 	if (!buffer)
 		return (NULL);
 	uint32_t lba = nb_block * fs_info->sectores_per_block;
+	lba += fs_info->lba_offset;
 	for (int i = 0; i < (int)fs_info->sectores_per_block; i++)
 		ide_read_sector(lba + i, &buffer[512 * i]);
 	return ((char*)buffer);
@@ -299,20 +302,21 @@ void ext2_readdir(struct vfs_node *dir_node)
 	kfree(block);
 }
 
-void init_ext2()
+static struct ext2_fs_info *init_ext2(uint32_t lba_offset)
 {
 	struct ext2_fs_info *fs_info = kmalloc(sizeof(struct ext2_fs_info));
 	if (!fs_info)
-		return ;
+		return (NULL);
 
 	kmemset(fs_info, 0, sizeof(struct ext2_fs_info));
+	fs_info->lba_offset = lba_offset;
 	fs_info->sb = kmalloc(sizeof(struct ext2_sb));
 	if (!fs_info->sb)
-		return ;
+		return (NULL);
 	// calcular superblock
 	uint8_t	buffer[1024];
-	ide_read_sector(2, buffer);
-	ide_read_sector(3, &buffer[512]);
+	ide_read_sector(lba_offset + 2, buffer);
+	ide_read_sector(lba_offset + 3, &buffer[512]);
 
 	kmemcpy(fs_info->sb, buffer, sizeof(struct ext2_sb));
 	if (fs_info->sb->magic_nb == 0xef53)
@@ -336,14 +340,24 @@ void init_ext2()
 
 	fs_info->bgdt = kmalloc(sizeof(struct ext2_block));
 	if (!fs_info->bgdt)
-		return ;
+		return (NULL);
 	kmemcpy(fs_info->bgdt, buffer2, sizeof(struct ext2_block));
 
-	// montar ext2 :)
-	vfs->ops = &ext2_ops;
-	vfs->fs_info = fs_info;
-	vfs->inode = 2;
-
 	kfree(buffer2);
+	return (fs_info);
+}
+
+void	ext2_mount_device(struct vfs_node *node, uint32_t nb_partition)
+{
+	struct mbr_entry *mbr = partition(nb_partition);
+	if (!mbr)
+		return ;
+	struct ext2_fs_info *fs_info = init_ext2(mbr->lba_start);
+	if (!fs_info)
+		return ;
+
+	node->ops = &ext2_ops;
+	node->fs_info = fs_info;
+	vfs->inode = 2;
 }
 
