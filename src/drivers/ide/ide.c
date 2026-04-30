@@ -1,12 +1,11 @@
 #include "ide.h"
 
-// IMPORTANTE: TO DO
+// IMPORTANTE: TODO
 // Implementar escane PIC, si no posible fallo al intentar utilizar
 // este kernel en otros dispositivos que no sea qemu
 
 static void	ide_wait()
 {
-//	kprintf("Status: 0x%x\n", inb(0x1F7));
 	uint8_t data = inb(0x1F7);
 	while ((data & 0x80) != 0 || (data & 0x40) == 0)
 		data = inb(0x1F7);

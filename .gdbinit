@@ -2,6 +2,6 @@
 #layout regs
 
 target remote localhost:1234
-break ext2_write
+break init_ext2
 continue
 
