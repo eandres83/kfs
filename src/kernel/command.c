@@ -10,7 +10,6 @@ void	cat(char *path)
 	if (node->type != VFS_FILE)
 	{
 		kprintf("Error: Not a file\n");
-		kfree(node);
 		return ;
 	}
 	char *res = node->ops->read(node);
@@ -18,11 +17,9 @@ void	cat(char *path)
 	{
 		kprintf("%s", res);
 		kfree(res);
-		kfree(node);
 		return ;
 	}
 	kprintf("Unknown error :(\n");
-	kfree(node);
 }
 
 void cd(char *path)
@@ -50,10 +47,9 @@ void cd(char *path)
 	node = get_vfs_node_path(path);
 	if (node == 0x0)
 		return ;
-	if (node->type != VFS_DIRECTORY)
+	if (node->type != VFS_DIRECTORY && node->type != VFS_MOUNTPOINT)
 	{
 		kprintf("Error: Not a directory\n");
-		kfree(node);
 		return ;
 	}
 	if (path[0] == '/')
@@ -81,9 +77,11 @@ bool login(char *user_buffer, char *passwd_buffer)
 	if (node == 0x0)
 		return (kprintf("Error: cat not read /etc/passwd :(\n"), false);
 	char *user = node->ops->read(node);
+	if (!user)
+		return (false);
 	char **lines = ksplit(user, '\n');
 	if (!lines)
-		return (kprintf("Error: malloc failed :(\n"), kfree(node), false);
+		return (kprintf("Error: malloc failed :(\n"), kfree(user), false);
 
 	for (int i = 0; lines[i] != NULL; i++)
 	{
@@ -93,10 +91,10 @@ bool login(char *user_buffer, char *passwd_buffer)
 		char *passwd = lines[i] + user_len + 1;
 
 		if ((kstrcmp(user_buffer, buff) == 0) && (kstrcmp(passwd_buffer, passwd) == 0))
-			return (double_free(lines), kfree(node), true);
+			return (double_free(lines), kfree(user), true);
 	}
 	double_free(lines);
-	kfree(node);
+	kfree(user);
 	return (false);
 }
 
@@ -115,7 +113,42 @@ void	mount(char *path, uint32_t nb_partition)
 		kprintf("Error: Not a directory or it's already a mountpoint!\n");
 		return ;
 	}
+	struct vfs_node *backup = kmalloc(sizeof(struct vfs_node));
+	if (!backup)
+		return ;
+	kmemcpy(backup, node, sizeof(struct vfs_node));
+	node->master = backup;
 	node->type = VFS_MOUNTPOINT;
 	ext2_mount_device(node, nb_partition);
+}
+
+void	umount(char *path)
+{
+	struct vfs_node *node = get_vfs_node_path(path);
+	if (!node)
+		return ;
+	if (node->type != VFS_MOUNTPOINT || node->master == NULL)
+	{
+		kprintf("Error: Not a mountpoint\n");
+		return ;
+	}
+	struct vfs_node *child = node->children;
+	while (child != NULL)
+	{
+		struct vfs_node *next = child->next_to_kin;
+		kfree(child);
+		child = next;
+	}
+	node->children = NULL;
+
+	struct vfs_node *backup = node->master;
+	node->ops = backup->ops;
+	node->fs_info = backup->fs_info;
+	node->inode = backup->inode;
+	node->type = backup->type;
+
+	kfree(backup);
+	node->master = NULL;
+	kprintf("umount successfully :)\n");
 }
 

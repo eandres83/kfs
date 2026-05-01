@@ -13,5 +13,7 @@ void	cat(char *path);
 void	cd(char *path);
 void	pwd();
 bool	login(char *user_buffer, char *passwd_buffer);
+void	mount(char *path, uint32_t nb_partition);
+void	umount(char *path);
 
 #endif

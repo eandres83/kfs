@@ -19,10 +19,27 @@ struct vfs_node *get_vfs_node_path(char *path)
 	{
 		if (kstrlen(word[i]) <= 0)
 			continue;
-		current_node = current_node->ops->finddir(current_node, word[i]);
+		struct vfs_node *child = current_node->children;
+		bool found = false;
+		while (child != NULL)
+		{
+			if (kstrcmp(child->name, word[i]) == 0)
+			{
+				current_node = child;
+				found = true;
+				break;
+			}
+			child = child->next_to_kin;
+		}
+		if (!found)
+		{
+			if (current_node->ops != NULL && current_node->ops->finddir != NULL)
+				current_node = current_node->ops->finddir(current_node, word[i]);
+			else
+				current_node = NULL;
+		}
 		if (current_node == 0x0)
 			return (kprintf("Error: No such file or directory\n"), double_free(word), NULL);
-//		kprintf("Buscando '%s' dentro de nodo actual (tipo: %d)\n", word[i], current_node->type);
 	}
 	double_free(word);
 	return (current_node);

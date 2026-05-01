@@ -66,6 +66,7 @@ $(DISK_IMG):
 	@mkdir -p $(FS_DIR)/sys
 	@mkdir -p $(FS_DIR)/var
 	@mkdir -p $(FS_DIR)/dev
+	@echo -n "Mierdon\n" > $(FS_DIR)/dev/file.txt
 	@mkdir -p $(FS_DIR)/proc
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
 	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) part.img

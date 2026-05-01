@@ -185,16 +185,33 @@ static void	execute_command(char *str)
 
 		int i;
 		char name[124] = {0};
-		for (i = 0; file_name[i] != ' '; i++)
+		for (i = 0; file_name[i] != ' ' && file_name[i] != '\0'; i++)
 			name[i] = file_name[i];
 		char *content = file_name + i + 1;
 
-		size_t ret = vfs->ops->write(get_current_node(), content, name);
-		if (ret == 0)
-			kprintf("Error: ");
+		struct vfs_node *node = get_current_node();
+		if (node->ops && node->ops->write)
+		{
+			size_t ret = node->ops->write(get_current_node(), content, name);
+			if (ret == 0)
+				kprintf("Error: cannot write :(\n");
+		}
+		else
+			kprintf("PUTADON BRO\n");
 	}
-	else if (kstrcmp(str, "mount_dummy") == 0)
-		mount_dummy(vfs);
+	else if (kstrncmp(str, "mount_dummy", 11) == 0)
+	{
+		char *name = str + 12;
+		struct vfs_node *node = get_vfs_node_path(name);
+		if (node == 0x0)
+			return ;
+		mount_dummy(node);
+	}
+	else if (kstrncmp(str, "umount", 6) == 0)
+	{
+		char *path = str + 7;
+		umount(path);
+	}
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
 }

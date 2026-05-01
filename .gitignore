@@ -1,6 +1,7 @@
 part.img
 rootfs
 .swp
+.swo
 disk.img
 .gdbinit
 *.a
