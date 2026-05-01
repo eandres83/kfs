@@ -74,7 +74,7 @@ void pwd()
 	kprintf("%s\n", pwd);
 }
 
-// TODO in kfs-x: do that this make sense with uid, id permision with current_process
+// TODO in kfs-x: make this make sense with uid, id permision with current_process
 bool login(char *user_buffer, char *passwd_buffer)
 {
 	struct vfs_node *node = get_vfs_node_path("/etc/passwd");
@@ -110,14 +110,12 @@ void	mount(char *path, uint32_t nb_partition)
 	struct vfs_node *node = get_vfs_node_path(path);
 	if (node == 0x0)
 		return ;
-
-	if (node->type == VFS_DIRECTORY || node->type == VFS_MOUNTPOINT)
+	if (node->type != VFS_DIRECTORY || node->type == VFS_MOUNTPOINT)
 	{
 		kprintf("Error: Not a directory or it's already a mountpoint!\n");
-		kfree(node);
 		return ;
 	}
 	node->type = VFS_MOUNTPOINT;
-	ext2_mount_device(node, 1);
+	ext2_mount_device(node, nb_partition);
 }
 

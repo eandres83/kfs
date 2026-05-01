@@ -358,6 +358,6 @@ void	ext2_mount_device(struct vfs_node *node, uint32_t nb_partition)
 
 	node->ops = &ext2_ops;
 	node->fs_info = fs_info;
-	vfs->inode = 2;
+	node->inode = 2;
 }
 

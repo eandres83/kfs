@@ -189,11 +189,12 @@ static void	execute_command(char *str)
 			name[i] = file_name[i];
 		char *content = file_name + i + 1;
 
-		
 		size_t ret = vfs->ops->write(get_current_node(), content, name);
 		if (ret == 0)
 			kprintf("Error: ");
 	}
+	else if (kstrcmp(str, "mount_dummy") == 0)
+		mount_dummy(vfs);
 	else if (kstrlen(str) > 0)
 		kprintf("Unknown command: %s\n", str);
 }
