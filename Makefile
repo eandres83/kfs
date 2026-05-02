@@ -70,6 +70,8 @@ $(DISK_IMG):
 	@mkdir -p $(FS_DIR)/proc
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
 	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) part.img
+	@mkdir -p empty_dir
+	@~/genext2fs/genext2fs -N 1024 -b 4096 -d empty_dir part2.img
 	@dd if=/dev/zero of=$(DISK_IMG) bs=1M count=10 status=none
 	@parted -s $(DISK_IMG) mklabel msdos
 	@parted -s $(DISK_IMG) mkpart primary ext2 1MiB 25%
@@ -77,6 +79,8 @@ $(DISK_IMG):
 	@parted -s $(DISK_IMG) mkpart primary ext2 50% 75%
 	@parted -s $(DISK_IMG) mkpart primary ext2 75% 100%
 	@dd if=part.img of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
+	@dd if=part2.img of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
+	@rm -rf empty_dir
 	@rm -rf $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
 
