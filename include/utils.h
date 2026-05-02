@@ -28,5 +28,6 @@ size_t	kstrncmp(const char *s1, const char *s2, size_t n);
 char 	*kstrcat(char *dest, const char *str);
 size_t	kstrrchr(const char *str, char c);
 size_t	kstrchr(const char *str, char c);
+size_t	katoi(char *str);
 
 #endif

@@ -36,6 +36,11 @@ void	mount_dummy(struct vfs_node *node)
 		return ;
 
 	kmemcpy(backup, node, sizeof(struct vfs_node));
+	if (node->type != VFS_DIRECTORY || node->type == VFS_MOUNTPOINT)
+	{
+		kprintf("Error: already exist or it's a directory\n");
+		return ;
+	}
 	node->master = backup;
 	node->type = VFS_MOUNTPOINT;
 	node->ops = &dummy_ops;
