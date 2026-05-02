@@ -56,7 +56,6 @@ uint32_t find_block(struct ext2_fs_info *fs_info, uint32_t addr_block)
 		{
 			if ((bitmap[i] & (1 << j)) == 0)
 			{
-//				kprintf("Encontrado un sitio en el bitmap y esta en 0 :)\n");
 				bitmap[i] |= (1 << j);
 				indx = (i * 8) + j;
 				ext2_write_block(addr_block, fs_info, bitmap);
@@ -97,7 +96,7 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	// write new block
 	uint32_t indx = find_block(fs_info, fs_info->bgdt->addr_block_bitmap);
 	if (indx == 0)
-		return (kprintf("block not found \n"), 0);
+		return (kprintf("block not found\n"), 0);
 	char buf[fs_info->size_block];
 	kmemset(buf, 0, fs_info->size_block);
 	kstrcpy(buf, str);
@@ -106,8 +105,8 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	// create new inode for new block
 	uint32_t indx_inode = find_block(fs_info, fs_info->bgdt->addr_inode_bitmap);
 	if (indx_inode == 0)
-		return (kprintf("block nod found\n"), 0);
-		
+		return (kprintf("block not found\n"), 0);
+
 	struct ext2_inode *new_inode = kmalloc(sizeof(struct ext2_inode));
 	if (!new_inode)
 		return (0);
@@ -130,21 +129,28 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 
 	// create dir_entry
 	struct ext2_inode *inode = read_inode(fs_info, node->inode);
-	char *inode_block = ext2_read_block(inode->direct_block[0], fs_info);
-	struct ext2_dir_entry *dir_entry = (struct ext2_dir_entry *)inode_block;
+
+	struct ext2_dir_entry *dir_entry = NULL;
+	uint32_t last_block_indx = (inode->lower_size / fs_info->size_block);
+	if (inode->lower_size % fs_info->size_block == 0 && last_block_indx > 0)
+		last_block_indx--; // por si es multiplo
+
+	char *inode_block = ext2_read_block(inode->direct_block[last_block_indx], fs_info);
+	dir_entry = (struct ext2_dir_entry *)inode_block;
 
 	uint32_t bytes_read = 0;
 	while (bytes_read < fs_info->size_block)
 	{
-		if ((bytes_read + dir_entry->entry_size) == fs_info->size_block)
+		if ((bytes_read + dir_entry->entry_size) >= fs_info->size_block)
 			break;
 		bytes_read += dir_entry->entry_size;
 		dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
-		bytes_read += dir_entry->entry_size;
 	}
 	uint32_t real_size = 8 + kstrlen(dir_entry->name); // 8 = dir_entry struct
 	real_size = ((real_size + 3) / 4) * 4; // round up
 
+	if (fs_info->size_block - bytes_read - real_size < real_size)
+		return (kprintf("Error: no left space\n"), 0);
 	uint32_t original_size = dir_entry->entry_size;
 	dir_entry->entry_size = real_size;
 
@@ -155,8 +161,7 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	new_dir->type = 1;
 	kmemcpy(new_dir->name, name, new_dir->name_len);
 
-	ext2_write_block(inode->direct_block[0], fs_info, inode_block);
-
+	ext2_write_block(inode->direct_block[last_block_indx], fs_info, inode_block);
 	kfree(inode_block);
 	kfree(inode);
 	return (inode->lower_size);
@@ -245,33 +250,37 @@ struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name)
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
 
-	char *block = ext2_read_block(inode->direct_block[0], fs_info);
-	struct ext2_dir_entry *dir_entry = (struct ext2_dir_entry*)block;
-
-	uint32_t bytes_read = 0;
-	while (bytes_read < fs_info->size_block)
+	uint32_t nb_block = inode->lower_size / fs_info->size_block;
+	for (int i = 0; i < (int)nb_block; i++)
 	{
-		if (dir_entry->inode != 0)
+		char *block = ext2_read_block(inode->direct_block[i], fs_info);
+		struct ext2_dir_entry *dir_entry = (struct ext2_dir_entry*)block;
+
+		uint32_t bytes_read = 0;
+		while (bytes_read < fs_info->size_block)
 		{
-			char buf[256] = {0};
-			kmemcpy(buf, dir_entry->name, dir_entry->name_len);
-			if (kstrcmp(buf, name) == 0)
+			if (dir_entry->inode != 0)
 			{
-				struct vfs_node *res = create_node(dir_node, dir_entry);
-				kfree(block);
-				kfree(inode);
-				return (res);
+				char buf[256] = {0};
+				kmemcpy(buf, dir_entry->name, dir_entry->name_len);
+				if (kstrcmp(buf, name) == 0)
+				{
+					struct vfs_node *res = create_node(dir_node, dir_entry);
+					kfree(block);
+					kfree(inode);
+					return (res);
+				}
 			}
+			if (dir_entry->entry_size == 0)
+			{
+				kprintf("Errro: finddir entry size == 0\n");
+				break;
+			}
+			bytes_read += dir_entry->entry_size;
+			dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
 		}
-		if (dir_entry->entry_size == 0)
-		{
-			kprintf("Error en entry_size == 0\n");
-			break;
-		}
-		bytes_read += dir_entry->entry_size;
-		dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
+		kfree(block);
 	}
-	kfree(block);
 	kfree(inode);
 	return (NULL);
 }
@@ -281,26 +290,43 @@ void ext2_readdir(struct vfs_node *dir_node)
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
 
-	char *block = ext2_read_block(inode->direct_block[0], fs_info);
-
-	struct ext2_dir_entry *dir_entry = (struct ext2_dir_entry *)block;
-
-	uint32_t bytes_read = 0;
-	while (bytes_read < fs_info->size_block)
+	uint32_t nb_block = inode->lower_size / fs_info->size_block;
+	for (int i = 0; i < (int)nb_block; i++)
 	{
-		if (dir_entry->inode != 0)
-			create_node(dir_node, dir_entry);
+		char *block = ext2_read_block(inode->direct_block[i], fs_info);
 
-		if (dir_entry->entry_size == 0)
+		struct ext2_dir_entry *dir_entry = (struct ext2_dir_entry *)block;
+
+		uint32_t bytes_read = 0;
+		while (bytes_read < fs_info->size_block)
 		{
-			kprintf("Error en entry_size == 0\n");
-			break;
+			if (dir_entry->inode != 0)
+			{
+				struct vfs_node *child = dir_node->children;
+				bool found = false;
+				while (child != NULL)
+				{
+					if (kstrncmp(child->name, dir_entry->name, dir_entry->name_len) == 0 && child->name[dir_entry->name_len] == '\0')
+					{
+						found = true;
+						break;
+					}
+					child = child->next_to_kin;
+				}
+				if (!found)
+					create_node(dir_node, dir_entry);
+			}
+			if (dir_entry->entry_size == 0)
+			{
+				kprintf("Error: readdir entry size == 0\n");
+				break;
+			}
+			bytes_read += dir_entry->entry_size;
+			dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
 		}
-		bytes_read += dir_entry->entry_size;
-		dir_entry = (struct ext2_dir_entry*)((char*)dir_entry + dir_entry->entry_size);
+		kfree(block);
 	}
 	kfree(inode);
-	kfree(block);
 }
 
 static struct ext2_fs_info *init_ext2(uint32_t lba_offset)
