@@ -1,7 +1,7 @@
-#include <kmalloc.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <kmalloc.h>
 #include "drivers/vga.h"
 #include "drivers/keyboard.h"
 #include "arch/i386/idt.h"

@@ -171,6 +171,14 @@ static void	execute_command(char *str)
 		char *path = str + 4;
 		cat(path);
 	}
+	else if (kstrncmp(str, "ls", 2) == 0)
+	{
+		char *path = str + 3;
+		if (path[0] != '\0')
+			ls(path);
+		else
+			ls(NULL);
+	}
 	else if (kstrcmp(str, "pwd") == 0)
 		pwd();
 	else if (kstrncmp(str, "cd", 2) == 0)
@@ -206,6 +214,26 @@ static void	execute_command(char *str)
 		if (node == 0x0)
 			return ;
 		mount_dummy(node);
+	}
+	else if (kstrncmp(str, "mount", 5) == 0)
+	{
+		char *path = str + 6;
+
+		char partition_nb[124] = {0};
+		int i;
+		for (i = 0; path[i] != ' ' && path[i] != '\0'; i++)
+			partition_nb[i] = path[i];
+		size_t partition = katoi(partition_nb);
+		i++;
+		if (path[i] == '\0')
+		{
+			kprintf("Error: wrong argument in mount command :(\n");
+			return ;
+		}
+		char name[124] = {0};
+		for (int j = 0; path[i] != '\0'; i++, j++)
+			name[j] = path[i];
+		mount(name, partition);
 	}
 	else if (kstrncmp(str, "umount", 6) == 0)
 	{

@@ -22,7 +22,30 @@ void	cat(char *path)
 	kprintf("Unknown error :(\n");
 }
 
-void cd(char *path)
+void	ls(char *path)
+{
+	struct vfs_node *node = NULL;
+	if (!path)
+		node = get_current_node();
+	else
+		node = get_vfs_node_path(path);
+
+	if (node->ops == NULL && node->ops->readdir == NULL)
+	{
+		kprintf("Error: wrong node :(\n");
+		return ;
+	}
+	node->ops->readdir(node);
+	struct vfs_node *child = node->children;
+	while (child != NULL)
+	{
+		kprintf("%s  ", child->name);
+		child = child->next_to_kin;
+	}
+	kprintf("\n");
+}
+
+void	cd(char *path)
 {
 	struct vfs_node *node;
 	char new_pwd[256];
@@ -64,14 +87,15 @@ void cd(char *path)
 	set_new_node(node);
 }
 
-void pwd()
+// TODO: in kfs-x when i have to implement mv, I'll have to make it calculate every time it's requeted
+void	pwd()
 {
 	char *pwd = get_current_pwd();
 	kprintf("%s\n", pwd);
 }
 
 // TODO in kfs-x: make this make sense with uid, id permision with current_process
-bool login(char *user_buffer, char *passwd_buffer)
+bool	login(char *user_buffer, char *passwd_buffer)
 {
 	struct vfs_node *node = get_vfs_node_path("/etc/passwd");
 	if (node == 0x0)
@@ -87,6 +111,8 @@ bool login(char *user_buffer, char *passwd_buffer)
 	{
 		char buff[128] = {0};
 		size_t user_len = kstrchr(lines[i], ':');
+		if (user_len == (size_t)-1)
+			return (false);
 		kstrlcpy(buff, lines[i], user_len + 1);
 		char *passwd = lines[i] + user_len + 1;
 
@@ -122,6 +148,18 @@ void	mount(char *path, uint32_t nb_partition)
 	ext2_mount_device(node, nb_partition);
 }
 
+static void	free_child(struct vfs_node *child)
+{
+	while (child != NULL)
+	{
+		if (child->children != NULL)
+			free_child(child->children);
+		struct vfs_node *next = child->next_to_kin;
+		kfree(child);
+		child = next;
+	}
+}
+
 void	umount(char *path)
 {
 	struct vfs_node *node = get_vfs_node_path(path);
@@ -133,13 +171,7 @@ void	umount(char *path)
 		return ;
 	}
 	struct vfs_node *child = node->children;
-	while (child != NULL)
-	{
-		struct vfs_node *next = child->next_to_kin;
-		kfree(child);
-		child = next;
-	}
-	node->children = NULL;
+	free_child(child);
 
 	struct vfs_node *backup = node->master;
 	node->ops = backup->ops;
