@@ -47,6 +47,7 @@ fclean: clean clean-disk
 	rm -f $(NAME)
 	rm -f kfs.iso
 	rm -rf isodir
+	rm part.img part2.img
 
 iso: $(NAME)
 	@mkdir -p isodir/boot/grub

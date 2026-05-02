@@ -29,14 +29,19 @@ void	ls(char *path)
 		node = get_current_node();
 	else
 		node = get_vfs_node_path(path);
-
-	if (node->ops == NULL && node->ops->readdir == NULL)
+	if (node == NULL)
+		return ;
+	if (node->ops == NULL || node->ops->readdir == NULL)
 	{
 		kprintf("Error: wrong node :(\n");
 		return ;
 	}
 	node->ops->readdir(node);
-	struct vfs_node *child = node->children;
+	struct vfs_node *child;
+	if (node->children != NULL)
+		child = node->children;
+	else
+		child = NULL;
 	while (child != NULL)
 	{
 		kprintf("%s  ", child->name);

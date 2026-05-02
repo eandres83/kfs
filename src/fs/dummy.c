@@ -1,10 +1,9 @@
 #include "fs/dummy.h"
 
-char	*dummy_read(struct vfs_node *node);
 size_t	dummy_write(struct vfs_node *node, char *str, char *file_name);
 
 static struct ops dummy_ops = {
-	.read = dummy_read,
+	.read = NULL,
 	.write = dummy_write,
 	.open = NULL,
 	.close = NULL,
@@ -20,13 +19,6 @@ size_t	dummy_write(struct vfs_node *node, char *str, char *file_name)
 
 	kprintf("que putas pasa aqui bro\n");
 	return (0);
-}
-
-char	*dummy_read(struct vfs_node *node)
-{
-	(void)node;
-	char *res = "HOLA desde el puto dummy_read\n";
-	return (res);
 }
 
 void	mount_dummy(struct vfs_node *node)
