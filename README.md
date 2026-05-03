@@ -1,96 +1,99 @@
-# KFS - Kernel From Scratch
+# KFS-6 - Filesystem & Persistent Storage
 
 ![Arch](https://img.shields.io/badge/arch-x86-lightgrey)
-![Kernel](https://img.shields.io/badge/kernel-Monolithic-red)
-![Language](https://img.shields.io/badge/language-C%20%2F%20Assembly-blue)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow)
+![Storage](https://img.shields.io/badge/storage-IDE%20%2F%20PATA-red)
+![Filesystem](https://img.shields.io/badge/filesystem-VFS%20%2F%20Ext2-blue)
 
 <br />
 <p align="center">
-  <h3 align="center">Writing a 32-bit Unix-like Operating System from scratch</h3>
+  <h3 align="center">Phase 6: Disk, Files and Format</h3>
 </p>
 
 ## 🗣️ About The Project
 
-**KFS** is a comprehensive systems engineering project focused on building a fully functional Operating System kernel starting from bare metal. Unlike standard application development, this project requires managing every bit of hardware, memory, and CPU execution state manually.
+**KFS-6** introduces non-volatile data storage to the kernel. Before this phase, the OS existed entirely in RAM and lost all state upon shutdown. Now, the kernel can interact with physical disk drives using the **IDE (Parallel ATA)** interface.
 
-The goal is to progress from a simple bootloader to a multitasking system capable of running user-space shell programs, following the evolution of the **x86 architecture**.
+This milestone required building a **Virtual File System (VFS)** to abstract filesystem operations, and implementing the **Ext2** filesystem protocol to parse inodes, superblocks, and directories.
 
----
-
-## 🗺️ Project Roadmap & Modules
-
-Development is divided into strict milestones (branches). This `main` branch contains the latest development snapshot.
-
-| Module | Focus | Status | Key Engineering Concepts |
-| :--- | :--- | :--- | :--- |
-| **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | **GDT & Shell** | ✅ Completed | Memory Segmentation (GDT), Flat Model, Interactive Shell. |
-| **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | **Memory** | ✅ Completed | Virtual Memory (Paging), PMM, Custom Heap (`kmalloc`), Panics. |
-| **[KFS-4](https://github.com/eandres83/kfs/tree/kfs-4)** | **Interrupts** | ✅ Completed | IDT, ISRs, PIC Remapping, Hardware IRQs. |
-| **[KFS-5](https://github.com/eandres83/kfs/tree/kfs-5)** | **Processes** | ✅ Completed | Multitasking, Context Switch, Scheduler, TCB, Syscalls. |
-| **KFS-6** | **User Space** | 🚧 In Progress | Ring 3 Execution, VFS (Virtual File System), ELF Loader. |
+### 🎯 Key Engineering Achievements
+- **IDE Controller Driver:** Developed a low-level device driver reading/writing 512-byte blocks from the IDE mass storage controller via isolated I/O ports (`0x1F0`).
+- **Virtual File System (VFS):** Implemented an abstraction layer defining a standardized filesystem node structure containing Name, Size, Type, Inode, Links, Father, Children, and Rights.
+- **Ext2 Implementation:** Engineered a parser for the *Second Extended Filesystem*. The kernel correctly locates the Superblock, reads Block Group Descriptors, and traverses the Inode tables to reconstruct the file tree in memory.
+- **Process Isolation:** The current working directory (`pwd`) is now tied to the process's Task Control Block (TCB), allowing concurrent processes to navigate different directories simultaneously.
+- **Bonuses Achieved:**
+  - **MBR Parsing:** Added support for the Master Boot Record to locate, identify, and handle multiple partitions on a single disk.
+  - **Mounting System:** Integrated `mount` and `umount` capabilities to dynamically attach block devices to the VFS tree.
+  - **User Management:** Implemented login protocols and user authentication (passwords) tied to file access rights.
 
 ---
 
-### 📂 Directory Structure
-~~~text
-.
-├── src/
-│   ├── arch/i386/     # Architecture-specific (IDT, PIC, Timer, Syscalls)
-│   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── kernel/        # Core kernel logic (kmain, shell, panic)
-│   ├── mm/            # Memory Management (PMM, VMM, kmalloc/slab)
-│   ├── task/          # Process Management (Scheduler, Context Switch)
-│   ├── drivers/       # Hardware drivers (VGA, Keyboard, I/O)
-│   └── lib/           # Custom standard library (kprintf, strings)
-├── include/           # System-wide header files
-├── linker.ld          # Memory layout definition (Higher Half Kernel)
-└── Makefile           # Build automation and QEMU integration
+## 🏗️ Storage Architecture
+
+The kernel uses a layered approach to translate high-level user commands into low-level electrical signals sent to the hard drive.
+
+~~~mermaid
+graph TD
+    subgraph User Space
+        CLI["Shell Commands (cat, cd, pwd)"]
+    end
+    
+    subgraph Kernel Space
+        VFS["Virtual File System (VFS)"]
+        EXT2["Ext2 Driver"]
+        MBR["Partition Manager (MBR)"]
+    end
+    
+    subgraph Hardware Layer
+        IDE["IDE / PATA Controller"]
+        DISK[("Physical Hard Drive")]
+    end
+
+    CLI -->|Path Translation| VFS
+    VFS -->|Inode Request| EXT2
+    EXT2 -->|LBA Block Request| MBR
+    MBR -->|Port I/O| IDE
+    IDE <--> DISK
 ~~~
 
 ---
 
-## 🚀 Current Capabilities (Main Branch)
+## 📂 Repository Structure (KFS-6 additions)
 
-Running the latest build allows you to:
-* **Preemptive Multitasking:** A custom Round-Robin scheduler driven by the PIT (IRQ0). Can concurrently run, pause, and schedule multiple processes.
-* **Interrupt-Driven Architecture:** Complete x86 **IDT** implementation. Handles CPU exceptions, hardware interrupts, and software interrupts (`int 0x80`).
-* **Memory Management:** Full physical and virtual memory managers (x86 Paging) supporting isolation, custom block-based Heap Allocator (`kmalloc`), and memory mapping (`mmap`).
-* **Interactive Shell:** A CLI environment supporting advanced commands (`malloc_test`, `virt2phys`, `meminfo`, `stack`, `layout`).
-* **Boot via GRUB:** Compliant with Multiboot specifications and initialized as a Higher-Half Kernel.
-
----
-
-## 🛠️ Installation & Usage
-
-### ⚠️ Critical Requirement: Cross-Compiler
-You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
-
-* **Compiler:** `i686-elf-gcc`
-* **ASM:** `i686-elf-as`
-
-### Build Instructions
-
-1.  **Clone the repository:**
-    ~~~bash
-    git clone https://github.com/eandres83/kfs.git
-    cd kfs
-    ~~~
-
-2.  **Compile the Kernel:**
-    ~~~bash
-    make
-    ~~~
-
-3.  **Run the OS (QEMU):**
-    ~~~bash
-    make run
-    ~~~
-
-4.  **Debug (GDB Connection):**
-    ~~~bash
-    make debug
-    ~~~
+~~~text
+.
+├── src/
+│   ├── drivers/
+│   │   └── ide/
+│   │       ├── ide.c        # IDE Controller initialization and I/O logic
+│   │       └── ide.h        # Hardware port definitions
+│   ├── fs/
+│   │   ├── ext2/            # Ext2 parser (Superblocks, Inodes, Directories)
+│   │   ├── vfs/             # Virtual File System abstraction layer
+│   │   ├── mbr.c            # Master Boot Record parsing
+│   │   └── dummy.c          # Mock filesystem structures for testing
+│   └── kernel/
+│       └── command.c        # File manipulation commands (cat, cd, pwd)
+└── ...
+~~~
 
 ---
-*Author: Eleder Andres. "Where there is a shell, there is a way."*
+
+## 🚀 Usage & Commands
+
+Compile and run the kernel in QEMU:
+
+~~~bash
+make run
+~~~
+
+### Filesystem Shell Commands
+Once booted, use the following commands to navigate the Ext2 filesystem:
+
+| Command | Description |
+| :--- | :--- |
+| **`pwd`** | Prints the current working directory of the active process. |
+| **`cd <path>`** | Changes the current working directory. |
+| **`cat <file>`** | Reads an Ext2 inode, extracts the data blocks, and prints the file content to standard output. |
+
+---
+*Developed by Eleder Andres. KFS-6 Release.*
