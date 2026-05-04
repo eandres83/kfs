@@ -81,7 +81,7 @@ $(DISK_IMG):
 	@parted -s $(DISK_IMG) mkpart primary ext2 75% 100%
 	@dd if=part.img of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
 	@dd if=part2.img of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
-	@rm -rf empty_dir
+	@rm -rf empty_dir part.img part2.img
 	@rm -rf $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
 
