@@ -3,7 +3,21 @@
 
 struct vfs_node *vfs = NULL;
 
-// /home/eandres/Documents/kfs/src/fs/vfs/vfs.c
+ssize_t read(int fd, void *buffer, size_t count)
+{
+	if (fd != 0)
+		return (-1);
+
+	size_t bytes_read = 0;
+	
+
+	for (int i = 0; i < count; i++)
+	{
+		
+	}
+	return (bytes_read);
+}
+
 struct vfs_node *get_vfs_node_path(char *path)
 {
 	char **word = ksplit(path, '/');
@@ -52,8 +66,7 @@ void init_vfs()
 		return ;
 
 	kmemset(vfs, 0, sizeof(struct vfs_node));
-	vfs->name[0] = '/';
-	vfs->name[1] = '\0';
+	kstrcpy(vfs->name, "/");
 	vfs->size = 0;
 	vfs->inode = 0;
 	vfs->links = 0;

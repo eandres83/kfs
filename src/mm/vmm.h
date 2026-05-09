@@ -41,11 +41,13 @@ void	vmm_initialize();
 void	vmm_map_page(void *phys, void *virt, bool is_user);
 void	vmm_unmap_page(void *virt);
 void	virt2phys(uint32_t virt);
+void	vmm_remove_mapping(void *virt);
 
 // process function
 struct proc;
 void	create_memory_process(struct proc *proc);
 void	vmm_load_process_directory(void *pd);
 void 	copy_parent_memory(struct proc *proc);
+void	free_page_directory(void *pagedir);
 
 #endif

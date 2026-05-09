@@ -108,10 +108,10 @@ void create_init_process()
 		return ;
 	current_process = new_proc;
 
-	char *argv[] = {"/home/kfs/bin", NULL};
+	char *argv[] = {"/home/kfs/test_bin", NULL};
 	char *envp[] = {"", NULL};
 	registers_t regs;
-	int32_t res = execve("/home/kfs/bin", argv, envp, &regs);
+	int32_t res = execve("/home/kfs/test_bin", argv, envp, &regs);
 	if (res == -1)
 	{
 		kprintf("Fatal error when init_main_process execve, soo bad :(\n");
@@ -198,8 +198,10 @@ ssize_t fork(registers_t *regs)
 	return (-1);
 }
 
-ssize_t mmap(size_t size)
+ssize_t mmap(ssize_t size)
 {
+	if (size < 0)
+		return (-1);
 	int index = -1;
 	for (int i = 0; i < 32; i++)
 	{
@@ -286,7 +288,7 @@ ssize_t wait(uint32_t *status)
 					for (int a = 0; a < 32; a++)
 					{
 						if (process[i].mmap_allocation[a] != 0)
-							munmap((void*)process[i].mmap_allocation[a]);
+							munmap((void*)process[i].mmap_allocation[a], 4096);
 					}
 					kmemset(&process[i], 0, sizeof(proc_t));
 					return (tmp_pid);

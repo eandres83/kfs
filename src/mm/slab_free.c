@@ -6,8 +6,7 @@ void	unrequest_memory(void *block, size_t size)
 {
 	for (uint32_t i = 0; i < size; i++)
 	{
-		vmm_unmap_page((void*)block);
-
+		vmm_unmap_page(block);
 		block = (void*)((uint32_t)block + PAGE_SIZE);
 	}
 }

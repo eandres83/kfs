@@ -2,6 +2,6 @@ layout asm
 layout regs
 
 target remote localhost:1234
-break execve
+break cat
 continue
 

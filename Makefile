@@ -58,13 +58,13 @@ iso: $(NAME)
 	@grub-mkrescue -o kfs.iso isodir
 	@echo "kfs.iso created"
 
-$(DISK_IMG): bin
+$(DISK_IMG): test_bin
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
 	@echo -n "root:root1\neandres:1234\nfuck:oian\n1:1\n" > $(FS_DIR)/etc/passwd
-	@cp bin $(FS_DIR)/home/kfs
+	@cp test_bin $(FS_DIR)/home/kfs
 	@mkdir -p $(FS_DIR)/sys
 	@mkdir -p $(FS_DIR)/var
 	@mkdir -p $(FS_DIR)/dev
@@ -88,8 +88,8 @@ $(DISK_IMG): bin
 clean-disk:
 	rm -rf $(DISK_IMG)
 
-bin:
-	$(CC) -m32 -ffreestanding -Wall -Wextra -Werror -nostdlib -fno-builtin -nostartfiles -nodefaultlibs test_bin.c -o bin
+test_bin:
+	$(CC) -m32 -ffreestanding -Wall -Wextra -Werror -nostdlib -fno-builtin -nostartfiles -nodefaultlibs test_bin.c -o test_bin
 
 run:
 	qemu-system-i386 -kernel $(NAME) -curses -drive file=disk.img,format=raw,if=ide

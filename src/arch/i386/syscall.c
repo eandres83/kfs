@@ -1,6 +1,7 @@
 #include "arch/i386/idt.h"
 #include "task/task.h"
 #include "task/elf.h"
+#include "fs/vfs/vfs.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -8,7 +9,7 @@ ssize_t sys_exit(registers_t *regs)
 	// medida de seguridad por si llegase hasta aqui
 	while (1)
 		asm volatile ("hlt");
-	return (1); // nunca va a llegar
+	return (1); // nunca va a llegar ;)
 }
 
 ssize_t sys_fork(registers_t *regs)
@@ -18,18 +19,14 @@ ssize_t sys_fork(registers_t *regs)
 
 ssize_t	sys_read(registers_t *regs)
 {
-	(void)regs;
-	kprintf("read syscall called\n");
-	return (-1);
+	return (read(regs->ebx, (void*)regs->ecx, regs->edx));
 }
 
 ssize_t	sys_write(registers_t *regs)
 {
 	if (regs->ebx != 1)
-	{
-		kprintf("Error: bad file descriptor\n");
 		return (-1);
-	}
+
 	const char *buf = (char*)regs->ecx;
 	size_t count = regs->edx;
 

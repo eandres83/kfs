@@ -1,10 +1,6 @@
 #include "vmm.h"
 #include "task/task.h"
 
-// tmp for test kfs-5
-extern uint32_t _user_start;
-extern uint32_t _user_end;
-
 static page_directory	*_cur_directory = (page_directory*)0xFFFFF000;
 
 void	vmm_load_process_directory(void *pd)
@@ -38,7 +34,7 @@ static void	vmm_free_page(pt_entry *e)
 	pt_entry_del_attrib(e, PTE_PRESENT);
 }
 
-static void	vmm_remove_mapping(void *virt)
+void	vmm_remove_mapping(void *virt)
 {
 	page_directory *pd = _cur_directory;
 	pd_entry *e = &pd->m_entries[PD_INDEX((uint32_t)virt)];
@@ -149,9 +145,6 @@ void	vmm_initialize()
 		pt_entry page = 0;
 		pt_entry_add_attrib(&page, PTE_PRESENT);
 		pt_entry_add_attrib(&page, PTE_WRITABLE);
-		// tmp for kfs-5
-		if (virt >= (uint32_t)&_user_start && virt < (uint32_t)&_user_end)
-			pt_entry_add_attrib(&page, PTE_USER);
 		pt_entry_set_frame(&page, frame);
 
 		table->m_entries[PT_INDEX(virt)] = page;
@@ -284,6 +277,33 @@ void create_memory_process(struct proc *proc)
 
 	proc->pd = phys;
 	vmm_remove_mapping(virt);
+}
+
+void	free_page_directory(void *pagedir)
+{
+	void *phys_pd = pagedir;
+	page_directory *pd = (page_directory*)0xFFBFE000;
+	vmm_map_page(phys_pd, (void*)pd, true);
+
+	for (int i = 0; i < 768; i++)
+	{
+		if (pd_entry_is_present(pd->m_entries[i]))
+		{
+			void *virt = (void*)0xFFBFF000;
+			void *phys = (void*)pt_entry_frame(pd->m_entries[i]);
+			vmm_map_page(phys, virt, true);
+			page_table *pt = (page_table*)virt;
+			for (int j = 0; j < 1024; j++)
+			{
+				if (pt_entry_is_present(pt->m_entries[j]))
+					vmm_free_page(&pt->m_entries[j]);
+			}
+			vmm_remove_mapping(virt);
+			pmm_free_page(phys);
+		}
+	}
+	vmm_remove_mapping((void*)pd);
+	pmm_free_page(pagedir);
 }
 
 void	virt2phys(uint32_t virt)
