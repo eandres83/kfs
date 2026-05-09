@@ -1,3 +1,5 @@
+bin
+test_bin.c
 part2.img
 part.img
 rootfs

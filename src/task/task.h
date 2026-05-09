@@ -7,6 +7,7 @@
 #include "mm/gdt.h"
 #include "arch/i386/idt.h"
 #include "fs/vfs/vfs.h"
+#include "task/elf.h"
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
@@ -46,7 +47,7 @@ extern void jump_to_usermode(uint32_t entry_point, uint32_t user_stack);
 extern void swtch(struct context **old, struct context *new_proc);
 extern void fork_child_exit();
 
-void iniciar_multitarea();
+void create_init_process();
 void yield();
 void find_signal(registers_t *regs);
 void kill_process(char *motivo);
@@ -62,14 +63,12 @@ ssize_t mmap();
 ssize_t munmap(void *addr);
 
 // helper for fs
+proc_t	*get_current_process();
 struct vfs_node *get_current_node();
 char	*get_current_pwd();
 void	set_new_node(struct vfs_node *new_node);
 void	set_new_pwd(char *pwd);
 
 void	set_current_process();
-
-// temp para kfs-5 borrar
-__attribute__((section(".user_text"))) void proceso_test_syscall();
 
 #endif

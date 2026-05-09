@@ -1,39 +1,5 @@
 #include "task.h"
 
-//__attribute__((section(".user_data"))) char letra_A[] = "A";
-//__attribute__((section(".user_data"))) char letra_B[] = "B";
-//
-//// temporal solo para testear procesos
-//__attribute__((section(".user_text"))) static int32_t mi_user_write_syscall(char *str, size_t len)
-//{
-//	int32_t ret;
-//
-//	asm volatile("int $0x80" : "=a" (ret) : "a" (4), "b" (1), "c" (str), "d" (len) : "memory");
-//
-//	return (ret);
-//}
-//
-//__attribute__((section(".user_text"))) static void proceso_A()
-//{
-////	char *letra = "A";
-//	while (1)
-//	{
-//		mi_user_write_syscall(letra_A, 1);
-//		for (volatile int i = 0; i < 1000000; i++);
-//	}
-//}
-//
-//__attribute__((section(".user_text"))) static void proceso_B()
-//{
-////	char *letra = "B";
-//	while (1)
-//	{
-//		mi_user_write_syscall(letra_B, 1);
-//		for (volatile int i = 0; i < 1000000; i++);
-//	}
-//}
-// ---------------------------------------------------------
-
 static uint32_t next_pid = 1;
 struct context *scheduler_context;
 struct tss_entry *tss;
@@ -56,7 +22,7 @@ static proc_t *find_process()
 	return (NULL);
 }
 
-void start_user_process()
+static void start_user_process()
 {
 	void *phys_stack = pmm_map_page();
 	void *virt_stack = (void *)(0xBFFFF000);
@@ -121,22 +87,48 @@ void scheduler()
 				current_process = &process[i];
 				vmm_load_process_directory(process[i].pd);
 				swtch(&scheduler_context, process[i].context);
-				asm volatile ("sti");
 			}
 		}
 	}
 }
 
-void iniciar_multitarea()
+static void enter_user_mode()
 {
-	kmemset(process, 0, sizeof(process));
+	uint32_t entry_point = (uint32_t)(size_t)current_process->user_eip;
+	uint32_t stack = (uint32_t)current_process->user_stack;
 
-//	create_process(proceso_A);
-//	create_process(proceso_B);
+	jump_to_usermode(entry_point, stack);
+}
 
-	create_process(proceso_test_syscall);
+void create_init_process()
+{
+	proc_t *new_proc = find_process();
+	new_proc->kstack = (char*)kmalloc(4096);
+	if (!new_proc->kstack)
+		return ;
+	current_process = new_proc;
 
-	kprintf("Scheduler ahora\n");
+	char *argv[] = {"/home/kfs/bin", NULL};
+	char *envp[] = {"", NULL};
+	registers_t regs;
+	int32_t res = execve("/home/kfs/bin", argv, envp, &regs);
+	if (res == -1)
+	{
+		kprintf("Fatal error when init_main_process execve, soo bad :(\n");
+		return ;
+	}
+	char *stack_top = new_proc->kstack + 4096;
+	new_proc->context = (struct context *)stack_top - 1;
+	new_proc->context->edi = 0;
+	new_proc->context->esi = 0;
+	new_proc->context->ebx = 0;
+	new_proc->context->ebp = 0;
+
+	new_proc->context->eip = (uint32_t)enter_user_mode;
+	new_proc->user_eip = (char*)regs.eip;
+	new_proc->user_stack = (char*)regs.useresp;
+
+	new_proc->state = RUNNABLE;
 	scheduler();
 }
 
@@ -206,7 +198,7 @@ ssize_t fork(registers_t *regs)
 	return (-1);
 }
 
-ssize_t mmap()
+ssize_t mmap(size_t size)
 {
 	int index = -1;
 	for (int i = 0; i < 32; i++)
@@ -220,31 +212,42 @@ ssize_t mmap()
 	if (index == -1)
 		return (-1);
 
-	uint32_t virt_addr = 0x40000000 + (current_process->mmap_count * 4096);
+	uint32_t start_vaddr = 0x40000000 + (current_process->mmap_count * 4096);
+	uint32_t virt_addr = start_vaddr;
 
-	void *phys_addr = pmm_map_page();
-	if (!phys_addr)
-		return (-1);
-	vmm_map_page(phys_addr, (void*)virt_addr, true);
+	size_t	total_size = (size + 4095) / 4096;
+
+	for (uint32_t i = 0; i < total_size; i++)
+	{
+		void *phys_addr = pmm_map_page();
+		if (!phys_addr)
+			return (-1);
+		vmm_map_page(phys_addr, (void*)virt_addr, true);
+		virt_addr += 4096;
+	}
 
 	current_process->mmap_allocation[index] = virt_addr;
 	current_process->mmap_count++;
 
-	return ((ssize_t)virt_addr);
+	return ((ssize_t)start_vaddr);
 }
 
-ssize_t munmap(void *addr)
+ssize_t munmap(void *addr, size_t size)
 {
-	vmm_unmap_page(addr);
-
-	for (int i = 0; i < 32; i++)
+	for (uint32_t i = 0; i < size; i++)
 	{
-		if (current_process->mmap_allocation[i] == (uint32_t)addr)
+
+		vmm_unmap_page(addr);
+		for (int i = 0; i < 32; i++)
 		{
-			current_process->mmap_allocation[i] = 0;
-			current_process->mmap_count--;
-			break;
+			if (current_process->mmap_allocation[i] == (uint32_t)addr)
+			{
+				current_process->mmap_allocation[i] = 0;
+				current_process->mmap_count--;
+				break;
+			}
 		}
+		addr = (void*)((uint32_t)addr + 4096);
 	}
 	return (0);
 }
@@ -354,6 +357,11 @@ void find_signal(registers_t *regs)
 }
 
 // helper function por fs
+proc_t	*get_current_process()
+{
+	return (current_process);
+}
+
 void	set_current_process()
 {
 	current_process = kmalloc(sizeof(proc_t));

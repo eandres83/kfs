@@ -45,9 +45,9 @@ clean:
 
 fclean: clean clean-disk
 	rm -f $(NAME)
-	rm -f kfs.iso
+	rm -f kfs.iso 
 	rm -rf isodir
-	rm part.img part2.img
+	rm -rf part.img part2.img
 
 iso: $(NAME)
 	@mkdir -p isodir/boot/grub
@@ -58,12 +58,13 @@ iso: $(NAME)
 	@grub-mkrescue -o kfs.iso isodir
 	@echo "kfs.iso created"
 
-$(DISK_IMG):
+$(DISK_IMG): bin
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
 	@echo -n "root:root1\neandres:1234\nfuck:oian\n1:1\n" > $(FS_DIR)/etc/passwd
+	@cp bin $(FS_DIR)/home/kfs
 	@mkdir -p $(FS_DIR)/sys
 	@mkdir -p $(FS_DIR)/var
 	@mkdir -p $(FS_DIR)/dev
@@ -81,12 +82,14 @@ $(DISK_IMG):
 	@parted -s $(DISK_IMG) mkpart primary ext2 75% 100%
 	@dd if=part.img of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
 	@dd if=part2.img of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
-	@rm -rf empty_dir part.img part2.img
-	@rm -rf $(FS_DIR)
+	@rm -rf empty_dir part.img part2.img $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
 
 clean-disk:
 	rm -rf $(DISK_IMG)
+
+bin:
+	$(CC) -m32 -ffreestanding -Wall -Wextra -Werror -nostdlib -fno-builtin -nostartfiles -nodefaultlibs test_bin.c -o bin
 
 run:
 	qemu-system-i386 -kernel $(NAME) -curses -drive file=disk.img,format=raw,if=ide
@@ -96,4 +99,4 @@ debug:
 
 re: fclean all
 
-.PHONY: all clean fclean re run debug iso
+.PHONY: all clean fclean re run debug iso clean-disk

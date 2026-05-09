@@ -2,6 +2,8 @@
 #define ELF_H
 
 #include <utils.h>
+#include "fs/vfs/vfs.h"
+#include "mm/vmm.h"
 
 typedef uint32_t 	Elf32_Addr; // Unsigned program address
 typedef uint16_t 	Elf32_Half; // Unsigned medium integer
@@ -59,36 +61,6 @@ struct elf32_phdr
 #define PT_LOPROC	0x70000000	// values in this inclusive range are reserved for processor-specific semantics
 #define PT_HIPROC	0x7fffffff	// same that PT_LOPROC
 
-struct elf32_shdr
-{
-	Elf32_Word	sh_name;
-	Elf32_Word	sh_type;
-	Elf32_Word	sh_flags;
-	Elf32_Addr	sh_addr;	// address at which the section's first byte should reside
-	Elf32_Off	sh_offset;	// byte offset from the beginning of the file to the first byte in section
-	Elf32_Word	sh_size;	// section size in bytes
-	Elf32_Word	sh_link;	// section header table index link
-	Elf32_Word	sh_info;	// exta info depends on the section type
-	Elf32_Word	sh_addralign;	// some sections have address alignment constraints, 0 and 1 mean section has no alignment constraints
-	Elf32_Word	sh_entsize;	// some sections hold a table of fixed-size entries
-};
-
-// section types -> sh_type
-#define SHT_NULL	0		// this value marks the section header as inactive
-#define SHT_PROGBITS	1		// section holds information defined by the program
-#define SHT_SYMTAB	2		// these sections hold a symbol table
-#define SHT_STRTAB	3		// string table
-#define SHT_RELA	4		// relocation entries with explicit addends
-#define SHT_HASH	5		// symbol hash table
-#define SHT_DYNAMIC	6		// info for dynamic linking
-#define SHT_NOTE	7		// info that marks the file in some way
-#define SHT_NOBITS	8		// a section of this type occupies no space in the file
-#define SHT_REL		9		// relocation entries without explicit addends
-#define SHT_SHLIB	10		// this section type is reserved but has unspecified semantics
-#define SHT_DYNSYM	11		// these sections hold a symbol table
-#define SHT_LOPROC	0x70000000	// values in this inclusive range are reserved for procesessor-specific
-#define SHT_HIPROC	0x7fffffff	// values in this inclusive range are reserved for procesessor-specific
-#define SHT_LOUSER	0x80000000	// lower bound of the range of indexes reserved for application programs
-#define SHT_HIUSER	0xffffffff	// upper bound of the range of indexes reserved for application programs
+ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t *regs);
 
 #endif 

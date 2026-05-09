@@ -1,5 +1,6 @@
 #include "arch/i386/idt.h"
 #include "task/task.h"
+#include "task/elf.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -42,6 +43,14 @@ ssize_t sys_wait(registers_t *regs)
 	return (regs->ebx);
 }
 
+ssize_t sys_execve(registers_t *regs)
+{
+	ssize_t res = execve((char*)regs->ebx, (char**)regs->ecx, (char**)regs->edx, regs);
+	if (res == -1)
+		kprintf("Error: something wrong in execve :(\n");
+	return (res);
+}
+
 ssize_t sys_getuid(registers_t *regs)
 {
 	(void)regs;
@@ -60,13 +69,12 @@ ssize_t sys_signal(registers_t *regs)
 
 ssize_t sys_mmap(registers_t *regs)
 {
-	(void)regs;
-	return (mmap());
+	return (mmap(regs->ebx));
 }
 
 ssize_t sys_munmap(registers_t *regs)
 {
-	return (munmap((void*)regs->ebx));
+	return (munmap((void*)regs->ebx, regs->ecx));
 }
 
 static ssize_t	(*syscall[200])(registers_t*) =
@@ -76,6 +84,7 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[3] = sys_read,
 	[4] = sys_write,
 	[7] = sys_wait,
+	[11] = sys_execve,
 	[24] = sys_getuid,
 	[37] = sys_kill,
 	[48] = sys_signal,
