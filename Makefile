@@ -6,7 +6,7 @@ INCLUDES = -I include -I src
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs $(INCLUDES)
-USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -fno-builtin -nostdlib -nodefualtlibs -I userland
+USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -fno-builtin -nostdlib -nodefaultlibs -I userland
 
 LDFLAGS = -T linker.ld
 
@@ -23,14 +23,14 @@ SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard 
 	$(wildcard src/arch/i386/lib/*.c)
 SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i386/*.s) $(wildcard src/task/*.s) 
 
-KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/%.o, $(SRCS_C)) \
-	$(patsubst src/%.s, $(BUILD_DIR)/%.o, $(SRCS_S))
+KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \
+	$(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
 
-USER_SRCS_C = $(wildcard userland/libc/*.c) $(wildcard userland/malloc/*.c) userland/printf.c userland/wrappers.c
-USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/%.o, $(USER_SRCS_C))
+USER_SRCS_C = $(wildcard userland/libc/*.c) $(wildcard userland/malloc/*.c) $(wildcard userland/*.c)
+USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)userland/%.o, $(USER_SRCS_C))
 CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
 
-APPS_SRCS = $(wildcard bin/*.c)
+APPS_SRCS = $(wildcard bin/*.c) $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins/*.c)
 APPS_BINS = $(patsubst bin/%.c, bin/%, $(APPS_SRCS))
 
 all: $(DISK_IMG) $(NAME)
@@ -91,12 +91,12 @@ $(DISK_IMG): $(NAME) $(APPS_BINS)
 	@parted -s $(DISK_IMG) mkpart primary ext2 75% 100%
 	@dd if=part.img of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
 	@dd if=part2.img of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
+	@rm -f part.img part2.img
+	@rm -rf empty_dir $(FS_DIR)
 	@echo "$(DISK_IMG) listo!"
 
 clean:
-	@rm -rf $(BUILD_DIR)
-	@rm -rf $(FS_DIR)
-	@rm -f part.img part2.img empty_dir
+	@rm -rf $(BUILD_DIR) $(FS_DIR) empty_dir
 	@find bin -type f ! -name '*.c' -delete
 
 fclean: clean 
