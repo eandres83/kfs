@@ -306,35 +306,20 @@ void	free_page_directory(void *pagedir)
 	pmm_free_page(pagedir);
 }
 
-void	virt2phys(uint32_t virt)
+bool	check_addr(uint32_t virt)
 {
 	page_directory *pd = _cur_directory;
 	pd_entry *pde = &pd->m_entries[PD_INDEX(virt)];
 
-	kprintf("Page Directory Entry (PDE) Index: %d\n", PD_INDEX(virt));
 	if (!pd_entry_is_present(*pde))
-		return ;
-
+		return (false);
 	page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
-
 	pt_entry *pte = &table->m_entries[PT_INDEX(virt)];
-	kprintf("Page Table Entry (PTE) Index: %d\n", PT_INDEX(virt));
 	if (!pt_entry_is_present(*pte))
-		return ;
+		return (false);
 
-	uint32_t phys_frame = *pte & PTE_FRAME;
-	uint32_t offset = virt & 0xFFF;
-	uint32_t phys_address = phys_frame + offset;
-
-	kprintf("Physical Frame: 0x%x\n", phys_frame);
-	kprintf("Offset: 0x%x\n", offset);
-	kprintf("EXACT PHYSICAL ADDRESS: 0x%x\n", phys_address);
-
-	kprintf("Flags: PRESENT");
-	if (pt_entry_is_writable(*pte))
-		kprintf(" | WRITABLE");
-	if (*pte & PTE_USER)
-		kprintf(" | USER");
-	kprintf("\n");
+	if (!pt_entry_is_writable(*pte) || !pt_entry_is_user(*pte))
+		return (false);
+	return (true);
 }
 

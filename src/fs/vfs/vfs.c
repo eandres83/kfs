@@ -3,21 +3,6 @@
 
 struct vfs_node *vfs = NULL;
 
-ssize_t read(int fd, void *buffer, size_t count)
-{
-	if (fd != 0)
-		return (-1);
-
-	size_t bytes_read = 0;
-	
-
-	for (int i = 0; i < count; i++)
-	{
-		
-	}
-	return (bytes_read);
-}
-
 struct vfs_node *get_vfs_node_path(char *path)
 {
 	char **word = ksplit(path, '/');

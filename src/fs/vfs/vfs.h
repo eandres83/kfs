@@ -38,6 +38,5 @@ struct ops
 
 void		init_vfs();
 struct vfs_node *get_vfs_node_path(char *path);
-ssize_t		read(int fd, void *buffer, size_t count);
 
 #endif
