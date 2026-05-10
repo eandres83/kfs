@@ -185,9 +185,9 @@ void	keyboard_callback(registers_t *regs)
 		return ;
 
 	if (!shift_status)
-		shell_handle_keypress(current_layout[data]);
+		tty_push_char(current_layout[data]);
 	else
-		shell_handle_keypress(current_shift_layout[data]);
+		tty_push_char(current_shift_layout[data]);
 }
 
 void	set_keyboard_layout(char *str)

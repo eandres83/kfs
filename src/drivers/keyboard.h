@@ -1,11 +1,10 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <stdint.h>
 #include <utils.h>
 #include "io.h"
-#include "vga.h"
 #include "arch/i386/idt.h"
+#include "tty/tty.h"
 
 #define SHIFT_KEY	-1
 #define CTRL_KEY	-2

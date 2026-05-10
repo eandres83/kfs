@@ -1,7 +1,7 @@
 #include "arch/i386/idt.h"
 #include "task/task.h"
 #include "task/elf.h"
-#include "fs/vfs/vfs.h"
+#include "arch/i386/lib/uaccess.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -24,14 +24,7 @@ ssize_t	sys_read(registers_t *regs)
 
 ssize_t	sys_write(registers_t *regs)
 {
-	if (regs->ebx != 1)
-		return (-1);
-
-	const char *buf = (char*)regs->ecx;
-	size_t count = regs->edx;
-
-	terminal_write(buf, count);
-	return (count);
+	return (write(regs->ebx, (const char*)regs->ecx, regs->edx));
 }
 
 ssize_t sys_wait(registers_t *regs)
