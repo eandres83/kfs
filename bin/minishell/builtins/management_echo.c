@@ -1,4 +1,4 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 int	management_echo(t_mini *mini)
 {
@@ -16,13 +16,13 @@ int	management_echo(t_mini *mini)
 	}
 	while (mini->full_cmd[i])
 	{
-		write(1, mini->full_cmd[i], ft_strlen(mini->full_cmd[i]));
+		write(STDOUT_FILENO, mini->full_cmd[i], ft_strlen(mini->full_cmd[i]));
 		if (mini->full_cmd[i + 1] != NULL)
-			write(1, " ", 1);
+			write(STDOUT_FILENO, " ", 1);
 		i++;
 	}
 	if (parameter == 1)
-		write(1, "\n", 1);
+		write(STDOUT_FILENO, "\n", 1);
 	g_exit_status = 0;
 	return (g_exit_status);
 }

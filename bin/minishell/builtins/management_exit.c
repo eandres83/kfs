@@ -1,4 +1,4 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 int	management_exit(t_mini *mini)
 {
@@ -9,4 +9,3 @@ int	management_exit(t_mini *mini)
 	rl_clear_history();
 	exit(status);
 }
-

@@ -1,4 +1,4 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 static	int	find_and_remove_var(char **env, const char *var_name)
 {
@@ -11,7 +11,6 @@ static	int	find_and_remove_var(char **env, const char *var_name)
 	{
 		if (ft_strncmp(var_name, env[j], len) == 0 && env[j][len] == '=')
 		{
-			free(env[j]);
 			while (env[j])
 			{
 				env[j] = env[j + 1];
@@ -29,7 +28,9 @@ int	count_val(const char *val)
 
 	i = 0;
 	while (val[i] && val[i] != '=')
+	{
 		i++;
+	}
 	return (i);
 }
 
@@ -102,4 +103,3 @@ int	management_unset(t_mini *mini)
 	g_exit_status = 0;
 	return (g_exit_status);
 }
-

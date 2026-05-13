@@ -1,4 +1,4 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 static char	*get_env_value(char **envp, char *var_name)
 {

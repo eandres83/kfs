@@ -1,4 +1,4 @@
-#include "minishell.h"
+#include "../minishell.h"
 
 char	*ft_expand_path(char *word)
 {
@@ -37,43 +37,13 @@ static char	*get_env_value(t_mini *mini, const char *name)
 	return (NULL);
 }
 
-int	ft_get_var_name_len(const char *var_name)
-{
-	int	len;
-
-	len = 0;
-	while (*var_name && (ft_isalnum(*var_name) || *var_name == '_'))
-	{
-		len++;
-		var_name++;
-	}
-	return (len);
-}
-
-/**
- * expand_variable - Expands an environment variable within a string.
- *
- * This function identifies an env variable preceded by a dollar sign ($)
- * and replaces it with its value from the env. If the variable is quoted
- * by single quotes, it is not expanded. If the variable does not exist in
- * the env, it is replaced with an empty string. Any remaining portion of
- * the string after the variable is preserved.
- *
- * *word: The input string containing the variable.
- * index: The current index of the dollar sign in the string.
- *
- * Return: 	A newly allocated string with the expanded variable,
- * 			or NULL	on failure. 
- * 
- * The caller is responsible for freeing the returned string.
- */
 char	*ft_expand_variable(t_mini *mini, char *word, int index)
 {
 	char	*var_name;
-	int		name_len;
+	int	name_len;
 	char	*var_value;
 	char	*expanded;
-	char 	*temp_exp;
+	char	*temp_exp;
 
 	if (ft_strncmp("$?", word, 2) == 0)
 		return (ft_itoa(g_exit_status));
@@ -97,27 +67,26 @@ char	*ft_expand_variable(t_mini *mini, char *word, int index)
 	return (expanded);
 }
 
-/**
- * expand - Expands all env variables and tilde characters
- * 			in an array of strings.
- *
- * This function iterates through an array of strings, expanding each
- * string that begins with a tilde (~) to the user's home directory
- * and expanding variables prefixed by a dollar sign ($) to their
- * corresponding values in the environment.
- *
- * **temp: An array of strings to be expanded.
- *
- * Return: 	The array with expanded strings. If a string is replaced,
- * 			its original memory is freed. Returns NULL if `temp` is NULL.
- */
+int	ft_get_var_name_len(const char *var_name)
+{
+	int	len;
+
+	len = 0;
+	while (*var_name && (ft_isalnum(*var_name) || *var_name == '_'))
+	{
+		len++;
+		var_name++;
+	}
+	return (len);
+}
+
 char	**ft_expand(t_mini *mini, char **temp)
 {
-	int		i;
-	int		j;
+	int	i;
+	int	j;
 	char	*prefix;
 	char	*aux;
-	char	*new_str;
+	char 	*new_str;
 
 	i = -1;
 	while (temp && temp[++i])
@@ -126,11 +95,7 @@ char	**ft_expand(t_mini *mini, char **temp)
 		while (temp[i][++j])
 		{
 			if (temp[i][0] == '~')
-			{
-				new_str = ft_expand_path(temp[i]);
-				free(temp[i]);
-				temp[i] = new_str;
-			}
+				temp[i] = ft_expand_path(temp[i]);
 			else if (temp[i][j] == '$' && ft_quote_context(temp[i], j) != '\'')
 			{
 				prefix = ft_substr(temp[i], 0, j);
@@ -147,3 +112,4 @@ char	**ft_expand(t_mini *mini, char **temp)
 	}
 	return (temp);
 }
+

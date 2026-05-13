@@ -1,13 +1,14 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
-int	management_pwd()
+int	management_pwd(t_mini *mini)
 {
 	char	cwd[MAX_PATH];
 
+	(void)mini;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 	{
-		write(1, &cwd, ft_strlen(cwd));
-		write(1, "\n", 1);
+		write(STDOUT_FILENO, &cwd, ft_strlen(cwd));
+		write(STDOUT_FILENO, "\n", 1);
 		g_exit_status = 0;
 	}
 	else

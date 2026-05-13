@@ -1,14 +1,4 @@
-#include "minishell.h"
-
-int	g_exit_status = 0;
-
-void	error(t_mini *mini, int sig, char *str)
-{
-	(void)mini;
-	g_exit_status = sig;
-	ft_putstr_fd(str, 2);
-	ft_putstr_fd("\n", 2);
-}
+#include "../minishell.h"
 
 void	ft_check_if_builtin(t_mini *node)
 {
@@ -64,12 +54,17 @@ void	ft_get_path(t_mini *node)
 	char	**paths;
 	char	*temp_path;
 	char	*valid_path;
-	int		i;
+	int	i;
 
 	if (node->is_builtin == 1)
 		return ;
 	paths = NULL;
 	paths = ft_get_path_util(node, paths);
+	if (node->full_path != NULL)
+	{
+		ft_free_array(paths);
+		return ;
+	}
 	i = 0;
 	while (paths && paths[i])
 	{
@@ -86,5 +81,25 @@ void	ft_get_path(t_mini *node)
 		free(valid_path);
 	}
 	ft_free_array(paths);
+}
+
+bool	ft_check_redirections_util(t_mini *node, char **array)
+{
+	int	len;
+
+	len = ft_arraylen(array);
+	if (len - 3 >= 0 && *array[len - 3] == '>' && *array[len - 2] == '>')
+	{
+		node->outfile = open(array[len - 1], O_CREAT | O_APPEND | O_WRONLY, 0644);
+		if (node->outfile == -1)
+			return (false);
+	}
+	else if (array && len - 2 >= 0 && *array[len - 2] == '>')
+	{
+		node->outfile = open(array[len - 1], O_CREAT | O_TRUNC | O_WRONLY, 0644);
+		if (node->outfile == -1)
+			return (false);
+	}
+	return (true);
 }
 

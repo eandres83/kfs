@@ -1,4 +1,4 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 static	char	*create_env_var(const char *name, const char *value)
 {
@@ -45,7 +45,10 @@ static	int	add_new_env_var(t_mini *mini, const char *new_var)
 		new_env_copy[i] = ft_strdup(mini->env_copy[i]);
 	new_env_copy[i] = ft_strdup(new_var);
 	if (!new_env_copy[i])
-		return (free(new_env_copy), 1);
+	{
+		free(new_env_copy);
+		return (1);
+	}
 	new_env_copy[i + 1] = NULL;
 	ft_free_array(mini->env_copy);
 	mini->env_copy = NULL;
@@ -73,7 +76,10 @@ int	set_env_var(t_mini *mini, const char *name, const char *value)
 	else
 	{
 		if (add_new_env_var(mini, new_var) < 0)
-			return (free(new_var), 1);
+		{
+			free(new_var);
+			return (1);
+		}
 	}
 	free(new_var);
 	return (0);
@@ -92,7 +98,8 @@ int	management_export(t_mini *mini)
 		value++;
 	}
 	else
+	{
 		value = "";
+	}
 	return (set_env_var(mini, mini->full_cmd[1], value));
 }
-

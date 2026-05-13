@@ -1,4 +1,4 @@
-#include "minishell.h"
+#include "../minishell.h"
 
 static size_t	ft_handle_quotes(const char *s, size_t i, char quote)
 {

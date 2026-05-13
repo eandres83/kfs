@@ -1,4 +1,4 @@
-#include "../../include/minishell.h"
+#include "../../minishell.h"
 
 int	management_env(t_mini *mini)
 {
@@ -12,8 +12,8 @@ int	management_env(t_mini *mini)
 	}
 	while (mini->env_copy[i])
 	{
-		write(1, mini->env_copy[i], ft_strlen(mini->env_copy[i]));
-		write(1, "\n", 1);
+		write(STDOUT_FILENO, mini->env_copy[i], ft_strlen(mini->env_copy[i]));
+		write(STDOUT_FILENO, "\n", 1);
 		i++;
 	}
 	g_exit_status = 0;

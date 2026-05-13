@@ -1,4 +1,4 @@
-#include "minishell.h"
+#include "../minishell.h"
 
 char	*get_name(char **env)
 {
@@ -26,7 +26,7 @@ char	*get_name(char **env)
 	return (prompt);
 }
 
-static	void	util_main(t_mini *mini, char *line)
+static	void	util_main(t_mini *mini, char *line, char **env)
 {
 	if (line[0] == ' ' || line[0] == '\0')
 	{
@@ -35,20 +35,18 @@ static	void	util_main(t_mini *mini, char *line)
 	}
 	if (ft_strlen(line) > 0)
 	{
-		char **array = ft_process_input(mini, line);
-		if (array == NULL)
+		mini = ft_process_input(mini, line, env);
+		add_history(line);
+		if (!mini)
 		{
 			free(line);
-			printf("Error: bad command :(\n");
+//			mini = ft_initialize_mini_node(env);
 			return ;
 		}
-		else
-			ft_create_structure(mini, array);
-		ft_free_array(array);
 		process_command2(mini);
 		free(line);
 	}
-	reset_mini_state(mini);
+	ft_clean_and_reset(mini);
 }
 
 int	main(int argc, char **argv, char **env)
@@ -66,14 +64,14 @@ int	main(int argc, char **argv, char **env)
 		name = get_name(mini->env_copy);
 		if (!name)
 		{
-			error(mini, 1, "Error: Could not get prompt name");
+			error(1, "Error: Could not get prompt name");
 			break ;
 		}
 		line = readline(name);
 		free(name);
 		if (!line)
 			break ;
-		util_main(mini, line);
+		util_main(mini, line, env);
 	}
 	ft_free_mini(mini);
 	rl_clear_history();
@@ -107,4 +105,4 @@ int	main(int argc, char **argv, char **env)
 //	}
 //	return (str);
 //}
-//
+
