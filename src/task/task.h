@@ -8,6 +8,9 @@
 #include "arch/i386/idt.h"
 #include "fs/vfs/vfs.h"
 #include "task/elf.h"
+#include "fs/fd.h"
+
+#define MAX_FD 64
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
@@ -38,6 +41,7 @@ typedef struct proc
 	char		pwd[256];
 	void		*pd;
 	enum procstate	state;
+	struct file	*fd_table[MAX_FD];
 	struct proc 	*parent;
 	struct context	*context;
 	struct vfs_node	*node;

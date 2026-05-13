@@ -192,6 +192,15 @@ ssize_t fork(registers_t *regs)
 			process[i].state = RUNNABLE;
 			process[i].node = current_process->node;
 			kstrcpy(process[i].pwd, current_process->pwd);
+
+			for (int j = 0; j < 63; j++)
+			{
+				if (current_process->fd_table[j] != NULL)
+				{
+					process[i].fd_table[j] = current_process->fd_table[j];
+					process[i].fd_table[j]->ref_count++;
+				}
+			}
 			return (process[i].pid);
 		}
 	}
