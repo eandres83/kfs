@@ -5,6 +5,7 @@
 #include <kmalloc.h>
 #include "drivers/io.h"
 #include "task/task.h"
+#include "fs/fd.h"
 
 extern struct vfs_node *vfs;
 
@@ -30,8 +31,8 @@ struct ops
 {
 	char *(*read) (struct vfs_node *);
 	size_t (*write) (struct vfs_node *, char *, char *);
-	void (*open) (struct vfs_node *);
-	void (*close) (struct vfs_node *);
+	ssize_t (*open) (struct vfs_node *, uint32_t);
+	size_t (*close) (struct vfs_node *);
 	void (*readdir) (struct vfs_node *);
 	struct vfs_node *(*finddir) (struct vfs_node *, char *);
 };
