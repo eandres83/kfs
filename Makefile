@@ -27,7 +27,7 @@ KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \
 	$(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
 
 USER_SRCS_C = $(wildcard userland/libc/*.c) $(wildcard userland/malloc/*.c) $(wildcard userland/*.c)
-USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)userland/%.o, $(USER_SRCS_C))
+USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
 CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
 
 APPS_SRCS = $(wildcard bin/*.c) $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins/*.c)
