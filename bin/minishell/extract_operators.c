@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "minishell.h"
 
 char	**ft_concatenate_array(char **array, char **temp_array, int index)
 {

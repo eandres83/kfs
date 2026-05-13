@@ -3,19 +3,19 @@ NAME = minishell
 
 RM = rm -rf
 
-OBJECTS_DIR = .obj
+OBJECTS_DIR = .object
 
-SRCS = $(wildcard *.c) $(wildcard buildtins/*.c) $(wildcard execute/*.c)
+SRCS = $(wildcard *.c) $(wildcard builtins/*.c) $(wildcard execute/*.c)
 
 # Generate object files list
-OBJS = $(SRCS:%.c=$(OBJECTS_DIR)/%.o)
+OBJS = $(SRCS:/%.c=$(OBJECTS_DIR)/%.o)
 
 # Default target
 all: $(NAME)
 
 # Link the final executable
-$(NAME): $(OBJS) $(LIBFT)
-	@$(CC) $(USER_CFLAGS) $(OBJS) -o $(NAME)
+$(NAME): $(OBJS)
+	@$(CC) $(USER_CFLAGS) $(USER_OBJS_C) $(CRT0_OBJ) $(OBJS) -o $(NAME)
 	@echo "-> Compilation completed: $(NAME)"
 
 # Build object files

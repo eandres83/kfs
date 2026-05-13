@@ -1,4 +1,4 @@
-#include "../../minishell.h"
+#include "../minishell.h"
 
 void	h_m_c(int pipefd[2], int last_fd, t_mini *mini, t_mini *next_cmd)
 {

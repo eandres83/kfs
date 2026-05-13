@@ -30,7 +30,7 @@ typedef struct s_mini
 	int		num;
 	int		infile;
 	int		outfile;
-	pid_t		pid;
+	ssize_t		pid;
 	char		*limit;
 	struct s_mini	*next;
 }t_mini;

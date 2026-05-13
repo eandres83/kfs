@@ -1,4 +1,4 @@
-#include "../../minishell.h"
+#include "../minishell.h"
 
 static	char	*create_env_var(const char *name, const char *value)
 {

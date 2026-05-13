@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "minishell.h"
 
 char	*get_name(char **env)
 {

@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "minishell.h"
 
 int	ft_locate_pipe(char **array, int *index)
 {

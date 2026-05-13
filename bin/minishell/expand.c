@@ -1,4 +1,4 @@
-#include "../minishell.h"
+#include "minishell.h"
 
 char	*ft_expand_path(char *word)
 {
@@ -6,11 +6,12 @@ char	*ft_expand_path(char *word)
 	char		*expanded;
 
 	if (word[0] != '~')
-		return (ft_strdup(word));
-	home_dir = getenv("HOME");
+		return (strdup(word));
+//	home_dir = get_env_value(
+	home_dir = strdup("mi/home");
 	if (!home_dir)
 		home_dir = "";
-	expanded = malloc(ft_strlen(home_dir) + ft_strlen(word));
+	expanded = malloc(strlen(home_dir) + strlen(word));
 	if (!expanded)
 		return (NULL);
 	ft_strlcpy(expanded, home_dir, (ft_strlen(home_dir) + 1));

@@ -1,4 +1,4 @@
-#include "../../minishell.h"
+#include "../minishell.h"
 
 static	int	find_and_remove_var(char **env, const char *var_name)
 {

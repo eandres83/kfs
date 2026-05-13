@@ -1,20 +1,20 @@
-#include "../minishell.h"
+#include "minishell.h"
 
 void	ft_check_if_builtin(t_mini *node)
 {
-	if (!ft_strcmp(node->full_cmd[0], "echo"))
+	if (!strcmp(node->full_cmd[0], "echo"))
 		node->is_builtin = 1;
-	else if (!ft_strcmp(node->full_cmd[0], "cd"))
+	else if (!strcmp(node->full_cmd[0], "cd"))
 		node->is_builtin = 1;
-	else if (!ft_strcmp(node->full_cmd[0], "pwd"))
+	else if (!strcmp(node->full_cmd[0], "pwd"))
 		node->is_builtin = 1;
-	else if (!ft_strcmp(node->full_cmd[0], "export"))
+	else if (!strcmp(node->full_cmd[0], "export"))
 		node->is_builtin = 1;
-	else if (!ft_strcmp(node->full_cmd[0], "unset"))
+	else if (!strcmp(node->full_cmd[0], "unset"))
 		node->is_builtin = 1;
-	else if (!ft_strcmp(node->full_cmd[0], "env"))
+	else if (!strcmp(node->full_cmd[0], "env"))
 		node->is_builtin = 1;
-	else if (!ft_strcmp(node->full_cmd[0], "exit"))
+	else if (!strcmp(node->full_cmd[0], "exit"))
 		node->is_builtin = 1;
 }
 
@@ -23,7 +23,7 @@ static void	check_this(t_mini *node)
 	if (node->full_cmd[0] && (node->full_cmd[0][0] == '/'
 		|| node->full_cmd[0][0] == '.'))
 	{
-		node->full_path = ft_strdup(node->full_cmd[0]);
+		node->full_path = strdup(node->full_cmd[0]);
 		return ;
 	}
 }
@@ -36,9 +36,9 @@ static	char	**ft_get_path_util(t_mini *node, char **paths)
 	i = 0;
 	while (node->env_copy[i])
 	{
-		if (ft_strncmp("PATH=", node->env_copy[i], 5) == 0)
+		if (strncmp("PATH=", node->env_copy[i], 5) == 0)
 		{
-			paths = ft_split(&(node->env_copy[i][5]), ':');
+			paths = split(&(node->env_copy[i][5]), ':');
 			break ;
 		}
 		else
@@ -68,16 +68,16 @@ void	ft_get_path(t_mini *node)
 	i = 0;
 	while (paths && paths[i])
 	{
-		temp_path = ft_strjoin(paths[i++], "/");
-		valid_path = ft_strjoin(temp_path, node->full_cmd[0]);
+		temp_path = strjoin(paths[i++], "/");
+		valid_path = strjoin(temp_path, node->full_cmd[0]);
 		free(temp_path);
-		if (access(valid_path, X_OK) == 0)
-		{
-			node->full_path = ft_strdup(valid_path);
-			free(valid_path);
-			ft_free_array(paths);
-			return ;
-		}
+//		if (access(valid_path, X_OK) == 0)
+//		{
+//			node->full_path = strdup(valid_path);
+//			free(valid_path);
+//			ft_free_array(paths);
+//			return ;
+//		}
 		free(valid_path);
 	}
 	ft_free_array(paths);
@@ -90,13 +90,15 @@ bool	ft_check_redirections_util(t_mini *node, char **array)
 	len = ft_arraylen(array);
 	if (len - 3 >= 0 && *array[len - 3] == '>' && *array[len - 2] == '>')
 	{
-		node->outfile = open(array[len - 1], O_CREAT | O_APPEND | O_WRONLY, 0644);
+		node->outfile = open(array[len - 1], 1, 1);
+//		node->outfile = open(array[len - 1], O_CREAT | O_APPEND | O_WRONLY, 0644);
 		if (node->outfile == -1)
 			return (false);
 	}
 	else if (array && len - 2 >= 0 && *array[len - 2] == '>')
 	{
-		node->outfile = open(array[len - 1], O_CREAT | O_TRUNC | O_WRONLY, 0644);
+		node->outfile = open(array[len - 1], 1, 1);
+//		node->outfile = open(array[len - 1], O_CREAT | O_TRUNC | O_WRONLY, 0644);
 		if (node->outfile == -1)
 			return (false);
 	}
