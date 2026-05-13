@@ -1,4 +1,4 @@
-#include "../include/malloc.h"
+#include "malloc.h"
 
 // Remove a block form the LARGE zone list and return mamory to the OS.
 // 1. Unlinks the block from the global double-linked list

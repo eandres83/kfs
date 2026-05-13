@@ -4,7 +4,7 @@ size_t	strrchr(const char *str, char c)
 {
 	size_t	len;
 
-	len = kstrlen(str) + 1;
+	len = strlen(str) + 1;
 	while (len--)
 	{
 		if (*(str + len) == (char)c)

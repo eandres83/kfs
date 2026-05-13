@@ -3,8 +3,8 @@
 static char **free_error(char **str)
 {
 	for (size_t i = 0; str[i]; i++)
-		kfree(str[i]);
-	kfree(str);
+		free(str[i]);
+	free(str);
 	return (NULL);
 }
 
@@ -62,7 +62,7 @@ char **split(const char *s, char c)
 	if (!s)
 		return (NULL);
 	number_words = nb_words(s, c);
-	tab = (char **)kmalloc(sizeof(char *) * (number_words + 1));
+	tab = (char **)malloc(sizeof(char *) * (number_words + 1));
 	if (!tab)
 		return (NULL);
 	i = 0;
@@ -71,10 +71,10 @@ char **split(const char *s, char c)
 	while (i < number_words)
 	{
 		get_next_word(&next_word, &next_word_len, c);
-		tab[i] = (char*)kmalloc(sizeof(char) * (next_word_len + 1));
+		tab[i] = (char*)malloc(sizeof(char) * (next_word_len + 1));
 		if (!tab[i])
 			return (free_error(tab));
-		kstrlcpy(tab[i], next_word, next_word_len + 1);
+		strlcpy(tab[i], next_word, next_word_len + 1);
 		i++;
 	}
 	tab[i] = NULL;

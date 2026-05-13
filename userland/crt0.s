@@ -3,9 +3,11 @@
 crt0:
 	movl (%esp), %eax
 	leal 4(%esp), %ebx
+	# ebx = esp + 4
 
 	# sintaxis offset(registro_base, registro_indice, multiplicador)
 	leal 8(%esp, %eax, 4), %ecx
+	# ecx = (%eax + %esp * 4) + 8
 
 	pushl %ecx
 	pushl %ebx
@@ -16,3 +18,4 @@ crt0:
 	movl %eax, %ebx
 	movl $1, %eax
 	int $0x80 
+

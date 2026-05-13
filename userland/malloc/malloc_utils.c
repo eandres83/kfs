@@ -1,4 +1,4 @@
-#include "../include/malloc.h"
+#include "malloc.h"
 
 // Iterates through the list to find the firts free block that fits the size
 // Return NULL if no suitable block is found
@@ -81,7 +81,7 @@ void	*request_memory(size_t size)
 	void *ptr;
 
 	ptr = mmap(size);
-	if (ptr == -1)
+	if ((int)ptr == -1)
 		return (NULL);
 	return (ptr);
 }

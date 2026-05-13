@@ -8,7 +8,7 @@
 // BLOCK_META_SIZE: Size of t_block struct aligned to 16 bytes
 #define ALIGN(x) (((x) + 15) & ~15)
 #define BLOCK_META_SIZE ALIGN(sizeof(t_block))
-#define PAGE_SIZE getpagesize()
+#define PAGE_SIZE 4096
 
 #include "../minilib.h"
 

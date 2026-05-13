@@ -1,6 +1,6 @@
 #include "../minilib.h"
 
-void	putnbr(long long n, int base)
+void	putnbr(long n, int base)
 {
 	char buffer[32];
 	int i;
@@ -11,7 +11,7 @@ void	putnbr(long long n, int base)
 	is_neg = 0;
 	if (n == 0)
 	{
-		terminal_putchar('0');
+		write(1, "0", 1);
 		return ;
 	}
 	if (n < 0 && base == 10)

@@ -1,6 +1,6 @@
 #include "minilib.h"
 
-ssize_t write(size_t fd, char *str, size_t len)
+ssize_t write(size_t fd, const char *str, size_t len)
 {
 	ssize_t ret;
 	asm volatile("int $0x80" : "=a" (ret) : "a" (4), "b" (fd), "c" (str), "d" (len) : "memory");
@@ -48,9 +48,9 @@ ssize_t signal(uint32_t num, void (*function)())
 	return (ret);
 }
 
-ssize_t	mmap(size_t size)
+void	*mmap(size_t size)
 {
-	ssize_t ret;
+	void *ret;
 	asm volatile("int $0x80" : "=a" (ret) : "a" (90), "b" (size) : "memory");
 	return (ret);
 }
