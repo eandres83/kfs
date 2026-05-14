@@ -1,14 +1,15 @@
 #include "arch/i386/lib/uaccess.h"
 
-ssize_t	open(char *pathname, uint32_t flags)
+ssize_t	open(char *filename, uint32_t flags, uint32_t mode)
 {
+	(void)mode;
 	proc_t *current = get_current_process();
 
 	int fd = fd_allocate(current);
 	if (fd < 0)
 		return (-24);
 
-	struct vfs_node *node = get_vfs_node_path(pathname);
+	struct vfs_node *node = get_vfs_node_path(filename);
 	if (!node)
 	{
 		fd_free(current, fd);
@@ -75,5 +76,13 @@ ssize_t	write(int fd, const char *str, size_t count)
 		return (-1);
 	terminal_write(str, count);
 	return (count);
+}
+
+ssize_t access(char *filename, int mode)
+{
+	(void)filename;
+	(void)mode;
+	kprintf("Hola desde access\n");
+	return (0);
 }
 
