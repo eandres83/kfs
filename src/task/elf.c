@@ -82,7 +82,7 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 		return (-1);
 	// leer el binario y comprobar que es elf valido
 	struct vfs_node *node = get_vfs_node_path(file_path);
-	if (!node)
+	if (node == 0x0)
 		return (-1);
 	char *content = node->ops->read(node);
 	if (!content)

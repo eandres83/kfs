@@ -65,11 +65,11 @@ ssize_t kill(uint32_t pid, uint32_t signal);
 ssize_t signal(uint32_t signum, void (*function));
 ssize_t mmap(ssize_t size);
 ssize_t munmap(void *addr, size_t size);
+char	*getcwd(char *buf, size_t size);
 
 // helper for fs
 proc_t	*get_current_process();
 struct vfs_node *get_current_node();
-char	*get_current_pwd();
 void	set_new_node(struct vfs_node *new_node);
 void	set_new_pwd(char *pwd);
 

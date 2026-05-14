@@ -108,10 +108,10 @@ void create_init_process()
 		return ;
 	current_process = new_proc;
 
-	char *argv[] = {"/home/kfs/test_bin", NULL};
+	char *argv[] = {"/bin/minishell", NULL};
 	char *envp[] = {"", NULL};
 	registers_t regs;
-	int32_t res = execve("/home/kfs/test_bin", argv, envp, &regs);
+	int32_t res = execve("/bin/minishell", argv, envp, &regs);
 	if (res == -1)
 	{
 		kprintf("Fatal error when init_main_process execve, soo bad :(\n");
@@ -334,6 +334,17 @@ ssize_t kill(uint32_t pid, uint32_t signal)
 	return (-1);
 }
 
+char	*getcwd(char *buf, size_t size)
+{
+	char pwd[256] = {0};
+	kstrcpy(pwd, current_process->pwd);
+	kmemset(buf, 0, size);
+	if (kstrlen(pwd) > size)
+		return (NULL);
+	kstrcpy(buf, pwd);
+	return (buf);
+}
+
 ssize_t getuid()
 {
 	return (current_process->uid);
@@ -384,11 +395,6 @@ void	set_current_process()
 struct vfs_node *get_current_node()
 {
 	return (current_process->node);
-}
-
-char *get_current_pwd()
-{
-	return (current_process->pwd);
 }
 
 void set_new_node(struct vfs_node *new_node)

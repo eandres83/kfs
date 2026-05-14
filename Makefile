@@ -1,4 +1,4 @@
-CC = i686-elf-gcc
+export CC = i686-elf-gcc
 AS = i686-elf-as
 LD = i686-elf-ld
 
@@ -6,16 +6,18 @@ INCLUDES = -I include -I src
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs $(INCLUDES)
-USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -fno-builtin -nostdlib -nodefaultlibs -I userland
 
+export USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -fno-builtin -nostdlib -nodefaultlibs -I userland
 LDFLAGS = -T linker.ld
+
+export PROJECT_ROOT := $(CURDIR)
 
 DISK_IMG = disk.img
 FS_DIR = rootfs
 
 NAME = kernel.bin
 
-BUILD_DIR = .obj
+export BUILD_DIR = .obj
 
 SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard src/kernel/*.c) \
 	$(wildcard src/lib/*.c) $(wildcard src/mm/*.c) $(wildcard src/arch/i386/*.c) $(wildcard src/task/*.c) \
@@ -27,11 +29,11 @@ KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \
 	$(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
 
 USER_SRCS_C = $(wildcard userland/libc/*.c) $(wildcard userland/malloc/*.c) $(wildcard userland/*.c)
-USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
-CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
+export USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
+export CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
 
-APPS_SRCS = $(wildcard bin/*.c) $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins/*.c)
-APPS_BINS = $(patsubst bin/%.c, bin/%, $(APPS_SRCS))
+APPS_SRCS = $(wildcard bin/*.c)
+APPS_OBJ = $(patsubst bin/%.c, bin/%, $(APPS_SRCS))
 
 all: $(DISK_IMG) $(NAME)
 
@@ -60,14 +62,16 @@ $(BUILD_DIR)/userland/crt0.o: userland/crt0.s
 	@$(AS) $< -o $@
 
 bin/%: bin/%.c $(CRT0_OBJ) $(USER_OBJS_C)
-	@mkdir -p bin
-	@mkdir -p $(BUILD_DIR)/apps
+	@mkdir -p $(dir $(BUILD_DIR)/apps/$*.o)
 	@echo "Compiling user apps: $*"
 	@$(CC) $(USER_CFLAGS) -c $< -o $(BUILD_DIR)/apps/$*.o
 	@echo "Linking app: $*"
 	@$(LD) -Ttext 0x08048000 -o $@ $(CRT0_OBJ) $(BUILD_DIR)/apps/$*.o $(USER_OBJS_C)
 
-$(DISK_IMG): $(NAME) $(APPS_BINS)
+build_minishell: $(CRT0_OBJ) $(USER_OBJS_C)
+	@$(MAKE) -C bin/minishell
+
+$(DISK_IMG): $(NAME) $(APPS_OBJ) build_minishell
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
@@ -79,7 +83,7 @@ $(DISK_IMG): $(NAME) $(APPS_BINS)
 	@mkdir -p $(FS_DIR)/proc
 	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
 	@mkdir -p $(FS_DIR)/bin
-	@if [ -d bin ] && [ "$$(ls -A bin)" ]; then cp bin/* $(FS_DIR)/bin/; fi
+	@find bin -type f ! -name "*.c" ! -name "*.h" ! -name "Makefile" ! -name "*.o" ! -name "*.s" -exec cp {} $(FS_DIR)/bin/ \;
 	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) part.img
 	@mkdir -p empty_dir
 	@~/genext2fs/genext2fs -N 1024 -b 4096 -d empty_dir part2.img
@@ -97,7 +101,7 @@ $(DISK_IMG): $(NAME) $(APPS_BINS)
 
 clean:
 	@rm -rf $(BUILD_DIR) $(FS_DIR) empty_dir
-	@find bin -type f ! -name '*.c' -delete
+	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' -delete
 
 fclean: clean 
 	rm -f $(NAME) $(DISK_IMG)

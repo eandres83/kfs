@@ -1,7 +1,7 @@
-layout asm
+#layout asm
 layout regs
 
 target remote localhost:1234
-break cat
+break ext2_read
 continue
 
