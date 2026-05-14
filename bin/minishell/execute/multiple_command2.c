@@ -4,7 +4,7 @@ int	create_pipes(int pipefd[2])
 {
 	if (pipe(pipefd) == -1)
 	{
-		perror("Could not create pipe");
+		error(1, "Could not create pipe");
 		return (EXIT_FAILURE);
 	}
 	return (0);
@@ -15,7 +15,7 @@ void	pipe_output(int pipefd[2])
 	close(pipefd[0]);
 	if (dup2(pipefd[1], STDOUT_FILENO) == -1)
 	{
-		perror("Dup2 error: Output redirection failed");
+		error(1, "Dup2 error: Output redirection failed");
 		exit(9);
 	}
 	close(pipefd[1]);
@@ -27,7 +27,7 @@ void	pipe_input(int last_fd)
 	{
 		if (dup2(last_fd, STDIN_FILENO) == -1)
 		{
-			perror("Dup2 error: Input redirection failed");
+			error(1, "Dup2 error: Input redirection failed");
 			exit(9);
 		}
 		close(last_fd);

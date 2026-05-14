@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-void	ft_check_if_builtin(t_mini *node)
+void	check_if_builtin(t_mini *node)
 {
 	if (!strcmp(node->full_cmd[0], "echo"))
 		node->is_builtin = 1;
@@ -28,7 +28,7 @@ static void	check_this(t_mini *node)
 	}
 }
 
-static	char	**ft_get_path_util(t_mini *node, char **paths)
+static	char	**get_path_util(t_mini *node, char **paths)
 {
 	int	i;
 
@@ -49,7 +49,7 @@ static	char	**ft_get_path_util(t_mini *node, char **paths)
 	return (paths);
 }
 
-void	ft_get_path(t_mini *node)
+void	get_path(t_mini *node)
 {
 	char	**paths;
 	char	*temp_path;
@@ -59,10 +59,10 @@ void	ft_get_path(t_mini *node)
 	if (node->is_builtin == 1)
 		return ;
 	paths = NULL;
-	paths = ft_get_path_util(node, paths);
+	paths = get_path_util(node, paths);
 	if (node->full_path != NULL)
 	{
-		ft_free_array(paths);
+		free_array(paths);
 		return ;
 	}
 	i = 0;
@@ -75,19 +75,19 @@ void	ft_get_path(t_mini *node)
 //		{
 //			node->full_path = strdup(valid_path);
 //			free(valid_path);
-//			ft_free_array(paths);
+//			free_array(paths);
 //			return ;
 //		}
 		free(valid_path);
 	}
-	ft_free_array(paths);
+	free_array(paths);
 }
 
-bool	ft_check_redirections_util(t_mini *node, char **array)
+bool	check_redirections_util(t_mini *node, char **array)
 {
 	int	len;
 
-	len = ft_arraylen(array);
+	len = arraylen(array);
 	if (len - 3 >= 0 && *array[len - 3] == '>' && *array[len - 2] == '>')
 	{
 		node->outfile = open(array[len - 1], 1, 1);

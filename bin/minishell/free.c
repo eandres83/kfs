@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-void	ft_free_array(char **array)
+void	free_array(char **array)
 {
 	int	i;
 
@@ -17,27 +17,27 @@ void	ft_free_array(char **array)
 	array = NULL;
 }
 
-void	ft_free_mini(t_mini *freethis)
+void	free_mini(t_mini *freethis)
 {
 	t_mini	*aux;
 
 	while (freethis)
 	{
 		if (freethis->full_cmd)
-			ft_free_array(freethis->full_cmd);
+			free_array(freethis->full_cmd);
 		if (freethis->full_path)
 			free(freethis->full_path);
 		if (freethis->envp)
-			ft_free_array(freethis->envp);
+			free_array(freethis->envp);
 		if (freethis->env_copy)
-			ft_free_array(freethis->env_copy);
+			free_array(freethis->env_copy);
 		aux = freethis;
 		freethis = freethis->next;
 		free(aux);
 	}
 }
 
-void	ft_clean_and_reset(t_mini *mini)
+void	clean_and_reset(t_mini *mini)
 {
 	t_mini	*aux;
 
@@ -49,7 +49,7 @@ void	ft_clean_and_reset(t_mini *mini)
 	if (mini->next != NULL)
 	{
 		aux = mini->next;
-		ft_free_mini(aux);
+		free_mini(aux);
 	}
 	reset_mini_state(mini);
 }

@@ -5,7 +5,8 @@ int	management_exit(t_mini *mini)
 	int	status;
 
 	status = g_exit_status;
-	ft_free_mini(mini);
-	rl_clear_history();
+	free_mini(mini);
 	exit(status);
+	return (status);
 }
+

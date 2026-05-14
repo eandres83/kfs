@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-int	ft_count_quotes(char const *s1)
+int	count_quotes(char const *s1)
 {
 	int		count;
 	int		i;
@@ -26,7 +26,7 @@ int	ft_count_quotes(char const *s1)
 	return (count);
 }
 
-char	*ft_strtrim_quotes(char const *s1, int squote, int dquote)
+char	*strtrim_quotes(char const *s1, int squote, int dquote)
 {
 	int		count;
 	int		i[2];
@@ -34,10 +34,10 @@ char	*ft_strtrim_quotes(char const *s1, int squote, int dquote)
 
 	i[1] = -1;
 	i[0] = 0;
-	count = ft_count_quotes(s1);
+	count = count_quotes(s1);
 	if (!s1 || count == -1)
 		return (NULL);
-	trimmed = malloc(sizeof(char) * (ft_strlen(s1) - count + 1));
+	trimmed = malloc(sizeof(char) * (strlen(s1) - count + 1));
 	if (!trimmed)
 		return (NULL);
 	while (s1[i[0]])
@@ -53,7 +53,7 @@ char	*ft_strtrim_quotes(char const *s1, int squote, int dquote)
 	return (trimmed);
 }
 
-char	ft_quote_context(const char *s, int index)
+char	quote_context(const char *s, int index)
 {
 	char		quote;
 	const char	*aux;
@@ -76,7 +76,7 @@ char	ft_quote_context(const char *s, int index)
 	return (quote);
 }
 
-char	**ft_final_trim(char **array)
+char	**final_trim(char **array)
 {
 	int		i;
 	char	*trimmed;
@@ -87,12 +87,12 @@ char	**ft_final_trim(char **array)
 	i = 0;
 	while (array[i])
 	{
-		len = ft_strlen(array[i]);
+		len = strlen(array[i]);
 		if ((len > 1) && array[i][0] == array[i][len - 1])
 		{
 			if (array[i][0] == '\'' || array[i][0] == '\"')
 			{
-				trimmed = ft_substr(array[i], 1, (len - 2));
+				trimmed = substr(array[i], 1, (len - 2));
 				free(array[i]);
 				array[i] = trimmed;
 			}

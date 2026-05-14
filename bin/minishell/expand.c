@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-char	*ft_expand_path(char *word)
+char	*expand_path(char *word)
 {
 	const char	*home_dir;
 	char		*expanded;
@@ -14,8 +14,8 @@ char	*ft_expand_path(char *word)
 	expanded = malloc(strlen(home_dir) + strlen(word));
 	if (!expanded)
 		return (NULL);
-	ft_strlcpy(expanded, home_dir, (ft_strlen(home_dir) + 1));
-	ft_strlcat(expanded, word + 1, (ft_strlen(expanded) + ft_strlen(word)));
+	strlcpy(expanded, home_dir, (strlen(home_dir) + 1));
+	strlcat(expanded, word + 1, (strlen(expanded) + strlen(word)));
 	return (expanded);
 }
 
@@ -24,11 +24,11 @@ static char	*get_env_value(t_mini *mini, const char *name)
 	int	i;
 	int	len;
 
-	len = ft_strlen(name);
+	len = strlen(name);
 	i = 0;
 	while (mini->env_copy[i])
 	{
-		if (ft_strncmp(mini->env_copy[i], name, len) == 0
+		if (strncmp(mini->env_copy[i], name, len) == 0
 			&& mini->env_copy[i][len] == '=')
 		{
 			return (mini->env_copy[i] + len + 1);
@@ -38,7 +38,7 @@ static char	*get_env_value(t_mini *mini, const char *name)
 	return (NULL);
 }
 
-char	*ft_expand_variable(t_mini *mini, char *word, int index)
+char	*expand_variable(t_mini *mini, char *word, int index)
 {
 	char	*var_name;
 	int	name_len;
@@ -46,34 +46,34 @@ char	*ft_expand_variable(t_mini *mini, char *word, int index)
 	char	*expanded;
 	char	*temp_exp;
 
-	if (ft_strncmp("$?", word, 2) == 0)
-		return (ft_itoa(g_exit_status));
-	name_len = ft_get_var_name_len(&word[index + 1]);
-	var_name = ft_substr(&word[index + 1], 0, name_len);
+	if (strncmp("$?", word, 2) == 0)
+		return (itoa(g_exit_status));
+	name_len = get_var_name_len(&word[index + 1]);
+	var_name = substr(&word[index + 1], 0, name_len);
 	var_value = get_env_value(mini, var_name);
 	free(var_name);
 	if (!var_value)
 		var_value = "";
-	expanded = malloc(ft_strlen(var_value) + 1);
+	expanded = malloc(strlen(var_value) + 1);
 	if (!expanded)
 		return (NULL);
-	ft_strlcpy(expanded, var_value, (ft_strlen(var_value) + 1));
+	strlcpy(expanded, var_value, (strlen(var_value) + 1));
 	if (word[index + name_len + 1] != '\0')
 	{
 		var_value = &word[index + name_len + 1];
 		temp_exp = expanded;
-		expanded = ft_strjoin(temp_exp, var_value);
+		expanded = strjoin(temp_exp, var_value);
 		free(temp_exp);
 	}
 	return (expanded);
 }
 
-int	ft_get_var_name_len(const char *var_name)
+int	get_var_name_len(const char *var_name)
 {
 	int	len;
 
 	len = 0;
-	while (*var_name && (ft_isalnum(*var_name) || *var_name == '_'))
+	while (*var_name && (isalnum(*var_name) || *var_name == '_'))
 	{
 		len++;
 		var_name++;
@@ -81,7 +81,7 @@ int	ft_get_var_name_len(const char *var_name)
 	return (len);
 }
 
-char	**ft_expand(t_mini *mini, char **temp)
+char	**expand(t_mini *mini, char **temp)
 {
 	int	i;
 	int	j;
@@ -96,14 +96,14 @@ char	**ft_expand(t_mini *mini, char **temp)
 		while (temp[i][++j])
 		{
 			if (temp[i][0] == '~')
-				temp[i] = ft_expand_path(temp[i]);
-			else if (temp[i][j] == '$' && ft_quote_context(temp[i], j) != '\'')
+				temp[i] = expand_path(temp[i]);
+			else if (temp[i][j] == '$' && quote_context(temp[i], j) != '\'')
 			{
-				prefix = ft_substr(temp[i], 0, j);
-				aux = ft_expand_variable(mini, temp[i], j);
+				prefix = substr(temp[i], 0, j);
+				aux = expand_variable(mini, temp[i], j);
 				if (aux == NULL)
-					aux = ft_strdup("");
-				new_str = ft_strjoin(prefix, aux);
+					aux = strdup("");
+				new_str = strjoin(prefix, aux);
 				free(temp[i]);
 				temp[i] = new_str;
 				free(aux);

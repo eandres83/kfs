@@ -2,12 +2,12 @@
 
 void	h_m_c(int pipefd[2], int last_fd, t_mini *mini, t_mini *next_cmd)
 {
-	pid_t	pid;
+	ssize_t	pid;
 
 	pid = fork();
 	if (pid == -1)
 	{
-		perror("fork");
+		error(1, "fork");
 		exit(EXIT_FAILURE);
 	}
 	if (pid == 0)
@@ -28,9 +28,9 @@ void	h_m_c(int pipefd[2], int last_fd, t_mini *mini, t_mini *next_cmd)
 
 void	execute_multiples_command(t_mini *mini)
 {
-	int		last_fd;
-	int		pipefd[2];
-	int		status;
+	int	last_fd;
+	int	pipefd[2];
+	int	status;
 	t_mini	*current;
 
 	last_fd = STDIN_FILENO;
@@ -39,7 +39,8 @@ void	execute_multiples_command(t_mini *mini)
 	{
 		if (current->next)
 		{
-			waitpid(mini->pid, &status, 0);
+//			waitpid(mini->pid, &status, 0);
+			wait(&status);
 			if (create_pipes(pipefd) == -1)
 				return ;
 		}
@@ -49,7 +50,7 @@ void	execute_multiples_command(t_mini *mini)
 			last_fd = pipefd[0];
 		current = current->next;
 	}
-	while (waitpid(-1, &status, 0) > 0)
+	while (wait(&status) > 0)
 		update_exit_status(status);
 }
 
@@ -74,7 +75,7 @@ void	reset_mini_state(t_mini *mini)
 	}
 	if (mini->full_cmd)
 	{
-		ft_free_array(mini->full_cmd);
+		free_array(mini->full_cmd);
 		mini->full_cmd = NULL;
 	}
 }

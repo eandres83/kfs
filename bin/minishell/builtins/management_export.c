@@ -5,10 +5,10 @@ static	char	*create_env_var(const char *name, const char *value)
 	char	*temp;
 	char	*result;
 
-	temp = ft_strjoin(name, "=");
+	temp = strjoin(name, "=");
 	if (!temp)
 		return (NULL);
-	result = ft_strjoin(temp, value);
+	result = strjoin(temp, value);
 	free(temp);
 	return (result);
 }
@@ -19,10 +19,10 @@ static	int	find_env_var(char **env_copy, const char *name)
 	int	len;
 
 	i = 0;
-	len = ft_strlen(name);
+	len = strlen(name);
 	while (env_copy[i])
 	{
-		if (ft_strncmp(env_copy[i], name, len) == 0 && env_copy[i][len] == '=')
+		if (strncmp(env_copy[i], name, len) == 0 && env_copy[i][len] == '=')
 			return (i);
 		i++;
 	}
@@ -42,15 +42,15 @@ static	int	add_new_env_var(t_mini *mini, const char *new_var)
 		return (1);
 	i = -1;
 	while (mini->env_copy[++i])
-		new_env_copy[i] = ft_strdup(mini->env_copy[i]);
-	new_env_copy[i] = ft_strdup(new_var);
+		new_env_copy[i] = strdup(mini->env_copy[i]);
+	new_env_copy[i] = strdup(new_var);
 	if (!new_env_copy[i])
 	{
 		free(new_env_copy);
 		return (1);
 	}
 	new_env_copy[i + 1] = NULL;
-	ft_free_array(mini->env_copy);
+	free_array(mini->env_copy);
 	mini->env_copy = NULL;
 	mini->env_copy = new_env_copy;
 	return (0);
@@ -71,7 +71,7 @@ int	set_env_var(t_mini *mini, const char *name, const char *value)
 	{
 		free(mini->env_copy[index]);
 		mini->env_copy[index] = NULL;
-		mini->env_copy[index] = ft_strdup(new_var);
+		mini->env_copy[index] = strdup(new_var);
 	}
 	else
 	{
@@ -90,8 +90,8 @@ int	management_export(t_mini *mini)
 	char	*value;
 
 	if ((is_valid(mini->full_cmd[1]) == -1) || !mini->env_copy)
-		return (ft_putstr_fd("Invalid env name or value\n", 2), 1);
-	value = ft_strchr(mini->full_cmd[1], '=');
+		return (error(1, "Invalid env name or value\n"), 1);
+	value = strchr(mini->full_cmd[1], '=');
 	if (value)
 	{
 		*value = '\0';

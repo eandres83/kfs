@@ -39,8 +39,8 @@ void	execute_external_command(t_mini *mini)
 
 void	execute_one_command(t_mini *mini)
 {
-	pid_t	pid;
-	int		status;
+	ssize_t	pid;
+	int	status;
 
 	pid = fork();
 	if (pid == -1)
@@ -60,7 +60,8 @@ void	execute_one_command(t_mini *mini)
 			close(mini->infile);
 		if (mini->outfile != STDOUT_FILENO)
 			close(mini->outfile);
-		waitpid(pid, &status, 0);
+//		waitpid(pid, &status, 0);
+		wait(&status);
 		update_exit_status(status);
 	}
 }

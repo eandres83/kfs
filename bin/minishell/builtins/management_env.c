@@ -12,7 +12,7 @@ int	management_env(t_mini *mini)
 	}
 	while (mini->env_copy[i])
 	{
-		write(STDOUT_FILENO, mini->env_copy[i], ft_strlen(mini->env_copy[i]));
+		write(STDOUT_FILENO, mini->env_copy[i], strlen(mini->env_copy[i]));
 		write(STDOUT_FILENO, "\n", 1);
 		i++;
 	}

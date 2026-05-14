@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-static size_t	ft_handle_quotes(const char *s, size_t i, char quote)
+static size_t	handle_quotes(const char *s, size_t i, char quote)
 {
 	i++;
 	while (s[i] && s[i] != quote)
@@ -11,7 +11,7 @@ static size_t	ft_handle_quotes(const char *s, size_t i, char quote)
 		return (i);
 }
 
-static size_t	ft_nb_words(char const *s, char c)
+static size_t	nb_words(char const *s, char c)
 {
 	size_t	i;
 	size_t	nb_words;
@@ -25,7 +25,7 @@ static size_t	ft_nb_words(char const *s, char c)
 	while (s[i])
 	{
 		if (s[i] == '\'' || s[i] == '\"')
-			i = ft_handle_quotes(s, i, s[i]);
+			i = handle_quotes(s, i, s[i]);
 		else if (s[i] == c)
 		{
 			nb_words++;
@@ -40,7 +40,7 @@ static size_t	ft_nb_words(char const *s, char c)
 	return (nb_words);
 }
 
-static void	ft_get_next_word(char **next_word, size_t *next_word_len, char c)
+static void	get_next_word(char **next_word, size_t *next_word_len, char c)
 {
 	size_t	i;
 	char	quote;
@@ -69,7 +69,7 @@ static void	ft_get_next_word(char **next_word, size_t *next_word_len, char c)
 	*next_word_len = i;
 }
 
-char	**ft_split_prompt(char const *s, char c)
+char	**split_prompt(char const *s, char c)
 {
 	char	**array;
 	char	*next_word;
@@ -78,19 +78,19 @@ char	**ft_split_prompt(char const *s, char c)
 
 	if (!s)
 		return (NULL);
-	array = (char **)malloc(sizeof(char *) * (ft_nb_words(s, c) + 1));
+	array = (char **)malloc(sizeof(char *) * (nb_words(s, c) + 1));
 	if (!array)
 		return (NULL);
 	i = 0;
 	next_word = (char *)s;
 	next_word_len = 0;
-	while (i < ft_nb_words(s, c))
+	while (i < nb_words(s, c))
 	{
-		ft_get_next_word(&next_word, &next_word_len, c);
+		get_next_word(&next_word, &next_word_len, c);
 		array[i] = (char *)malloc(sizeof(char) * (next_word_len + 1));
 		if (!array[i])
 			return (NULL);
-		ft_strlcpy(array[i], next_word, next_word_len + 1);
+		strlcpy(array[i], next_word, next_word_len + 1);
 		i++;
 	}
 	array[i] = NULL;

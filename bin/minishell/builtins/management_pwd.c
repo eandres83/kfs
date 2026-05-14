@@ -7,13 +7,13 @@ int	management_pwd(t_mini *mini)
 	(void)mini;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 	{
-		write(STDOUT_FILENO, &cwd, ft_strlen(cwd));
+		write(STDOUT_FILENO, cwd, strlen(cwd));
 		write(STDOUT_FILENO, "\n", 1);
 		g_exit_status = 0;
 	}
 	else
 	{
-		perror("Error: pwd");
+		error(1, "Error: pwd");
 		g_exit_status = 1;
 	}
 	return (g_exit_status);
@@ -31,5 +31,5 @@ void	update_pwd(t_mini *mini)
 		mini->full_path = strdup(new_path);
 	}
 	else
-		perror("Error: pwd");
+		error(1, "Error: pwd");
 }

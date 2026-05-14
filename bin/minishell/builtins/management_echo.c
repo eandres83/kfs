@@ -9,14 +9,14 @@ int	management_echo(t_mini *mini)
 	parameter = 1;
 	if (!mini->full_cmd[i])
 		return (g_exit_status = 0);
-	if (mini->full_cmd[i] && ft_strncmp(mini->full_cmd[i], "-n", 2) == 0)
+	if (mini->full_cmd[i] && strncmp(mini->full_cmd[i], "-n", 2) == 0)
 	{
 		parameter = 0;
 		i++;
 	}
 	while (mini->full_cmd[i])
 	{
-		write(STDOUT_FILENO, mini->full_cmd[i], ft_strlen(mini->full_cmd[i]));
+		write(STDOUT_FILENO, mini->full_cmd[i], strlen(mini->full_cmd[i]));
 		if (mini->full_cmd[i + 1] != NULL)
 			write(STDOUT_FILENO, " ", 1);
 		i++;

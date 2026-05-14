@@ -9,7 +9,7 @@ static	int	find_and_remove_var(char **env, const char *var_name)
 	len = count_val(var_name);
 	while (env[++j])
 	{
-		if (ft_strncmp(var_name, env[j], len) == 0 && env[j][len] == '=')
+		if (strncmp(var_name, env[j], len) == 0 && env[j][len] == '=')
 		{
 			while (env[j])
 			{
@@ -65,7 +65,7 @@ char	**create_env_copy(char **env)
 		return (NULL);
 	while (i < len)
 	{
-		env_copy[i] = ft_strdup(env[i]);
+		env_copy[i] = strdup(env[i]);
 		if (!env_copy[i])
 		{
 			while (i > 0)
@@ -87,7 +87,7 @@ int	management_unset(t_mini *mini)
 	if (!mini->env_copy || (is_valid(mini->full_cmd[1]) == 0))
 	{
 		g_exit_status = 1;
-		ft_putstr_fd("Unset: Invalid parameter name\n", 2);
+		error(1, "Unset: Invalid parameter name\n");
 		return (g_exit_status);
 	}
 	while (mini->full_cmd[i])
@@ -95,7 +95,7 @@ int	management_unset(t_mini *mini)
 		if (!find_and_remove_var(mini->env_copy, mini->full_cmd[i]))
 		{
 			g_exit_status = 1;
-			ft_putstr_fd("Unset: Variable not found\n", 2);
+			error(1, "Unset: Variable not found\n");
 			return (g_exit_status);
 		}
 		i++;

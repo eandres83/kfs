@@ -5,11 +5,11 @@ static char	*get_env_value(char **envp, char *var_name)
 	int	i;
 	int	len;
 
-	len = ft_strlen(var_name);
+	len = strlen(var_name);
 	i = 0;
 	while (envp[i])
 	{
-		if (ft_strncmp(envp[i], var_name, len) == 0 && envp[i][len] == '=')
+		if (strncmp(envp[i], var_name, len) == 0 && envp[i][len] == '=')
 			return (&envp[i][len + 1]);
 		i++;
 	}
@@ -22,15 +22,15 @@ static void	update_env_variable(char **envp, char *var_name, char *new_value)
 	int		len;
 	char	*new_entry;
 
-	len = ft_strlen(var_name);
+	len = strlen(var_name);
 	i = 0;
 	while (envp[i])
 	{
-		if (ft_strncmp(envp[i], var_name, len) == 0 && envp[i][len] == '=')
+		if (strncmp(envp[i], var_name, len) == 0 && envp[i][len] == '=')
 		{
 			free(envp[i]);
-			new_entry = ft_strjoin(var_name, "=");
-			envp[i] = ft_strjoin(new_entry, new_value);
+			new_entry = strjoin(var_name, "=");
+			envp[i] = strjoin(new_entry, new_value);
 			free(new_entry);
 			return ;
 		}
@@ -64,14 +64,15 @@ int	management_cd(t_mini *mini)
 	target_dir = get_target_dir(mini);
 	if (!target_dir)
 	{
-		perror("Error: cd");
-		return (1);
+		error(1, "Error: cd");
+		return (EXIT_FAILURE);
 	}
-	if (chdir(target_dir) == -1)
-	{
-		perror("Error: cd");
-		return (1);
-	}
+	// TODO: implementar chdir de verdad como en command.c
+//	if (chdir(target_dir) == -1)
+//	{
+//		error(1, "Error: cd");
+//		return (EXIT_FAILURE);
+//	}
 	update_pwd_variables(oldpwd, mini);
 	return (0);
 }
