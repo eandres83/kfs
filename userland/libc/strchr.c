@@ -1,6 +1,6 @@
 #include "../minilib.h"
 
-size_t	strchr(const char *str, char c)
+char	*strchr(const char *str, char c)
 {
 	size_t len;
 
@@ -8,9 +8,9 @@ size_t	strchr(const char *str, char c)
 	while (str[len] != '\0')
 	{
 		if (str[len] == c)
-			return (len);
+			return ((char*)&str[len]);
 		len++;
 	}
-	return (-1);
+	return (0);
 }
 

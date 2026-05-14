@@ -1,6 +1,6 @@
-.global crt0
+.global _start
 
-crt0:
+_start:
 	movl (%esp), %eax
 	leal 4(%esp), %ebx
 	# ebx = esp + 4
