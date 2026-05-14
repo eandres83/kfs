@@ -80,7 +80,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_timer(1000);
 
 	init_vfs();
-	set_current_process();
+//	set_current_process();
 
 	kprintf("LOGIN> ");
 
