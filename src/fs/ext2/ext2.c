@@ -160,6 +160,8 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 
 	// create dir_entry
 	struct ext2_inode *inode = read_inode(fs_info, node->inode);
+	if (!inode)
+		return (0);
 
 	struct ext2_dir_entry *dir_entry = NULL;
 	uint32_t last_block_indx = (inode->lower_size / fs_info->size_block);
@@ -198,10 +200,14 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	return (inode->lower_size);
 }
 
+// Doubly and Triply indirect block pointers are intentionally NOT implemented
+// Total supported file size ceiling: ~268 KB
 char *ext2_read(struct vfs_node *dir_node)
 {
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
+	if (!inode)
+		return (NULL);
 
 	uint32_t nb_block = inode->lower_size / fs_info->size_block;
 	if ((inode->lower_size % fs_info->size_block) > 0)
@@ -211,22 +217,45 @@ char *ext2_read(struct vfs_node *dir_node)
 		return (kfree(inode), NULL);
 	buffer[inode->lower_size] = '\0';
 	uint32_t bytes_read = 0;
-	for (int i = 0; i < (int)nb_block; i++)
+	uint32_t *indirect_block_cache = NULL;
+	uint32_t pointer_per_block = fs_info->size_block / 4;
+	for (uint32_t i = 0; i < nb_block; i++)
 	{
-		char *buf = ext2_read_block(inode->direct_block[i], fs_info);
-		uint32_t to_read = inode->lower_size - (i * 4096);
-		if (to_read >= 4096)
+		char *buf = NULL;
+		if (i < 12)
+			buf = ext2_read_block(inode->direct_block[i], fs_info);
+		else if (i >= 12 && i < (12 + pointer_per_block))
 		{
-			kmemcpy(&buffer[4096 * i], buf, 4096);
-			bytes_read += 4096;
+			if (indirect_block_cache == NULL)
+			{
+				indirect_block_cache = (uint32_t*)ext2_read_block(inode->singly_indirect_block, fs_info);
+				if (!indirect_block_cache)
+					return (kfree(buffer), kfree(inode), NULL);
+			}
+			uint32_t real_data_lba = indirect_block_cache[i - 12];
+			buf = ext2_read_block(real_data_lba, fs_info);
+		}
+		if (!buf)
+		{
+			if (indirect_block_cache)
+				kfree(indirect_block_cache);
+			return (kfree(buffer), kfree(inode), NULL);
+		}
+		uint32_t to_read = inode->lower_size - (i * fs_info->size_block);
+		if (to_read >= fs_info->size_block)
+		{
+			kmemcpy(&buffer[fs_info->size_block * i], buf, fs_info->size_block);
+			bytes_read += fs_info->size_block;
 		}
 		else
 		{
-			kmemcpy(&buffer[4096 * i], buf, to_read);
+			kmemcpy(&buffer[fs_info->size_block * i], buf, to_read);
 			bytes_read += to_read;
 		}
 		kfree(buf);
 	}
+	if (indirect_block_cache)
+		kfree(indirect_block_cache);
 	kfree(inode);
 	return (buffer);
 }
@@ -243,6 +272,8 @@ static	struct vfs_node *create_node(struct vfs_node *dir_node, struct ext2_dir_e
 
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *child_inode = read_inode(fs_info, dir_entry->inode);
+	if (!child_inode)
+		return (NULL);
 
 	if ((child_inode->type_permisi & 0xF000) == 0x4000)
 		new_node->type = VFS_DIRECTORY;
@@ -280,6 +311,8 @@ struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name)
 {
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
+	if (!inode)
+		return (NULL);
 
 	uint32_t nb_block = inode->lower_size / fs_info->size_block;
 	for (int i = 0; i < (int)nb_block; i++)
@@ -320,6 +353,8 @@ void ext2_readdir(struct vfs_node *dir_node)
 {
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)dir_node->fs_info;
 	struct ext2_inode *inode = read_inode(fs_info, dir_node->inode);
+	if (!inode)
+		return ;
 
 	uint32_t nb_block = inode->lower_size / fs_info->size_block;
 	for (int i = 0; i < (int)nb_block; i++)

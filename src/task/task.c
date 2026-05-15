@@ -143,7 +143,7 @@ void yield()
 void kill_process(char *motivo)
 {
 	
-	kprintf("\n[Kernel] Porceso PID %d asesinado por exception: %s \n",
+	kprintf("[Kernel] Porceso PID %d asesinado por exception: %s \n",
 		current_process->pid, motivo);
 	kill(current_process->pid, 9);
 	exit_process(139);

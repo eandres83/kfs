@@ -106,6 +106,22 @@ void	init_idt()
 	register_interrupt_handler(128, &syscall_callback);
 }
 
+static void	print_regs(registers_t *regs)
+{
+	terminal_setcolor(VGA_COLOR_LIGHT_RED);
+	kprintf("\n");
+	if (regs->int_no == 14)
+	{
+		uint32_t faulting_address;
+		__asm__ volatile ("mov %%cr2, %0" : "=r" (faulting_address));
+		kprintf("Page Fault Linear Address(cr2) value -> %x\n", faulting_address);
+	}
+	kprintf("EAX: 0x%x, ECX: 0x%x, EDX: 0x%x, EBX: 0x%x\n", regs->eax, regs->ecx, regs->edx, regs->ebx);
+	kprintf("ESP: 0x%x, EBP: 0x%x, ESI: 0x%x, EDI: 0x%x\n", regs->esp, regs->ebp, regs->esi, regs->edi);
+	kprintf("EIP: 0x%x, CS: 0x%x, EFLAGS: 0x%x, err_code: %d\n", regs->eip, regs->cs, regs->eflags, regs->err_code);
+	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
+}
+
 void	isr_handler(registers_t *regs)
 {
 	if (interrupts[regs->int_no] != NULL)
@@ -117,18 +133,15 @@ void	isr_handler(registers_t *regs)
 
 	if ((regs->cs & 3) == 3)
 	{
+		print_regs(regs);
 		char *motivo = "Unknown Exception";
 		if (regs->int_no < 22)
 			motivo = error_msg[regs->int_no];
 		kill_process(motivo);
 		return ;
 	}
-
 	terminal_initialize();
-
-	kprintf("EAX: 0x%x, ECX: 0x%x, EDX: 0x%x, EBX: 0x%x\n", regs->eax, regs->ecx, regs->edx, regs->ebx);
-	kprintf("ESP: 0x%x, EBP: 0x%x, ESI: 0x%x, EDI: 0x%x\n", regs->esp, regs->ebp, regs->esi, regs->edi);
-	kprintf("EIP: 0x%x, CS: 0x%x, EFLAGS: 0x%x, err_code: %d\n", regs->eip, regs->cs, regs->eflags, regs->err_code);
+	print_regs(regs);
 
 	if (regs->int_no < 21 && error_msg[regs->int_no] != NULL)
 		PANIC(error_msg[regs->int_no]);
@@ -146,7 +159,6 @@ void	irq_handler(registers_t *regs)
 	}
 	// send reset signal to master
 	outb(0x20, 0x20);
-
 	if (interrupts[regs->int_no] != 0)
 	{
 		isr_t action = interrupts[regs->int_no];

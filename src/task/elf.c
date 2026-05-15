@@ -61,6 +61,7 @@ static char *make_stack(char **envp, char **argv)
 
 	user_stack -= 4;
 	*(uint32_t*)user_stack = 0; // NULL de envp
+	// aqui hacer bucle para meter env
 	user_stack -= 4;
 	*(uint32_t*)user_stack = 0; // NULl de argv
 
@@ -123,10 +124,14 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 //			kprintf("Segmento %d: memsz -> %x, pide -> %d paginas\n", i, program->p_memsz, nb_page);
 			for (uint32_t j = 0; j < nb_page; j++)
 			{
-				void *phys = pmm_map_page();
-				if (!phys)
-					return (double_free(argv), double_free(envp), kfree(content), -1);
-				vmm_map_page(phys, (void*)(start_page + (j * 4096)), true);
+				void *virt_addr = (void*)(start_page + (j * 4096));
+				if (check_addr((uint32_t)virt_addr) == false)
+				{
+					void *phys = pmm_map_page();
+					if (!phys)
+						return (double_free(argv), double_free(envp), kfree(content), -1);
+					vmm_map_page(phys, virt_addr, true);
+				}
 			}
 			if (program->p_filesz > 0)
 				kmemcpy((void*)program->p_vaddr, (void*)((char*)content + program->p_offset), program->p_filesz);
@@ -139,6 +144,7 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 
 	regs->useresp = (uint32_t)user_stack;
 	regs->eip = elf->e_entry;
+	kprintf("La direccion del entry_point -> %x\n", elf->e_entry);
 
 	if (old_pd != NULL)
 		free_page_directory(old_pd);
