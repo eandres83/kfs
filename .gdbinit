@@ -2,6 +2,6 @@
 layout regs
 
 target remote localhost:1234
-break ext2_read
+break create_init_process
 continue
 

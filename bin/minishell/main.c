@@ -1,31 +1,31 @@
 #include "minishell.h"
 
-char	*get_name(char **env)
-{
-	char	*user;
-	char	*prompt;
-	int		i;
-
-	i = 0;
-	user = NULL;
-	if (!env)
-		return (strdup("minishell $ "));
-	while (env[i])
-	{
-		if (strncmp("USER=", env[i], 5) == 0)
-		{
-			user = strjoin(PURPLEB, env[i] + 5);
-			break ;
-		}
-		i++;
-	}
-	if (!user)
-		user = strjoin(PURPLEB, "unknown");
-	prompt = strjoin(user, BLUEB"@minishell $ "X);
-	free(user);
-	return (prompt);
-}
-
+//char	*get_name(char **env)
+//{
+//	char	*user;
+//	char	*prompt;
+//	int		i;
+//
+//	i = 0;
+//	user = NULL;
+//	if (!env)
+//		return (strdup("minishell $ "));
+//	while (env[i])
+//	{
+//		if (strncmp("USER=", env[i], 5) == 0)
+//		{
+//			user = strjoin(PURPLEB, env[i] + 5);
+//			break ;
+//		}
+//		i++;
+//	}
+//	if (!user)
+//		user = strjoin(PURPLEB, "unknown");
+//	prompt = strjoin(user, BLUEB"@minishell $ "X);
+//	free(user);
+//	return (prompt);
+//}
+//
 //static	void	util_main(t_mini *mini, char *line, char **env)
 //{
 //	if (line[0] == ' ' || line[0] == '\0')
@@ -77,7 +77,7 @@ char	*get_name(char **env)
 
 int main()
 {
-	printf("Esta puta va ?\n");
+	write(1, "HOLA!", 5);
 	return (0);
 }
 
@@ -107,4 +107,4 @@ int main()
 //	free_mini(mini);
 //	return (0);
 //}
-
+//

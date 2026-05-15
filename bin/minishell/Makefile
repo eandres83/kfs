@@ -11,12 +11,14 @@ MINISHELL_OBJS = $(SRCS:/%.c=$(OBJECTS_DIR)/%.o)
 ABS_USER_OBJS = $(addprefix $(PROJECT_ROOT)/, $(USER_OBJS_C))
 ABS_CRT0 = $(PROJECT_ROOT)/$(CRT0_OBJ)
 
+LINKER_USER = -T $(PROJECT_ROOT)/userland/userland.ld
+
 # Default target
 all: $(NAME)
 
 # Link the final executable
 $(NAME): $(MINISHELL_OBJS)
-	@$(CC) $(USER_CFLAGS) $(MINISHELL_OBJS) $(ABS_USER_OBJS) $(ABS_CRT0) -o $(NAME)
+	@$(CC) $(LINKER_USER) $(USER_CFLAGS) $(MINISHELL_OBJS) $(ABS_USER_OBJS) $(ABS_CRT0) -o $(NAME)
 	@echo "-> Compilation completed: $(NAME)"
 
 # Build object files
