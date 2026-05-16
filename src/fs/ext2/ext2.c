@@ -3,7 +3,7 @@
 struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name);
 void	ext2_readdir(struct vfs_node *dir_node);
 char	*ext2_read(struct vfs_node *dir_node);
-size_t 	ext2_write(struct vfs_node *node, char *str, char *name);
+size_t 	ext2_write(struct vfs_node *node, char *str, size_t len);
 ssize_t ext2_open(struct vfs_node *node, uint32_t flags);
 size_t	ext2_close(struct vfs_node *node);
 
@@ -120,14 +120,75 @@ size_t	ext2_close(struct vfs_node *node)
 	return (0);
 }
 
-size_t ext2_write(struct vfs_node *node, char *str, char *name)
+size_t ext2_write(struct vfs_node *node, char *str, size_t len)
 {
+	struct ext2_fs_info *fs_info = (struct ext2_fs_info *)node->fs_info;
+	struct ext2_inode *inode = read_inode(fs_info, node->inode);
+	if (!inode)
+		return (1);
+
+	size_t bytes_written = 0;
+	while (bytes_written < len)
+	{
+		uint32_t current_size = inode->lower_size + bytes_written;
+		uint32_t block_index = current_size / fs_info->size_block;
+		uint32_t offset_in_block = current_size % fs_info->size_block;
+
+		if (block_index >= 12)
+		{
+			kprintf("Error: file to large :(\n");
+			break;
+		}
+		if (inode->direct_block[block_index] == 0)
+		{
+			inode->direct_block[block_index] = find_block(fs_info, fs_info->bgdt->addr_inode_bitmap);
+			if (inode->direct_block[block_index] == 0)
+			{
+				kprintf("Error: cannot find a free block\n");
+				break;
+			}
+		}
+		char *buffer = ext2_read_block(inode->direct_block[block_index], fs_info);
+		if (!buffer)
+			break;
+		uint32_t space_in_block = fs_info->size_block - offset_in_block;
+		uint32_t chunk_size = (len - bytes_written < space_in_block);
+		kmemcpy(buffer + offset_in_block, str + bytes_written, chunk_size);
+		ext2_write_block(inode->direct_block[block_index], fs_info, buffer);
+		kfree(buffer);
+		bytes_written += chunk_size;
+	}
+	if (bytes_written > 0)
+	{
+		inode->lower_size += bytes_written;
+		uint32_t inode_index = node->inode -1;
+		uint32_t offset_bytes = inode_index * fs_info->sb->inode_size;
+		uint32_t block_offset = offset_bytes / fs_info->size_block;
+		uint32_t internal_offset = offset_bytes % fs_info->size_block;
+		uint32_t table_lba = fs_info->bgdt->addr_inode_table + block_offset;
+		char *table_buffer = ext2_read_block(table_lba, fs_info);
+		if (table_buffer)
+		{
+			kmemcpy(table_buffer + internal_offset, inode, fs_info->sb->inode_size);
+			ext2_write_block(table_lba, fs_info, table_buffer);
+			kfree(table_buffer);
+		}
+		else
+			kprintf("Error: cannot read inode table\n");
+	}
+	kfree(inode);
+	return (bytes_written);
+}
+
+size_t ext2_create(struct vfs_node *node, char *str, char *file, uint32_t rights)
+{
+	(void)rights;
 	struct ext2_fs_info *fs_info = (struct ext2_fs_info *)node->fs_info;
 
 	// write new block
 	uint32_t indx = find_block(fs_info, fs_info->bgdt->addr_block_bitmap);
 	if (indx == 0)
-		return (kprintf("block not found\n"), 0);
+		return (kprintf("block not found\n"), 1);
 	char buf[fs_info->size_block];
 	kmemset(buf, 0, fs_info->size_block);
 	kstrcpy(buf, str);
@@ -136,11 +197,11 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	// create new inode for new block
 	uint32_t indx_inode = find_block(fs_info, fs_info->bgdt->addr_inode_bitmap);
 	if (indx_inode == 0)
-		return (kprintf("block not found\n"), 0);
+		return (kprintf("block not found\n"), 1);
 
 	struct ext2_inode *new_inode = kmalloc(sizeof(struct ext2_inode));
 	if (!new_inode)
-		return (0);
+		return (1);
 	new_inode->direct_block[0] = indx;
 	new_inode->nb_hard_links = 1;
 	new_inode->nb_disk_sector = fs_info->size_block / 512;
@@ -161,7 +222,7 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	// create dir_entry
 	struct ext2_inode *inode = read_inode(fs_info, node->inode);
 	if (!inode)
-		return (0);
+		return (1);
 
 	struct ext2_dir_entry *dir_entry = NULL;
 	uint32_t last_block_indx = (inode->lower_size / fs_info->size_block);
@@ -183,16 +244,16 @@ size_t ext2_write(struct vfs_node *node, char *str, char *name)
 	real_size = ((real_size + 3) / 4) * 4; // round up
 
 	if (fs_info->size_block - bytes_read - real_size < real_size)
-		return (kprintf("Error: no left space\n"), 0);
+		return (kprintf("Error: no left space\n"), 1);
 	uint32_t original_size = dir_entry->entry_size;
 	dir_entry->entry_size = real_size;
 
 	struct ext2_dir_entry *new_dir = (struct ext2_dir_entry*)((char*)dir_entry + real_size);
 	new_dir->entry_size = original_size - real_size;
 	new_dir->inode = indx_inode + 1;
-	new_dir->name_len = kstrlen(name);
+	new_dir->name_len = kstrlen(file);
 	new_dir->type = 1;
-	kmemcpy(new_dir->name, name, new_dir->name_len);
+	kmemcpy(new_dir->name, file, new_dir->name_len);
 
 	ext2_write_block(inode->direct_block[last_block_indx], fs_info, inode_block);
 	kfree(inode_block);

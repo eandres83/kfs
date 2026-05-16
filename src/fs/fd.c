@@ -36,3 +36,27 @@ void	fd_free(proc_t *proc, int fd)
 	proc->fd_table[fd] = NULL;
 }
 
+static struct ops tty_fake_ops = {
+	.read = tty_vfs_read,
+	.write = tty_vfs_write,
+	.open = NULL,
+	.close = NULL,
+	.readdir = NULL,
+	.finddir = NULL,
+};
+
+void	create_init_fd(proc_t *proc)
+{
+	struct file *new_file = kmalloc(sizeof(struct file*));
+	if (!new_file)
+		return ;
+	struct vfs_node *node = kmalloc(sizeof(struct vfs_node*));
+	if (!node)
+		return ;
+	node->ops = &tty_fake_ops;
+	new_file->node = node;
+	proc->fd_table[0] = new_file;
+	proc->fd_table[1] = new_file;
+	proc->fd_table[2] = new_file;
+}
+

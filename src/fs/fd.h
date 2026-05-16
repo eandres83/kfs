@@ -2,6 +2,7 @@
 #define FD_H
 
 #include <utils.h>
+#include "drivers/tty/tty.h"
 
 struct proc;
 
@@ -16,5 +17,6 @@ struct file
 int32_t		fd_allocate(struct proc *proc);
 struct file	*fd_get(struct proc *proc, int fd);
 void		fd_free(struct proc *proc, int fd);
+void		create_init_fd(struct proc *proc);
 
 #endif
