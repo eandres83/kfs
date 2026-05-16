@@ -9,6 +9,7 @@
 #include "fs/vfs/vfs.h"
 #include "task/elf.h"
 #include "fs/fd.h"
+#include "drivers/tty/tty.h"
 
 #define MAX_FD 64
 

@@ -18,7 +18,7 @@ static char **malloc_var(char **str)
 	uint32_t len = 0;
 	while (str[len] != NULL)
 		len++;
-	char **res = (char **)kmalloc(sizeof(char*) * len);
+	char **res = (char **)kmalloc(sizeof(char*) * (len + 1));
 	if (!res)
 		return (NULL);
 	for (int i = 0; i < (int)len; i++)
@@ -34,42 +34,56 @@ static char **malloc_var(char **str)
 
 static char *make_stack(char **envp, char **argv)
 {
-	(void)envp;
 	void *phys = pmm_map_page();
 	void *virt = (void*)0xBFFFF000;
 	vmm_map_page(phys, virt, true);
+	char *user_stack = (char*)virt + 4096;
+
+	uint32_t addr_save_envp[64];
+	uint32_t env_len;
+	for (env_len = 0; envp[env_len] != NULL; env_len++)
+	{
+		size_t len = kstrlen(envp[env_len]) + 1;
+		user_stack = user_stack - len;
+		kstrcpy(user_stack, envp[env_len]);
+		addr_save_envp[env_len] = (uint32_t)user_stack;
+	}
+	uint32_t align = (uint32_t)user_stack % 4;
+	if (align != 0)
+		user_stack -= align;
 
 	int32_t argc = 0;
 	while (argv[argc] != NULL)
 		argc++;
-
-	char *user_stack = (char*)virt + 4096;
-	uint32_t addr_save[64];
-
+	uint32_t addr_save_argv[64];
 	int32_t tmp_argc = argc - 1;
 	while (tmp_argc >= 0)
 	{
 		size_t len_last_argc = kstrlen(argv[tmp_argc]) + 1;
 		user_stack = user_stack - len_last_argc;
 		kstrcpy(user_stack, argv[tmp_argc]);
-		addr_save[tmp_argc] = (uint32_t)user_stack;
+		addr_save_argv[tmp_argc] = (uint32_t)user_stack;
 		tmp_argc--;
 	}
-	uint32_t align = (uint32_t)user_stack % 4;
+	align = (uint32_t)user_stack % 4;
 	if (align != 0)
 		user_stack -= align;
 
 	user_stack -= 4;
 	*(uint32_t*)user_stack = 0; // NULL de envp
 	// aqui hacer bucle para meter env
-	user_stack -= 4;
-	*(uint32_t*)user_stack = 0; // NULl de argv
-
-	// hacer un bucle recorriendo argv y metiendolo en user_stack
-	for (int i = argc - 1; i >= 0; i++)
+	for (int i = env_len - 1; i >= 0; i--)
 	{
 		user_stack -= 4;
-		*(uint32_t*)user_stack = addr_save[i];
+		*(uint32_t*)user_stack = addr_save_envp[i];
+	}
+	user_stack -= 4;
+	*(uint32_t*)user_stack = 0; // NULl de argv
+	// hacer un bucle recorriendo argv y metiendolo en user_stack
+	for (int i = argc - 1; i >= 0; i--)
+	{
+		user_stack -= 4;
+		*(uint32_t*)user_stack = addr_save_argv[i];
 	}
 	// por ultimo meter argc y done
 	user_stack -= 4;
@@ -144,7 +158,16 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 
 	regs->useresp = (uint32_t)user_stack;
 	regs->eip = elf->e_entry;
-	kprintf("La direccion del entry_point -> %x\n", elf->e_entry);
+
+	// --- DEBUG ZONE ---
+//	page_directory *pd = (page_directory*)0xFFFFF000;
+//	pd_entry pde = pd->m_entries[PD_INDEX(elf->e_entry)];
+//
+//	page_table *pt = (page_table*)(0xFFC00000 + (PD_INDEX(elf->e_entry) * 4096));
+//	pt_entry pte = pt->m_entries[PT_INDEX(elf->e_entry)];
+//
+//	kprintf("PDE: %x (Present: %d, User: %d, RW: %d)\n", pde, (pde & PDE_PRESENT) != 0, (pde & PDE_USER) != 0, (pde & PDE_WRITABLE) != 0);
+//	kprintf("PTE: %x (Present: %d, User: %d, RW: %d)\n", pte, (pte & PTE_PRESENT) != 0, (pte & PTE_USER) != 0, (pte & PTE_WRITABLE) != 0);
 
 	if (old_pd != NULL)
 		free_page_directory(old_pd);

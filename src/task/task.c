@@ -109,7 +109,7 @@ void create_init_process()
 	current_process = new_proc;
 
 	char *argv[] = {"/bin/minishell", NULL};
-	char *envp[] = {"", NULL};
+	char *envp[] = {"PATH=/bin", "TERM=linux", "USER=root", NULL};
 	registers_t regs;
 	int32_t res = execve("/bin/minishell", argv, envp, &regs);
 	if (res == -1)
@@ -124,6 +124,7 @@ void create_init_process()
 	new_proc->context->ebx = 0;
 	new_proc->context->ebp = 0;
 
+	create_init_fd(new_proc);
 	new_proc->context->eip = (uint32_t)enter_user_mode;
 	new_proc->user_eip = (char*)regs.eip;
 	new_proc->user_stack = (char*)regs.useresp;

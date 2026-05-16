@@ -61,6 +61,7 @@ struct elf32_phdr
 #define PT_LOPROC	0x70000000	// values in this inclusive range are reserved for processor-specific semantics
 #define PT_HIPROC	0x7fffffff	// same that PT_LOPROC
 
+extern void reload_tlb(void *virt);
 ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t *regs);
 
 #endif 
