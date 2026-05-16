@@ -62,18 +62,17 @@ ssize_t read(int fd, void *buf, size_t count)
 {
 	struct file *filed = fd_get(get_current_process(), fd);
 
+	if (filed == NULL || filed->node == NULL || filed->node->ops->read == NULL)
+		return (-1);
 	char *kbuff = filed->node->ops->read(filed->node);
-	for (size_t i = 0; i < count; i++)
-		kbuff[i] = tty_read_char();
-
 	copy_to_user(kbuff, (char*)buf, count);
-	return (count);
+	kfree(kbuff);
+	return (kstrlen(kbuff));
 }
 
 ssize_t	write(int fd, const char *str, size_t count)
 {
-	if (fd != 1)
-		return (-1);
+	(void)fd;
 	terminal_write(str, count);
 	return (count);
 }

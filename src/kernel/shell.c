@@ -74,7 +74,7 @@ static uint32_t index = 0;
 //		if (node->ops && node->ops->write)
 //		{
 //			size_t ret = node->ops->write(get_current_node(), content, name);
-//			if (ret == 0)
+//			if (ret == 1)
 //				kprintf("Error: cannot write :(\n");
 //		}
 //		else
