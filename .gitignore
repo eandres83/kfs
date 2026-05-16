@@ -11,3 +11,11 @@ disk.img
 *.bin
 .obj
 isodir
+
+bin/*
+!bin/*.c
+!bin/*.h
+!bin/minishell/*.c
+!bin/minishell/*.h
+!bin/minishell/Makefile
+

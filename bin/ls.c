@@ -1,10 +1,8 @@
 #include "../userland/minilib.h"
 
-int main(int argc, char **argv)
+int main()
 {
-	printf("numero de argumentos -> %d\n", argc);
-	printf("el primer argumento -> %s\n", argv[0]);
-
+	write(1, "HOLA", 4);
 	return (0);
 }
 

@@ -28,8 +28,9 @@ void	handle_redirection2(t_mini *mini)
 
 void	execute_external_command(t_mini *mini)
 {
-	if (!mini->full_cmd && !mini->full_cmd[0])
+	if (!mini->full_cmd || !mini->full_cmd[0])
 		exit(1);
+//	mini->full_path = "/bin/ls";
 	if (execve(mini->full_path, mini->full_cmd, mini->env_copy) == -1)
 	{
 		error(127, "Command not found");
