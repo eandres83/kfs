@@ -47,10 +47,10 @@ static struct ops tty_fake_ops = {
 
 void	create_init_fd(proc_t *proc)
 {
-	struct file *new_file = kmalloc(sizeof(struct file*));
+	struct file *new_file = kmalloc(sizeof(struct file));
 	if (!new_file)
 		return ;
-	struct vfs_node *node = kmalloc(sizeof(struct vfs_node*));
+	struct vfs_node *node = kmalloc(sizeof(struct vfs_node));
 	if (!node)
 		return ;
 	node->ops = &tty_fake_ops;

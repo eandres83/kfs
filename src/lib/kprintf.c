@@ -6,6 +6,7 @@ void	kprintf(const char *format, ...)
 	va_list args;
 	va_start(args, format);
 
+	terminal_setcolor(VGA_COLOR_LIGHT_RED);
 	for (int i = 0; format[i] != '\0'; i++)
 	{
 		if (format[i] == '%')
@@ -30,6 +31,7 @@ void	kprintf(const char *format, ...)
 		else
 			terminal_putchar(format[i]);
 	}
+	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 	va_end(args);
 }
 

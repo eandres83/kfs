@@ -14,14 +14,14 @@ char	*get_name(char **env)
 	{
 		if (strncmp("USER=", env[i], 5) == 0)
 		{
-			user = strjoin(PURPLEB, env[i] + 5);
+			user = strdup(env[i] + 5);
 			break ;
 		}
 		i++;
 	}
 	if (!user)
-		user = strjoin(PURPLEB, "unknown");
-	prompt = strjoin(user, BLUEB"@minishell $ "X);
+		user = strdup("unknown");
+	prompt = strjoin(user, "@minishell $ ");
 	free(user);
 	return (prompt);
 }
@@ -58,7 +58,8 @@ static char	*get_one_line(int fd)
 	if (!str)
 		return (NULL);
 	str[0] = 0;
-	while (read(fd, &c, 1) > 0)
+	int ret;
+	while ((ret = read(fd, &c, 1)) > 0)
 	{
 		if (c == '\n')
 			break ;
@@ -74,16 +75,11 @@ static char	*get_one_line(int fd)
 	}
 	return (str);
 }
-//
-//int main()
-//{
-//	write(1, "HOLA!", 5);
-//	return (0);
-//}
-//
+
 int	main(int argc, char **argv, char **env)
 {
 	char	*line;
+	char	*name;
 	t_mini	*mini;
 
 	(void)argv;
@@ -93,15 +89,15 @@ int	main(int argc, char **argv, char **env)
 	mini = initialize_mini_node(env);
 	while (1)
 	{
-//		name = get_name(mini->env_copy);
-//		if (!name)
-//		{
-//			error(1, "Error: Could not get prompt name");
-//			break ;
-//		}
+		name = get_name(mini->env_copy);
+		if (!name)
+		{
+			error(1, "Error: Could not get prompt name");
+			break ;
+		}
+		printf("%s ", name);
 		line = get_one_line(0);
-		printf("el content de line -> %s\n", line);
-//		free(name);
+		free(name);
 		if (!line)
 			break ;
 		util_main(mini, line, env);

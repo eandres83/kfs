@@ -65,9 +65,13 @@ ssize_t read(int fd, void *buf, size_t count)
 	if (filed == NULL || filed->node == NULL || filed->node->ops->read == NULL)
 		return (-1);
 	char *kbuff = filed->node->ops->read(filed->node);
-	copy_to_user(kbuff, (char*)buf, count);
+	if (copy_to_user((char*)buf, kbuff, count) < 0)
+	{
+		kfree(kbuff);
+		return (-1);
+	}
 	kfree(kbuff);
-	return (kstrlen(kbuff));
+	return (count);
 }
 
 ssize_t	write(int fd, const char *str, size_t count)
