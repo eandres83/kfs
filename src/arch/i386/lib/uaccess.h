@@ -2,6 +2,7 @@
 #define UACCESS
 
 #include <utils.h>
+#include <uapi.h>
 #include "drivers/vga.h"
 #include "drivers/tty/tty.h"
 #include "mm/vmm.h"

@@ -105,24 +105,24 @@ ssize_t	sys_getcwd(registers_t *regs)
 
 static ssize_t	(*syscall[200])(registers_t*) =
 {
-	[1] = sys_exit,
-	[2] = sys_fork,
-	[3] = sys_read,
-	[4] = sys_write,
-	[5] = sys_open,
-	[6] = sys_close,
-	[7] = sys_wait,
-	[11] = sys_execve,
-	[24] = sys_getuid,
-	[33] = sys_access,
-	[37] = sys_kill,
-	[41] = sys_dup,
-	[42] = sys_pipe,
-	[48] = sys_signal,
-	[63] = sys_dup2,
-	[90] = sys_mmap,
-	[91] = sys_munmap,
-	[183] = sys_getcwd
+	[SYS_exit] 	= sys_exit,
+	[SYS_fork] 	= sys_fork,
+	[SYS_read] 	= sys_read,
+	[SYS_write] 	= sys_write,
+	[SYS_open] 	= sys_open,
+	[SYS_close] 	= sys_close,
+	[SYS_wait] 	= sys_wait,
+	[SYS_execve] 	= sys_execve,
+	[SYS_getuid] 	= sys_getuid,
+	[SYS_access] 	= sys_access,
+	[SYS_kill] 	= sys_kill,
+	[SYS_dup] 	= sys_dup,
+	[SYS_pipe] 	= sys_pipe,
+	[SYS_signal] 	= sys_signal,
+	[SYS_dup2] 	= sys_dup2,
+	[SYS_mmap] 	= sys_mmap,
+	[SYS_munmap]	= sys_munmap,
+	[SYS_getcwd] 	= sys_getcwd
 };
 
 void 	syscall_callback(registers_t *regs)

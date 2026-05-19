@@ -31,6 +31,7 @@ typedef struct proc
 	uint32_t	id;
 	uint32_t	pid;
 	uint32_t	uid;
+	uint32_t	gid;
 	uint32_t	exit_status;
 	uint32_t	signals;
 	uint32_t	signal_handlers[32];

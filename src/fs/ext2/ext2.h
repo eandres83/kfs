@@ -88,5 +88,6 @@ struct ext2_dir_entry
 // 8 bytes + name_len
 
 void	ext2_mount_device(struct vfs_node *node, uint32_t nb_partition);
+struct ext2_inode *get_inode(struct vfs_node *node);
 
 #endif
