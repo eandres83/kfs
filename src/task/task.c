@@ -274,12 +274,62 @@ void exit_process(uint32_t status)
 	swtch(&current_process->context, scheduler_context);
 }
 
+static uint32_t clear_process(proc_t *process, uint32_t *status)
+{
+	if (status != NULL)
+		*status = process->exit_status;
+	uint32_t tmp_pid = process->pid;
+	if (process->kstack)
+		kfree(process->kstack);
+	if (process->pd)
+		pmm_free_page(process->pd);
+	for (int a = 0; a < 32; a++)
+	{
+		if (process->mmap_allocation[a] != 0)
+			munmap((void*)process->mmap_allocation[a], 4096);
+	}
+	kmemset(process, 0, sizeof(proc_t));
+	return (tmp_pid);
+}
+
+ssize_t waitpid(ssize_t pid, uint32_t *status, uint32_t options)
+{
+	while (1)
+	{
+		uint32_t ret_pid;
+		bool child = false;
+
+		for (int i = 0; i < 64; i++)
+		{
+			if (process[i].parent == current_process)
+			{
+				child = true;
+				if (process[i].state == ZOMBIE)
+				{
+					if (pid == -1)
+						return (clear_process(&process[i], status));
+					else if (pid > 0)
+					{
+						if (process[i].pid == (uint32_t)pid)
+							return (clear_process(&process[i], status));
+					}
+				}
+			}
+		}
+		if (options & 1)
+			return (0);
+		if (child == false)
+			return (-1);
+		current_process->state = SLEEPING;
+		yield();
+	}
+}
+
 ssize_t wait(uint32_t *status)
 {
 	while (1)
 	{
 		bool child = false;
-		uint32_t tmp_pid;
 	
 		for (int i = 0; i < 64; i++)
 		{
@@ -288,20 +338,7 @@ ssize_t wait(uint32_t *status)
 				child = true;
 				if (process[i].state == ZOMBIE)
 				{
-					if (status != NULL)
-						*status = process[i].exit_status;
-					tmp_pid = process[i].pid;
-					if (process[i].kstack)
-						kfree(process[i].kstack);
-					if (process[i].pd)
-						pmm_free_page(process[i].pd);
-					for (int a = 0; a < 32; a++)
-					{
-						if (process[i].mmap_allocation[a] != 0)
-							munmap((void*)process[i].mmap_allocation[a], 4096);
-					}
-					kmemset(&process[i], 0, sizeof(proc_t));
-					return (tmp_pid);
+					return (clear_process(&process[i], status));
 				}
 			}
 		}

@@ -15,6 +15,9 @@ typedef int32_t ssize_t;
 #define W_OK 2
 #define R_OK 4
 
+// waitpid options
+#define WNOHANG 1
+
 // syscall
 #define SYS_exit 	1
 #define SYS_fork 	2
