@@ -1,4 +1,6 @@
 #include "arch/i386/lib/uaccess.h"
+#include "fs/ext2/ext2.h"
+#include "task/task.h"
 
 ssize_t	open(char *filename, uint32_t flags, uint32_t mode)
 {
@@ -81,11 +83,53 @@ ssize_t	write(int fd, const char *str, size_t count)
 	return (count);
 }
 
+static	int check_permission(uint16_t permission, uint32_t offset, int mode)
+{
+	if (mode & X_OK)
+	{
+		if ((permission & (1 << offset)) == 0)
+			return (-1);
+	}
+	if (mode & W_OK)
+	{
+		if ((permission & (1 << (offset + 1))) == 0)
+			return (-1);
+	}
+	if (mode & R_OK)
+	{
+		if ((permission & (1 << (offset + 2))) == 0)
+			return (-1);
+	}
+	return (0);
+}
+
 ssize_t access(char *filename, int mode)
 {
-	(void)filename;
-	(void)mode;
-	kprintf("Hola desde access\n");
+	struct vfs_node *node = get_vfs_node_path(filename);
+	if (node == 0x0)
+		return (-1);
+	struct ext2_inode *inode = get_inode(node);
+	if (!inode)
+		return (-1);
+	proc_t *current_process = get_current_process();
+
+	if (current_process->uid == 0)
+		return (0);
+	if (current_process->uid == inode->user_id)
+	{
+		if (check_permission(inode->type_permisi, 6, mode) == -1)
+			return (-1);
+	}
+	else if (current_process->gid == inode->group_id)
+	{
+		if (check_permission(inode->type_permisi, 3, mode) == -1)
+			return (-1);
+	}
+	else
+	{
+		if (check_permission(inode->type_permisi, 0, mode) == -1)
+			return (-1);
+	}
 	return (0);
 }
 
