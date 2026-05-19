@@ -71,13 +71,13 @@ void	get_path(t_mini *node)
 		temp_path = strjoin(paths[i++], "/");
 		valid_path = strjoin(temp_path, node->full_cmd[0]);
 		free(temp_path);
-//		if (access(valid_path, X_OK) == 0)
-//		{
-//			node->full_path = strdup(valid_path);
-//			free(valid_path);
-//			free_array(paths);
-//			return ;
-//		}
+		if (access(valid_path, X_OK) == 0)
+		{
+			node->full_path = strdup(valid_path);
+			free(valid_path);
+			free_array(paths);
+			return ;
+		}
 		free(valid_path);
 	}
 	free_array(paths);

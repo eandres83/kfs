@@ -62,6 +62,13 @@ ssize_t execve(char *file_path, char **argv, char **envp)
 	return (ret);
 }
 
+ssize_t access(char *file_name, int mode)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (33), "b" (file_name), "c" (mode) : "memory");
+	return (ret);
+}
+
 void getuid()
 {
 	asm volatile("int $0x80" : : "a" (24) : "memory");

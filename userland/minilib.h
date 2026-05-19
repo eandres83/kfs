@@ -6,8 +6,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "malloc/malloc.h"
-
-typedef int32_t ssize_t;
+#include "../include/uapi.h"
 
 // wrappers for syscall
 void	exit(uint32_t status);
@@ -19,6 +18,7 @@ ssize_t close(uint32_t fd);
 ssize_t	wait(int *status);
 ssize_t	kill(uint32_t pid, uint32_t sig);
 ssize_t	execve(char *file_path, char **argv, char **envp);
+ssize_t	access(char *file_name, int mode);
 ssize_t	dup(uint32_t fd);
 ssize_t	pipe(int *fd);
 ssize_t	signal(uint32_t num, void (*function)());

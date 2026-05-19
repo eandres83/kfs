@@ -5,12 +5,6 @@
 
 #define MAX_PATH 1024
 
-#define STDIN_FILENO 0
-#define STDOUT_FILENO 1
-
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-
 extern int	g_exit_status;
 
 # define RED		"\033[0;31m"
