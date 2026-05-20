@@ -26,7 +26,7 @@ static	int	find_env_var(char **env_copy, const char *name)
 			return (i);
 		i++;
 	}
-	return (1);
+	return (-1);
 }
 
 static	int	add_new_env_var(t_mini *mini, const char *new_var)
@@ -89,7 +89,7 @@ int	management_export(t_mini *mini)
 {
 	char	*value;
 
-	if ((is_valid(mini->full_cmd[1]) == -1) || !mini->env_copy)
+	if ((mini->full_cmd[1] != NULL && (is_valid(mini->full_cmd[1]) == -1)) || !mini->env_copy)
 		return (error(1, "Invalid env name or value\n"), 1);
 	value = strchr(mini->full_cmd[1], '=');
 	if (value)

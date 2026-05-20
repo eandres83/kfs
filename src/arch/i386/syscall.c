@@ -38,6 +38,12 @@ ssize_t sys_close(registers_t *regs)
 	return (close(regs->ebx));
 }
 
+ssize_t sys_waitpid(registers_t *regs)
+{
+	waitpid(regs->ebx, &regs->ecx, regs->edx);
+	return (regs->ecx);
+}
+
 ssize_t sys_wait(registers_t *regs)
 {
 	wait(&regs->ebx);
@@ -111,6 +117,7 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[SYS_write] 	= sys_write,
 	[SYS_open] 	= sys_open,
 	[SYS_close] 	= sys_close,
+	[SYS_waitpid]	= sys_waitpid,
 	[SYS_wait] 	= sys_wait,
 	[SYS_execve] 	= sys_execve,
 	[SYS_getuid] 	= sys_getuid,

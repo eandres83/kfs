@@ -15,6 +15,7 @@ ssize_t	read(size_t fd, char *buf, size_t len);
 ssize_t	write(size_t fd, const char *str, size_t len);
 ssize_t open(char *filename, uint32_t flags, uint32_t mode);
 ssize_t close(uint32_t fd);
+ssize_t	waitpid(ssize_t fd, int *status, uint32_t options);
 ssize_t	wait(int *status);
 ssize_t	kill(uint32_t pid, uint32_t sig);
 ssize_t	execve(char *file_path, char **argv, char **envp);
