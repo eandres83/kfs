@@ -61,6 +61,7 @@ void kill_process(char *motivo);
 // syscall
 void 	exit_process(uint32_t status);
 ssize_t	wait(uint32_t *status);
+ssize_t	waitpid(ssize_t pid, uint32_t *status, uint32_t options);
 ssize_t getuid();
 ssize_t fork(registers_t *regs);
 ssize_t kill(uint32_t pid, uint32_t signal);

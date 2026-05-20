@@ -39,8 +39,7 @@ void	execute_multiples_command(t_mini *mini)
 	{
 		if (current->next)
 		{
-//			waitpid(mini->pid, &status, 0);
-			wait(&status);
+			waitpid(mini->pid, &status, 0);
 			if (create_pipes(pipefd) == -1)
 				return ;
 		}

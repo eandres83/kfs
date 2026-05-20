@@ -43,6 +43,8 @@ ssize_t	open(char *filename, uint32_t flags, uint32_t mode)
 
 ssize_t	close(int fd)
 {
+	if (fd >= 2)
+		return (-1);
 	proc_t *current = get_current_process();
 
 	struct file *f = fd_get(current, fd);

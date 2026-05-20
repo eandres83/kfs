@@ -296,7 +296,6 @@ ssize_t waitpid(ssize_t pid, uint32_t *status, uint32_t options)
 {
 	while (1)
 	{
-		uint32_t ret_pid;
 		bool child = false;
 
 		for (int i = 0; i < 64; i++)

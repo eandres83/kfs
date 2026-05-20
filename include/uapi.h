@@ -25,7 +25,8 @@ typedef int32_t ssize_t;
 #define SYS_write	4
 #define SYS_open	5
 #define SYS_close	6
-#define SYS_wait	7
+#define SYS_waitpid	7
+#define SYS_wait	8
 #define SYS_execve	11
 #define SYS_getuid	24
 #define SYS_access	33
