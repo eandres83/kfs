@@ -22,56 +22,6 @@ static proc_t *find_process()
 	return (NULL);
 }
 
-static void start_user_process()
-{
-	void *phys_stack = pmm_map_page();
-	void *virt_stack = (void *)(0xBFFFF000);
-	vmm_map_page(phys_stack, virt_stack, true);
-	if (!virt_stack)
-		return ;
-	current_process->user_stack = (char*)virt_stack + 4096;
-	uint32_t entry_point = (uint32_t)(size_t)current_process->user_eip;
-
-	jump_to_usermode(entry_point, (uint32_t)current_process->user_stack);
-}
-
-void create_process(void (*function)())
-{
-	proc_t *proc = find_process();
-	if (proc == NULL)
-		return ;
-	// create kernel stack for a process
-	proc->kstack = (char*)kmalloc(4096);
-	if (!proc->kstack)
-		return ;
-
-	// request page directory
-	create_memory_process(proc);
-
-	// calcular el top stack
-	char *stack_top = proc->kstack + 4096;
-	// restar 1 struct context para que quede justo el tamano exacto
-	proc->context = (struct context *)stack_top - 1;
-
-	proc->context->edi = 0;
-	proc->context->esi = 0;
-	proc->context->ebx = 0;
-	proc->context->ebp = 0;
-
-	// donde tiene que saltar la CPU al hacer el ret
-	proc->user_eip = (char*)function;
-	// create user stack
-	proc->context->eip = (uint32_t)start_user_process;
-
-	kmemset(proc->pwd, 0, 256);
-	kstrcpy(proc->pwd, "/");
-
-	proc->node = vfs;
-
-	proc->mmap_count = 0;
-	proc->state = RUNNABLE;
-}
-
 void scheduler()
 {
 	while (1)
@@ -109,7 +59,7 @@ void create_init_process()
 	current_process = new_proc;
 
 	char *argv[] = {"/bin/minishell", NULL};
-	char *envp[] = {"PATH=/bin", "TERM=linux", "USER=root", NULL};
+	char *envp[] = {"PATH=/bin:/usr/bin", "TERM=linux", "USER=root", NULL};
 	registers_t regs;
 	int32_t res = execve("/bin/minishell", argv, envp, &regs);
 	if (res == -1)
@@ -128,6 +78,11 @@ void create_init_process()
 	new_proc->context->eip = (uint32_t)enter_user_mode;
 	new_proc->user_eip = (char*)regs.eip;
 	new_proc->user_stack = (char*)regs.useresp;
+
+	kmemset(proc->pwd, 0, 256);
+	kstrcpy(proc->pwd, "/");
+	proc->node = vfs;
+	proc->mmap_count = 0;
 
 	new_proc->state = RUNNABLE;
 	scheduler();
@@ -374,6 +329,7 @@ ssize_t kill(uint32_t pid, uint32_t signal)
 char	*getcwd(char *buf, size_t size)
 {
 	char pwd[256] = {0};
+	kprintf("El current_process->pwd -> %s\n", current_process->pwd);
 	kstrcpy(pwd, current_process->pwd);
 	kmemset(buf, 0, size);
 	if (kstrlen(pwd) > size)
