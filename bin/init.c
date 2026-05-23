@@ -125,16 +125,13 @@ int main()
 			printf("Fatal error in init process execve\n");
 			exit(1);
 		}
-		exit(42);
 	}
 	else if (pid > 0)
 	{
 		int status = 0;
 		waitpid(pid, &status, 0);
-		if (status == 42)
+		if (status == 1)
 			printf("Fuera de mi puta shell bro\n");
-		while(1)
-			for (volatile int i = 0; i < 500000000; i++);
 	}
 	dfree(line);
 	return (0);
