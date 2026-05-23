@@ -117,6 +117,12 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 	// cambiar al nuevo pd y destruir el antiguo
 	proc_t	*current_process = get_current_process();
 	void *old_pd = current_process->pd;
+	current_process->mmap_count = 0;
+
+	for (int i = 0; i < 32; i++)
+		current_process->mmap_allocation[i] = 0;
+	for (int i = 0; i < 32; i++)
+		current_process->signal_handlers[i] = 0;
 
 	create_memory_process(current_process);
 	vmm_load_process_directory(current_process->pd);

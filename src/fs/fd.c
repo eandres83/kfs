@@ -32,7 +32,8 @@ void	fd_free(proc_t *proc, int fd)
 {
 	if (fd > 63 || fd < 0)
 		return ;
-	kfree(proc->fd_table[fd]);
+	if (proc->fd_table[fd]->ref_count == 0)
+		kfree(proc->fd_table[fd]);
 	proc->fd_table[fd] = NULL;
 }
 
