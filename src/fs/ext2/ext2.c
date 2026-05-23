@@ -4,7 +4,7 @@ struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name);
 void	ext2_readdir(struct vfs_node *dir_node);
 char	*ext2_read(struct vfs_node *dir_node);
 size_t 	ext2_write(struct vfs_node *node, char *str, size_t len);
-ssize_t ext2_open(struct vfs_node *node, uint32_t flags);
+ssize_t ext2_open(struct vfs_node *node);
 size_t	ext2_close(struct vfs_node *node);
 
 static struct ops ext2_ops = {
@@ -100,7 +100,7 @@ struct ext2_inode *get_inode(struct vfs_node *node)
 	return (inode);
 }
 
-ssize_t ext2_open(struct vfs_node *node, uint32_t flags)
+ssize_t ext2_open(struct vfs_node *node)
 {
 	if (!node || !node->fs_info)
 		return (-1);
@@ -109,13 +109,6 @@ ssize_t ext2_open(struct vfs_node *node, uint32_t flags)
 	struct ext2_inode *inode = read_inode(fs_info, node->inode);
 	if (!inode)
 		return (-2);
-
-	// check permision
-	if (node->rights != flags)
-	{
-		kfree(inode);
-		return (-13);
-	}
 
 	node->size = inode->lower_size;
 	kfree(inode);

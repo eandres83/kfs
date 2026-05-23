@@ -31,7 +31,7 @@ struct ops
 {
 	char *(*read) (struct vfs_node *);
 	size_t (*write) (struct vfs_node *, char *, size_t);
-	ssize_t (*open) (struct vfs_node *, uint32_t);
+	ssize_t (*open) (struct vfs_node *);
 	size_t (*close) (struct vfs_node *);
 	void (*readdir) (struct vfs_node *);
 	struct vfs_node *(*finddir) (struct vfs_node *, char *);
