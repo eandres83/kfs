@@ -78,8 +78,6 @@ void create_init_process()
 	new_proc->user_eip = (char*)regs.eip;
 	new_proc->user_stack = (char*)regs.useresp;
 
-//	kmemset(new_proc->pwd, 0, 256);
-//	kstrcpy(new_proc->pwd, "/");
 	new_proc->node = vfs;
 	new_proc->mmap_count = 0;
 
@@ -148,7 +146,6 @@ ssize_t fork(registers_t *regs)
 			process[i].mmap_count = current_process->mmap_count;
 			process[i].state = RUNNABLE;
 			process[i].node = current_process->node;
-			kstrcpy(process[i].pwd, current_process->pwd);
 
 			for (int j = 0; j < 63; j++)
 			{
@@ -393,20 +390,37 @@ ssize_t	chdir(char *path)
 		kprintf("Error: Not a directory\n");
 		return (kfree(new_pwd), -1);
 	}
-	set_new_pwd(new_pwd);
 	set_new_node(node);
 	return (0);
 }
 
 char	*getcwd(char *buf, size_t size)
 {
-	char pwd[256] = {0};
-	kprintf("El current_process->pwd -> %s\n", current_process->pwd);
-	kstrcpy(pwd, current_process->pwd);
-	kmemset(buf, 0, size);
-	if (kstrlen(pwd) > size)
+	struct vfs_node *node = current_process->node;
+	char temp_buf[size];
+	kmemset(temp_buf, 0, size);
+
+	while (node->father != NULL)
+	{
+		kstrcat(temp_buf, node->name);
+		kstrcat(temp_buf, "/");
+		node = node->father;
+	}
+	char **array = ksplit(temp_buf, '/');
+	if (!array)
 		return (NULL);
-	kstrcpy(buf, pwd);
+	kmemset(buf, 0, size);
+	kstrcat(buf, "/");
+	int i = 0;
+	while (array[i])
+		i++;
+	while (i-- > 0)
+	{
+		kstrcat(buf, array[i]);
+		kstrcat(buf, "/");
+	}
+//	kprintf("El puto buf final -> %s\n", buf);
+	double_free(array);
 	return (buf);
 }
 
@@ -470,18 +484,10 @@ void find_signal(registers_t *regs)
 	}
 }
 
-// helper function por fs
+// setters and getters
 proc_t	*get_current_process()
 {
 	return (current_process);
-}
-
-void	set_current_process()
-{
-	current_process = kmalloc(sizeof(proc_t));
-	current_process->node = vfs;
-	kmemset(current_process->pwd, 0, 256);
-	kstrcpy(current_process->pwd, "/");
 }
 
 struct vfs_node *get_current_node()
@@ -492,11 +498,5 @@ struct vfs_node *get_current_node()
 void set_new_node(struct vfs_node *new_node)
 {
 	current_process->node = new_node;
-}
-
-void set_new_pwd(char *path)
-{
-	kmemset(current_process->pwd, 0, 256);
-	kstrcpy(current_process->pwd, path);
 }
 

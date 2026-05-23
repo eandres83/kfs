@@ -41,7 +41,6 @@ typedef struct proc
 	char		*kstack;
 	char		*user_stack;
 	char		*user_eip;
-	char		pwd[256];
 	void		*pd;
 	enum procstate	state;
 	struct file	*fd_table[MAX_FD];
@@ -79,8 +78,5 @@ ssize_t	chdir(char *path);
 proc_t	*get_current_process();
 struct vfs_node *get_current_node();
 void	set_new_node(struct vfs_node *new_node);
-void	set_new_pwd(char *pwd);
-
-void	set_current_process();
 
 #endif
