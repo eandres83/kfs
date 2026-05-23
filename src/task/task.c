@@ -397,30 +397,28 @@ ssize_t	chdir(char *path)
 char	*getcwd(char *buf, size_t size)
 {
 	struct vfs_node *node = current_process->node;
-	char temp_buf[size];
-	kmemset(temp_buf, 0, size);
-
+	kmemset(buf, 0, size);
+	if (node->father == NULL)
+	{
+		buf[0] = '/';
+		return (buf);
+	}
+	// tmp pointer
+	char *p = buf + size -1;
+	*p = '\0';
 	while (node->father != NULL)
 	{
-		kstrcat(temp_buf, node->name);
-		kstrcat(temp_buf, "/");
+		int len  = kstrlen(node->name);
+		if (p - buf < len + 1)
+			return (NULL);
+		p -= len;
+		kmemcpy(p, node->name, len);
+		p--;
+		*p = '/';
 		node = node->father;
 	}
-	char **array = ksplit(temp_buf, '/');
-	if (!array)
-		return (NULL);
-	kmemset(buf, 0, size);
-	kstrcat(buf, "/");
-	int i = 0;
-	while (array[i])
-		i++;
-	while (i-- > 0)
-	{
-		kstrcat(buf, array[i]);
-		kstrcat(buf, "/");
-	}
-//	kprintf("El puto buf final -> %s\n", buf);
-	double_free(array);
+	int total_len = kstrlen(p);
+	kmemcpy(buf, p, total_len + 1);
 	return (buf);
 }
 
