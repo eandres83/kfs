@@ -118,7 +118,11 @@ int main()
 	ssize_t pid = fork();
 	if (pid == 0)
 	{
-		chdir(line[5]);
+		if (chdir(line[5]) == -1)
+		{
+			printf("Fatal error in chdir syscall\n");
+			exit(1);
+		}
 		ssize_t res = execve(line[6], argv, envp);
 		if (res == -1)
 		{

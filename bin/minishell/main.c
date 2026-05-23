@@ -77,48 +77,48 @@ char	*get_one_line(int fd)
 }
 
 // main to test syscall and everything
-//int main(int argc, char **argv, char **envp)
-//{
-//	(void)argc;
-//	(void)argv;
-//	(void)envp;
-//	char buff[256] = {0};
-//	char *pwd = getcwd(buff, 256);
-//	if (pwd[0] == '\0')
-//		printf("Me cago en toa tu pu** madre\n");
-//	printf("el pwd -> %s\n", buff);
-//	return (0);
-//}
-
-int	main(int argc, char **argv, char **env)
+int main(int argc, char **argv, char **envp)
 {
-	char	*line;
-	char	*name;
-	t_mini	*mini;
-
-	(void)argv;
 	(void)argc;
-//	setup_signals();
-	printf("Estoy en mi puta minishell desde ring3\n");
-	for (int i = 0; env[i] != NULL; i++)
-		printf("el puto env -> %s\n", env[i]);
-	mini = initialize_mini_node(env);
-	while (1)
-	{
-		name = get_name(mini->env_copy);
-		if (!name)
-		{
-			error(1, "Error: Could not get prompt name");
-			break ;
-		}
-		printf("%s ", name);
-		line = get_one_line(0);
-		free(name);
-		if (!line)
-			break ;
-		util_main(mini, line, env);
-	}
-	free_mini(mini);
+	(void)argv;
+	(void)envp;
+	char buff[256] = {0};
+	char *pwd = getcwd(buff, 256);
+	if (pwd[0] == '\0')
+		printf("Me cago en toa tu pu** madre\n");
+	printf("el pwd -> %s\n", buff);
 	return (0);
 }
+
+//int	main(int argc, char **argv, char **env)
+//{
+//	char	*line;
+//	char	*name;
+//	t_mini	*mini;
+//
+//	(void)argv;
+//	(void)argc;
+////	setup_signals();
+//	printf("Estoy en mi puta minishell desde ring3\n");
+//	for (int i = 0; env[i] != NULL; i++)
+//		printf("el puto env -> %s\n", env[i]);
+//	mini = initialize_mini_node(env);
+//	while (1)
+//	{
+//		name = get_name(mini->env_copy);
+//		if (!name)
+//		{
+//			error(1, "Error: Could not get prompt name");
+//			break ;
+//		}
+//		printf("%s ", name);
+//		line = get_one_line(0);
+//		free(name);
+//		if (!line)
+//			break ;
+//		util_main(mini, line, env);
+//	}
+//	free_mini(mini);
+//	return (0);
+//}
 
