@@ -22,7 +22,7 @@ void	printf(const char *format, ...)
 		{
 			i++;
 			if (format[i] == 'c')
-				print_string((char*)va_arg(args, int));
+				write(1, &format[i], 1);
 			else if (format[i] == 's')
 				print_string(va_arg(args, char*));
 			else if (format[i] == 'd')

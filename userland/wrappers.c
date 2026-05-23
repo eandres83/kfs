@@ -62,6 +62,13 @@ ssize_t execve(char *file_path, char **argv, char **envp)
 	return (ret);
 }
 
+ssize_t chdir(char *path)
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_chdir), "b" (path) : "memory");
+	return (ret);
+}
+
 void getuid()
 {
 	asm volatile("int $0x80" : : "a" (SYS_getuid) : "memory");

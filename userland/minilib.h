@@ -28,6 +28,7 @@ void	*mmap(size_t size);
 ssize_t munmap(void *addr, size_t size);
 void	getuid();
 char	*getcwd(void *buff, size_t size);
+ssize_t	chdir(char *path);
 
 // other function
 void	printf(const char *format, ...);
@@ -55,5 +56,6 @@ void	*bzero(void *s, size_t n);
 int	isalnum(char c);
 int	isalpha(char c);
 int 	isdigit(char c);
+void	dfree(char **str);
 
 #endif
