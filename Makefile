@@ -68,7 +68,7 @@ bin/%: bin/%.c $(CRT0_OBJ) $(USER_OBJS_C)
 	@echo "Compiling user apps: $*"
 	@$(CC) $(USER_CFLAGS) -c $< -o $(BUILD_DIR)/apps/$*.o
 	@echo "Linking app: $*"
-	@$(LD) -Ttext 0x08048000 -o $@ $(CRT0_OBJ) $(BUILD_DIR)/apps/$*.o $(USER_OBJS_C)
+	@$(LD) -T userland/userland.ld -o $@ $(CRT0_OBJ) $(BUILD_DIR)/apps/$*.o $(USER_OBJS_C)
 
 bin/minishell/minishell: $(CRT0_OBJ) $(USER_OBJS_C) $(SRCS_MINISHELL)
 	@$(MAKE) -C bin/minishell
@@ -77,9 +77,10 @@ $(DISK_IMG): $(NAME) $(APPS_OBJ) bin/minishell/minishell
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
-	@echo -n "root:root1\neandres:1234\nfuck:oian\n1:1\n" > $(FS_DIR)/etc/passwd
-	@mkdir -p $(FS_DIR)/sys
-	@mkdir -p $(FS_DIR)/var
+	@echo -n "root:x:0:0:root:/root:/bin/minishell\neandres:x:1000:1000:user:/home/eandres:/bin/minishell" > $(FS_DIR)/etc/passwd
+	@echo -n "root:hash\neandres:hash" > $(FS_DIR)/etc/shadow
+	@mkdir -p $(FS_DIR)/root
+	@mkdir -p $(FS_DIR)/home
 	@mkdir -p $(FS_DIR)/dev
 	@echo -n "Mierdon\n" > $(FS_DIR)/dev/file.txt
 	@mkdir -p $(FS_DIR)/proc

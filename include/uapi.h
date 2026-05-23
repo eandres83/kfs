@@ -33,6 +33,7 @@ typedef int32_t ssize_t;
 #define SYS_waitpid	7
 #define SYS_wait	8
 #define SYS_execve	11
+#define SYS_chdir	12
 #define SYS_setuid	23
 #define SYS_getuid	24
 #define SYS_access	33

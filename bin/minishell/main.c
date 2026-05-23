@@ -26,7 +26,7 @@ char	*get_name(char **env)
 	return (prompt);
 }
 
-static	void	util_main(t_mini *mini, char *line, char **env)
+void	util_main(t_mini *mini, char *line, char **env)
 {
 	if (line[0] == ' ' || line[0] == '\0')
 	{
@@ -47,7 +47,7 @@ static	void	util_main(t_mini *mini, char *line, char **env)
 	clean_and_reset(mini);
 }
 
-static char	*get_one_line(int fd)
+char	*get_one_line(int fd)
 {
 	char	c;
 	char	*str;
@@ -76,6 +76,20 @@ static char	*get_one_line(int fd)
 	return (str);
 }
 
+// main to test syscall and everything
+//int main(int argc, char **argv, char **envp)
+//{
+//	(void)argc;
+//	(void)argv;
+//	(void)envp;
+//	char buff[256] = {0};
+//	char *pwd = getcwd(buff, 256);
+//	if (pwd[0] == '\0')
+//		printf("Me cago en toa tu pu** madre\n");
+//	printf("el pwd -> %s\n", buff);
+//	return (0);
+//}
+
 int	main(int argc, char **argv, char **env)
 {
 	char	*line;
@@ -86,6 +100,8 @@ int	main(int argc, char **argv, char **env)
 	(void)argc;
 //	setup_signals();
 	printf("Estoy en mi puta minishell desde ring3\n");
+	for (int i = 0; env[i] != NULL; i++)
+		printf("el puto env -> %s\n", env[i]);
 	mini = initialize_mini_node(env);
 	while (1)
 	{
