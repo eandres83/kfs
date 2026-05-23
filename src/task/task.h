@@ -30,8 +30,9 @@ typedef struct proc
 	// procesos de array, comprobar si la uso antes de entregar
 	uint32_t	id;
 	uint32_t	pid;
-	uint32_t	uid;
-	uint32_t	gid;
+	uint32_t	ruid;	// Real uid
+	uint32_t	euid;	// Effective uid
+	uint32_t	gid;	// Group id
 	uint32_t	exit_status;
 	uint32_t	signals;
 	uint32_t	signal_handlers[32];
@@ -62,7 +63,10 @@ void kill_process(char *motivo);
 void 	exit_process(uint32_t status);
 ssize_t	wait(uint32_t *status);
 ssize_t	waitpid(ssize_t pid, uint32_t *status, uint32_t options);
+ssize_t setuid(uint32_t uid);
 ssize_t getuid();
+ssize_t setgid(uint32_t gid);
+ssize_t	getgid();
 ssize_t fork(registers_t *regs);
 ssize_t kill(uint32_t pid, uint32_t signal);
 ssize_t signal(uint32_t signum, void (*function));

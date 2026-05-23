@@ -14,7 +14,6 @@ static proc_t *find_process()
 		{
 			process[i].state = EMBRYO;
 			process[i].id = i;
-			process[i].uid = 0; // root process
 			process[i].pid = next_pid++;
 			return (&process[i]);
 		}
@@ -58,10 +57,10 @@ void create_init_process()
 		return ;
 	current_process = new_proc;
 
-	char *argv[] = {"/bin/minishell", NULL};
+	char *argv[] = {"/bin/init", NULL};
 	char *envp[] = {"PATH=/bin:/usr/bin", "TERM=linux", "USER=root", NULL};
 	registers_t regs;
-	int32_t res = execve("/bin/minishell", argv, envp, &regs);
+	int32_t res = execve("/bin/init", argv, envp, &regs);
 	if (res == -1)
 	{
 		kprintf("Fatal error when init_main_process execve, soo bad :(\n");
@@ -79,10 +78,10 @@ void create_init_process()
 	new_proc->user_eip = (char*)regs.eip;
 	new_proc->user_stack = (char*)regs.useresp;
 
-	kmemset(proc->pwd, 0, 256);
-	kstrcpy(proc->pwd, "/");
-	proc->node = vfs;
-	proc->mmap_count = 0;
+//	kmemset(new_proc->pwd, 0, 256);
+//	kstrcpy(new_proc->pwd, "/");
+	new_proc->node = vfs;
+	new_proc->mmap_count = 0;
 
 	new_proc->state = RUNNABLE;
 	scheduler();
@@ -115,6 +114,8 @@ ssize_t fork(registers_t *regs)
 		{
 			process[i].parent = current_process;
 			process[i].pid = next_pid++;
+			process[i].ruid = current_process->ruid;
+			process[i].euid = current_process->euid;
 			process[i].kstack = kmalloc(4096);
 			if (!process[i].kstack)
 				return (-1);
@@ -193,24 +194,23 @@ ssize_t mmap(ssize_t size)
 		virt_addr += 4096;
 	}
 
-	current_process->mmap_allocation[index] = virt_addr;
-	current_process->mmap_count++;
+	current_process->mmap_allocation[index] = start_vaddr;
+	current_process->mmap_count += total_size;
 
 	return ((ssize_t)start_vaddr);
 }
 
 ssize_t munmap(void *addr, size_t size)
 {
-	for (uint32_t i = 0; i < size; i++)
+	size_t real_size = ((size + 4095) / 4096);
+	for (uint32_t i = 0; i < real_size; i++)
 	{
-
 		vmm_unmap_page(addr);
-		for (int i = 0; i < 32; i++)
+		for (int j = 0; j < 32; j++)
 		{
-			if (current_process->mmap_allocation[i] == (uint32_t)addr)
+			if (current_process->mmap_allocation[j] == (uint32_t)addr)
 			{
-				current_process->mmap_allocation[i] = 0;
-				current_process->mmap_count--;
+				current_process->mmap_allocation[j] = 0;
 				break;
 			}
 		}
@@ -338,9 +338,36 @@ char	*getcwd(char *buf, size_t size)
 	return (buf);
 }
 
+ssize_t setuid(uint32_t new_uid)
+{
+	if (current_process->euid == 0)
+	{
+		current_process->euid = new_uid;
+		current_process->ruid = new_uid;
+		return (0);
+	}
+	else if (current_process->ruid == new_uid)
+	{
+		current_process->euid = new_uid;
+		return (0);
+	}
+	return (-1);
+}
+
 ssize_t getuid()
 {
-	return (current_process->uid);
+	return (current_process->euid);
+}
+
+ssize_t setgid(uint32_t gid)
+{
+	current_process->gid = gid;
+	return (0);
+}
+
+ssize_t	getgid()
+{
+	return (current_process->gid);
 }
 
 void find_signal(registers_t *regs)

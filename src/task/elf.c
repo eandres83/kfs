@@ -135,7 +135,6 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 			uint32_t end_vaddr = program->p_vaddr + program->p_memsz;
 			uint32_t end_page = (end_vaddr + 4095) & 0xFFFFF000;
 			uint32_t nb_page = (end_page - start_page) / 4096;
-//			kprintf("Segmento %d: memsz -> %x, pide -> %d paginas\n", i, program->p_memsz, nb_page);
 			for (uint32_t j = 0; j < nb_page; j++)
 			{
 				void *virt_addr = (void*)(start_page + (j * 4096));
@@ -145,6 +144,7 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 					if (!phys)
 						return (double_free(argv), double_free(envp), kfree(content), -1);
 					vmm_map_page(phys, virt_addr, true);
+					kmemset(virt_addr, 0, 4096);
 				}
 			}
 			if (program->p_filesz > 0)
@@ -155,19 +155,8 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 		program = (struct elf32_phdr*)((char*)program + elf->e_phentsize);
 	}
 	char *user_stack = make_stack(envp, argv);
-
 	regs->useresp = (uint32_t)user_stack;
 	regs->eip = elf->e_entry;
-
-	// --- DEBUG ZONE ---
-//	page_directory *pd = (page_directory*)0xFFFFF000;
-//	pd_entry pde = pd->m_entries[PD_INDEX(elf->e_entry)];
-//
-//	page_table *pt = (page_table*)(0xFFC00000 + (PD_INDEX(elf->e_entry) * 4096));
-//	pt_entry pte = pt->m_entries[PT_INDEX(elf->e_entry)];
-//
-//	kprintf("PDE: %x (Present: %d, User: %d, RW: %d)\n", pde, (pde & PDE_PRESENT) != 0, (pde & PDE_USER) != 0, (pde & PDE_WRITABLE) != 0);
-//	kprintf("PTE: %x (Present: %d, User: %d, RW: %d)\n", pte, (pte & PTE_PRESENT) != 0, (pte & PTE_USER) != 0, (pte & PTE_WRITABLE) != 0);
 
 	if (old_pd != NULL)
 		free_page_directory(old_pd);
