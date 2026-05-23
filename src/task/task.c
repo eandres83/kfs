@@ -385,7 +385,7 @@ ssize_t	chdir(char *path)
 	if (new_pwd == NULL)
 		return (-1);
 
-	struct vfs_node *node = get_vfs_node_path(path);
+	struct vfs_node *node = get_vfs_node_path(new_pwd);
 	if (node == 0x0)
 		return (kfree(new_pwd), -1);
 	if (node->type != VFS_DIRECTORY && node->type != VFS_MOUNTPOINT)
