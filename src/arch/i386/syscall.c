@@ -63,6 +63,11 @@ ssize_t	sys_access(registers_t *regs)
 	return (access((char *)regs->ebx, regs->ecx));
 }
 
+ssize_t	sys_setuid(registers_t *regs)
+{
+	return (setuid(regs->ebx));
+}
+
 ssize_t sys_getuid(registers_t *regs)
 {
 	(void)regs;
@@ -82,6 +87,17 @@ ssize_t sys_dup(registers_t *regs)
 ssize_t sys_pipe(registers_t *regs)
 {
 	return (pipe((int*)regs->ebx));
+}
+
+ssize_t	sys_setgid(registers_t *regs)
+{
+	return (setgid(regs->ebx));
+}
+
+ssize_t	sys_getgid(registers_t *regs)
+{
+	(void)regs;
+	return (getgid());
 }
 
 ssize_t sys_signal(registers_t *regs)
@@ -120,11 +136,14 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[SYS_waitpid]	= sys_waitpid,
 	[SYS_wait] 	= sys_wait,
 	[SYS_execve] 	= sys_execve,
+	[SYS_setuid]	= sys_setuid,
 	[SYS_getuid] 	= sys_getuid,
 	[SYS_access] 	= sys_access,
 	[SYS_kill] 	= sys_kill,
 	[SYS_dup] 	= sys_dup,
 	[SYS_pipe] 	= sys_pipe,
+	[SYS_setgid]	= sys_setgid,
+	[SYS_getgid]	= sys_getgid,
 	[SYS_signal] 	= sys_signal,
 	[SYS_dup2] 	= sys_dup2,
 	[SYS_mmap] 	= sys_mmap,

@@ -9,6 +9,11 @@ typedef int32_t ssize_t;
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+// open flags
+#define O_RDONLY 0
+#define O_WRONLY 1
+#define O_RDWR	 2
+
 // access mode
 #define F_OK 0
 #define X_OK 1
@@ -28,11 +33,14 @@ typedef int32_t ssize_t;
 #define SYS_waitpid	7
 #define SYS_wait	8
 #define SYS_execve	11
+#define SYS_setuid	23
 #define SYS_getuid	24
 #define SYS_access	33
 #define SYS_kill	37
 #define SYS_dup		41
 #define SYS_pipe	42
+#define SYS_setgid	46
+#define SYS_getgid	47
 #define SYS_signal	48
 #define SYS_dup2	63
 #define SYS_mmap	90
