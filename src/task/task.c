@@ -326,6 +326,78 @@ ssize_t kill(uint32_t pid, uint32_t signal)
 	return (-1);
 }
 
+static char *pwd_right(char *path)
+{
+	char new_pwd[256];
+	kmemset(new_pwd, 0, 256);
+	if (path[0] != '/')
+	{
+		// ruta relativa
+		if (getcwd(new_pwd, 256) == NULL)
+			return (NULL);
+		if (new_pwd[kstrlen(new_pwd) - 1] != '/')
+			kstrcat(new_pwd, "/");
+		kstrcat(new_pwd, path);
+	}
+	else
+		kstrcpy(new_pwd, path);
+	char **array = ksplit(new_pwd, '/');
+	if (!array)
+		return (NULL);
+
+	char *pila[256];
+	int top = 0;
+	for (int i = 0; array[i] != NULL; i++)
+	{
+		if (kstrcmp(array[i], ".") == 0 || kstrlen(array[i]) == 0)
+			continue;
+		else if (kstrcmp(array[i], "..") == 0)
+		{
+			if (top > 0)
+				top--;
+		}
+		else
+		{
+			pila[top] = array[i];
+			top++;
+		}
+	}
+	double_free(array);
+	char *pwd = (char*)kmalloc(sizeof(char) * 256);
+	if (!pwd)
+		return (NULL);
+	kmemset(pwd, 0, 256);
+	kstrcpy(pwd, "/");
+	for (int i = 0; i < top; i++)
+	{
+		kstrcat(pwd, pila[i]);
+		if (i < top -1)
+			kstrcat(pwd, "/");
+	}
+	return (pwd);
+}
+
+ssize_t	chdir(char *path)
+{
+	if (!path)
+		return (-1);
+	char *new_pwd = pwd_right(path);
+	if (new_pwd == NULL)
+		return (-1);
+
+	struct vfs_node *node = get_vfs_node_path(path);
+	if (node == 0x0)
+		return (kfree(new_pwd), -1);
+	if (node->type != VFS_DIRECTORY && node->type != VFS_MOUNTPOINT)
+	{
+		kprintf("Error: Not a directory\n");
+		return (kfree(new_pwd), -1);
+	}
+	set_new_pwd(new_pwd);
+	set_new_node(node);
+	return (0);
+}
+
 char	*getcwd(char *buf, size_t size)
 {
 	char pwd[256] = {0};

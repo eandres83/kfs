@@ -73,6 +73,7 @@ ssize_t signal(uint32_t signum, void (*function));
 ssize_t mmap(ssize_t size);
 ssize_t munmap(void *addr, size_t size);
 char	*getcwd(char *buf, size_t size);
+ssize_t	chdir(char *path);
 
 // helper for fs
 proc_t	*get_current_process();

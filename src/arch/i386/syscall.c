@@ -58,6 +58,11 @@ ssize_t sys_execve(registers_t *regs)
 	return (res);
 }
 
+ssize_t	sys_chdir(registers_t *regs)
+{
+	return (chdir((char*)regs->ebx));
+}
+
 ssize_t	sys_access(registers_t *regs)
 {
 	return (access((char *)regs->ebx, regs->ecx));
@@ -136,6 +141,7 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[SYS_waitpid]	= sys_waitpid,
 	[SYS_wait] 	= sys_wait,
 	[SYS_execve] 	= sys_execve,
+	[SYS_chdir]	= sys_chdir,
 	[SYS_setuid]	= sys_setuid,
 	[SYS_getuid] 	= sys_getuid,
 	[SYS_access] 	= sys_access,
