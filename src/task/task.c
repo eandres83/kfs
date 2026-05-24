@@ -235,11 +235,7 @@ static uint32_t clear_process(proc_t *process, uint32_t *status)
 		kfree(process->kstack);
 	if (process->pd)
 		pmm_free_page(process->pd);
-	for (int a = 0; a < 32; a++)
-	{
-		if (process->mmap_allocation[a] != 0)
-			munmap((void*)process->mmap_allocation[a], 4096);
-	}
+	free_page_directory(process->pd);
 	kmemset(process, 0, sizeof(proc_t));
 	return (tmp_pid);
 }
@@ -288,9 +284,7 @@ ssize_t wait(uint32_t *status)
 			{
 				child = true;
 				if (process[i].state == ZOMBIE)
-				{
 					return (clear_process(&process[i], status));
-				}
 			}
 		}
 		if (child == false)
