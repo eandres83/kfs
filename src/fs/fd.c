@@ -8,6 +8,7 @@ int32_t	fd_allocate(proc_t *proc)
 		return (-1);
 
 	kmemset(new_fd, 0, sizeof(struct file));
+	new_fd->ref_count++;
 
 	for (int i = 0; i < MAX_FD; i++)
 	{
@@ -17,12 +18,13 @@ int32_t	fd_allocate(proc_t *proc)
 			return (i);
 		}
 	}
+	kfree(new_fd);
 	return (-1);
 }
 
 struct file	*fd_get(proc_t *proc, int fd)
 {
-	if (fd > 63 || fd < 0)
+	if (fd >= MAX_FD || fd < 0)
 		return (NULL);
 	struct file *new_file = proc->fd_table[fd];
 	return (new_file);
@@ -30,8 +32,11 @@ struct file	*fd_get(proc_t *proc, int fd)
 
 void	fd_free(proc_t *proc, int fd)
 {
-	if (fd > 63 || fd < 0)
+	if (fd >= MAX_FD || fd < 0)
 		return ;
+	if (proc->fd_table[fd] == NULL)
+		return ;
+	proc->fd_table[fd]->ref_count--;
 	if (proc->fd_table[fd]->ref_count == 0)
 		kfree(proc->fd_table[fd]);
 	proc->fd_table[fd] = NULL;
@@ -48,16 +53,37 @@ static struct ops tty_fake_ops = {
 
 void	create_init_fd(proc_t *proc)
 {
-	struct file *new_file = kmalloc(sizeof(struct file));
-	if (!new_file)
-		return ;
 	struct vfs_node *node = kmalloc(sizeof(struct vfs_node));
 	if (!node)
 		return ;
 	node->ops = &tty_fake_ops;
-	new_file->node = node;
-	proc->fd_table[0] = new_file;
-	proc->fd_table[1] = new_file;
-	proc->fd_table[2] = new_file;
+
+	struct file *file_stdin = kmalloc(sizeof(struct file));
+	if (!file_stdin)
+		return ;
+	kmemset(file_stdin, 0, sizeof(struct file));
+	file_stdin->ref_count++;
+	file_stdin->flags = O_RDONLY;
+	file_stdin->node = node;
+
+	struct file *file_stdout = kmalloc(sizeof(struct file));
+	if (!file_stdout)
+		return ;
+	kmemset(file_stdout, 0, sizeof(struct file));
+	file_stdout->ref_count++;
+	file_stdout->flags = O_WRONLY;
+	file_stdout->node = node;
+
+	struct file *file_stderr = kmalloc(sizeof(struct file));
+	if (!file_stderr)
+		return ;
+	kmemset(file_stderr, 0, sizeof(struct file));
+	file_stderr->ref_count++;
+	file_stderr->node = node;
+	file_stderr->flags = O_WRONLY;
+
+	proc->fd_table[0] = file_stdin;
+	proc->fd_table[1] = file_stdout;
+	proc->fd_table[2] = file_stderr;
 }
 

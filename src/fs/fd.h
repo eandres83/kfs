@@ -2,6 +2,7 @@
 #define FD_H
 
 #include <utils.h>
+#include <uapi.h>
 #include "drivers/tty/tty.h"
 
 struct proc;
