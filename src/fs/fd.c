@@ -56,6 +56,7 @@ void	create_init_fd(proc_t *proc)
 	struct vfs_node *node = kmalloc(sizeof(struct vfs_node));
 	if (!node)
 		return ;
+	kmemset(node, 0, sizeof(struct vfs_node));
 	node->ops = &tty_fake_ops;
 
 	struct file *file_stdin = kmalloc(sizeof(struct file));
