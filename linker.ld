@@ -18,9 +18,21 @@ SECTIONS
 	   AT(...) is for virtual memory */
 	.text : AT(ADDR(.text) - 0xC0000000)
 	{
+		__start_exception_tables = .;
+		KEEP(*(__ex_table));
+		__stop_exception_tables = .;
 		*(.multiboot)
 		*(.text)
+		*(.fixup)
 	}
+
+	. = ALIGN(4K);
+
+	.fixup : AT(ADDR(.fixup) - 0xC0000000)
+	{
+		*(.fixup)
+	}
+
 	
 	/* Read-only data. */
 	.rodata ALIGN(4K) : AT(ADDR(.rodata) - 0xC0000000)

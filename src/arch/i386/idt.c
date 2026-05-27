@@ -1,6 +1,9 @@
 #include "idt.h"
 #include "task/task.h"
 
+extern const struct exception_table_entry __start_exception_tables[];
+extern const struct exception_table_entry __stop_exception_tables[];
+
 extern void idt_flush(uint32_t);
 
 idt_entry_t 	idt_entries[256];
@@ -131,6 +134,13 @@ void	isr_handler(registers_t *regs)
 		return ;
 	}
 
+	uint32_t res = search_exception_table(regs->eip);
+	if (res != 0)
+	{
+		regs->eip = res;
+		return ;
+	}
+
 	if ((regs->cs & 3) == 3)
 	{
 		print_regs(regs);
@@ -169,5 +179,17 @@ void	irq_handler(registers_t *regs)
 void	register_interrupt_handler(uint8_t n, isr_t action)
 {
 	interrupts[n] = action;
+}
+
+uint32_t search_exception_table(uint32_t eip)
+{
+	const struct exception_table_entry *entry;
+
+	for (entry = __start_exception_tables; entry < __stop_exception_tables; entry++)
+	{
+		if (entry->insn == eip)
+			return (entry->fixup);
+	}
+	return (0);
 }
 

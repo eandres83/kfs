@@ -31,10 +31,17 @@ typedef struct registers
 	uint32_t eip, cs, eflags, useresp, ss; // pushed by the processor automatically
 } registers_t;
 
+struct exception_table_entry
+{
+	uint32_t insn; // el eip peligroso
+	uint32_t fixup;
+};
+
 typedef void (*isr_t)(registers_t *);
 
 void	init_idt();
 void	register_interrupt_handler(uint8_t, isr_t action);
+uint32_t search_exception_table(uint32_t eip);
 
 extern void isr_handler(registers_t *regs);
 extern void irq_handler(registers_t *regs);
