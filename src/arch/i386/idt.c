@@ -184,8 +184,10 @@ void	register_interrupt_handler(uint8_t n, isr_t action)
 uint32_t search_exception_table(uint32_t eip)
 {
 	const struct exception_table_entry *entry;
+	const struct exception_table_entry *start = __start_exception_tables;
+	const struct exception_table_entry *stop = __stop_exception_tables;
 
-	for (entry = __start_exception_tables; entry < __stop_exception_tables; entry++)
+	for (entry = start; entry < stop; entry++)
 	{
 		if (entry->insn == eip)
 			return (entry->fixup);
