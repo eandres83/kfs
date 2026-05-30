@@ -9,7 +9,8 @@
 #include "task/task.h"
 #include "fs/fd.h"
 
-ssize_t	copy_to_user(void *user_addr, const void *kernel_addr, size_t count);
+ssize_t	copy_to_user_wrap(void *user_addr, const void *kernel_addr, size_t count);
+ssize_t	copy_from_user_wrap(void *kernel_addr, const void *user_addr, size_t count);
 
 // syscall
 ssize_t	read(int fd, void *buffer, size_t count);

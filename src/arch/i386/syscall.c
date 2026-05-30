@@ -42,7 +42,7 @@ ssize_t sys_waitpid(registers_t *regs)
 {
 	uint32_t status;
 	ssize_t pid = waitpid(regs->ebx, &status, regs->edx);
-	if (!check_addr(regs->ecx))
+	if (!check_user_addr(regs->ecx))
 		return (-1);
 	*(uint32_t*)regs->ecx = status;
 	return (pid);
@@ -52,7 +52,7 @@ ssize_t sys_wait(registers_t *regs)
 {
 	uint32_t status;
 	ssize_t pid = wait(&status);
-	if (!check_addr(regs->ebx))
+	if (!check_user_addr(regs->ebx))
 		return (-1);
 	*(uint32_t*)regs->ebx = status;
 	return (pid);

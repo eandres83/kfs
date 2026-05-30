@@ -1,4 +1,4 @@
-#include "arch/i386/lib/uaccess.h"
+#include "uaccess.h"
 #include "fs/ext2/ext2.h"
 #include "task/task.h"
 
@@ -24,28 +24,29 @@ static	int check_permission(uint16_t permission, uint32_t offset, int mode)
 
 static int check_node_permision(struct vfs_node *node, int mode)
 {
-	struct ext2_inode *inode = get_inode(node);
-	if (!inode)
-		return (-1);
 	proc_t *current_process = get_current_process();
 	int ret = -1;
 
 	if (current_process->euid == 0)
 		ret = 0;
-	else if (current_process->euid == inode->user_id)
-		ret = check_permission(inode->type_permisi, 6, mode);
-	else if (current_process->gid == inode->group_id)
-		ret = check_permission(inode->type_permisi, 3, mode);
+	else if (current_process->euid == node->uid)
+		ret = check_permission(node->rights, 6, mode);
+	else if (current_process->gid == node->gid)
+		ret = check_permission(node->rights, 3, mode);
 	else
-		ret = check_permission(inode->type_permisi, 0, mode);
-	kfree(inode);
+		ret = check_permission(node->rights, 0, mode);
 	return (ret);
 }
 
 ssize_t access(char *filename, int mode)
 {
-	struct vfs_node *node = get_vfs_node_path(filename);
-	if (node == 0x0)
+	char *kbuff = (char*)kmalloc(kstrlen(filename) + 1);
+	if (!kbuff)
+		return (-1);
+	kmemset(kbuff, 0, kstrlen(filename) + 1);
+	copy_from_user_wrap(kbuff, filename, kstrlen(filename));
+	struct vfs_node *node = get_vfs_node_path(kbuff);
+	if (!node)
 		return (-1);
 	int ret = check_node_permision(node, mode);
 	return (ret);
@@ -60,7 +61,14 @@ ssize_t	open(char *filename, uint32_t flags, uint32_t mode)
 	if (fd < 0)
 		return (-24);
 
-	struct vfs_node *node = get_vfs_node_path(filename);
+	char *kbuff = (char*)kmalloc(kstrlen(filename) + 1);
+	if (!kbuff)
+		return (-1);
+	kmemset(kbuff, 0, kstrlen(filename) + 1);
+	ssize_t res = copy_from_user_wrap(kbuff, filename, kstrlen(filename));
+	if (res == -1)
+		return (-1);
+	struct vfs_node *node = get_vfs_node_path(kbuff);
 	if (!node)
 	{
 		fd_free(current, fd);
@@ -94,7 +102,7 @@ ssize_t	open(char *filename, uint32_t flags, uint32_t mode)
 	}
 	new_file->node = node;
 	new_file->flags = flags;
-	new_file->indx = 0;
+	new_file->offset = 0;
 	new_file->ref_count = 1;
 
 	current->fd_table[fd] = new_file;
@@ -103,21 +111,13 @@ ssize_t	open(char *filename, uint32_t flags, uint32_t mode)
 
 ssize_t	close(int fd)
 {
-	if (fd >= 2)
+	if (fd < 0 || fd >= MAX_FD)
 		return (-1);
 	proc_t *current = get_current_process();
 
-	struct file *f = fd_get(current, fd);
+	struct file *f = current->fd_table[fd];
 	if (!f)
-		return (-9);
-	f->ref_count--;
-
-	if (f->ref_count == 0)
-	{
-		if (f->node && f->node->ops && f->node->ops->close)
-			f->node->ops->close(f->node);
-		kfree(f);
-	}
+		return (-11);
 	fd_free(current, fd);
 	return (0);
 }
@@ -125,23 +125,49 @@ ssize_t	close(int fd)
 ssize_t read(int fd, void *buf, size_t count)
 {
 	struct file *filed = fd_get(get_current_process(), fd);
-
 	if (filed == NULL || filed->node == NULL || filed->node->ops->read == NULL)
 		return (-1);
-	char *kbuff = filed->node->ops->read(filed->node);
-	if (copy_to_user((char*)buf, kbuff, count) < 0)
-	{
-		kfree(kbuff);
+	if (filed->flags & O_WRONLY)
 		return (-1);
-	}
+	char *kbuff = (char*)kmalloc(sizeof(char) * count);
+	if (!kbuff)
+		return (-1);
+	kmemset(kbuff, 0, count);
+	ssize_t res = filed->node->ops->read(filed->node, kbuff, count, filed->offset);
+	if (res < 0)
+		return (kfree(kbuff), -1);
+	else if (res == 0)
+		return (kfree(kbuff), 0);
+	ssize_t user_read = copy_to_user_wrap((char*)buf, kbuff, res);
+	if (user_read < 0)
+		return (kfree(kbuff), -1);
+
+	filed->offset += res;
 	kfree(kbuff);
-	return (count);
+	return (res);
 }
 
 ssize_t	write(int fd, const char *str, size_t count)
 {
-	(void)fd;
-	terminal_write(str, count);
-	return (count);
+	struct file *filed = fd_get(get_current_process(), fd);
+	if (filed == NULL || filed->node == NULL || filed->node->ops->write == NULL)
+		return (-1);
+	if (filed->flags & O_RDONLY)
+		return (-1);
+
+	char *kbuff = (char*)kmalloc(sizeof(char) * count);
+	if (!kbuff)
+		return (-1);
+	kmemset(kbuff, 0, count);
+	ssize_t user_read = copy_from_user_wrap(kbuff, str, count);
+	if (user_read < 0)
+		return (kfree(kbuff), -1);
+	ssize_t res = filed->node->ops->write(filed->node, kbuff, count, filed->offset);
+	if (res < 0)
+		return (kfree(kbuff), -1);
+
+	filed->offset += res;
+	kfree(kbuff);
+	return (res);
 }
 
