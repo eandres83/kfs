@@ -1,7 +1,5 @@
 #include "sysfile.h"
 
-// this is only for test that minishell compile
-
 ssize_t dup(int32_t fd)
 {
 	proc_t *proc = get_current_process();
@@ -37,41 +35,40 @@ ssize_t dup2(int32_t oldfd, int32_t newfd)
 	return (newfd);
 }
 
-static struct buf_ring pipe_buf;
-
-void	init_buf_ring(int size)
-{
-	kmemset(pipe_buf.buff, 0, size);
-	pipe_buf.head = 0;
-	pipe_buf.tail = 0;
-	pipe_buf.size = size;
-	pipe_buf.count = 0;
-}
-
-char *pipe_read(struct vfs_node *node)
+ssize_t pipe_read(struct vfs_node *node, char *buff, size_t len, size_t offset)
 {
 	(void)node;
-	if (pipe_buf.count > 0)
+	(void)offset;
+	struct buf_ring *pipe_buf = (struct buf_ring *)node->fs_info;
+	size_t i;
+	for (i = 0; len > i; i++)
 	{
-		pipe_buf.tail = (pipe_buf.tail + 1) % pipe_buf.size;
-		pipe_buf.count--;
-	}
-	return (NULL);
-}
-
-size_t pipe_write(struct vfs_node *node, char *str, size_t size)
-{
-	(void)node;
-	for (size_t i = 0; str[i] && size > i; i++)
-	{
-		if (pipe_buf.size > pipe_buf.count)
+		if (pipe_buf->count > 0)
 		{
-//			copy_to_user(str[i], pipe_buf.buff[pipe_buf.head], 1);
-			pipe_buf.count++;
-			pipe_buf.head = (pipe_buf.head + 1) % pipe_buf.size;
+			kmemcpy(&buff[i], &pipe_buf->buff[pipe_buf->tail], 1);
+			pipe_buf->tail = (pipe_buf->tail + 1) % pipe_buf->size;
+			pipe_buf->count--;
 		}
 	}
-	return (-1);
+	return (i);
+}
+
+ssize_t pipe_write(struct vfs_node *node, char *str, size_t size, size_t offset)
+{
+	(void)node;
+	(void)offset;
+	struct buf_ring *pipe_buf = (struct buf_ring *)node->fs_info;
+	size_t i;
+	for (i = 0; size > i; i++)
+	{
+		if (pipe_buf->size > pipe_buf->count)
+		{
+			kmemcpy(&pipe_buf->buff[pipe_buf->head], &str[i], 1);
+			pipe_buf->head = (pipe_buf->head + 1) % pipe_buf->size;
+			pipe_buf->count++;
+		}
+	}
+	return (i);
 }
 
 static struct ops buf_ring = {
@@ -85,34 +82,42 @@ static struct ops buf_ring = {
 
 ssize_t pipe(int *fd)
 {
+	int kernel_fd[2];
 	proc_t *proc = get_current_process();
-	if (proc->fd_table[fd[0]] == NULL || proc->fd_table[fd[1]] == NULL)
-		return (-1);
 	struct vfs_node *node = kmalloc(sizeof(struct vfs_node));
 	if (!node)
 		return (-1);
 	kmemset(node, 0, sizeof(struct vfs_node));
 	node->ops = &buf_ring;
 
-	struct file *file_read = kmalloc(sizeof(struct file));
-	if (!file_read)
-		return (-1);
-	kmemset(file_read, 0, sizeof(struct file));
-	file_read->ref_count++;
+	struct buf_ring *buf_ring = kmalloc(sizeof(struct buf_ring));
+	if (!buf_ring)
+		return (kfree(node), -1);
+	kmemset(buf_ring, 0, sizeof(struct buf_ring));
+	buf_ring->size = 4096;
+	node->fs_info = buf_ring;
+
+	kernel_fd[0] = fd_allocate(proc);
+	if (kernel_fd[0] == -1)
+		return (kfree(buf_ring), kfree(node), -1);
+	struct file *file_read = proc->fd_table[kernel_fd[0]];
 	file_read->flags = O_RDONLY;
 	file_read->node = node;
 
-	struct file *file_write = kmalloc(sizeof(struct file));
-	if (!file_write)
-		return (-1);
-	kmemset(file_write, 0, sizeof(struct file));
-	file_write->ref_count++;
+	kernel_fd[1] = fd_allocate(proc);
+	if (kernel_fd[1] == -1)
+		return (kfree(buf_ring), kfree(node), fd_free(proc, kernel_fd[0]), -1);
+	struct file *file_write = proc->fd_table[kernel_fd[1]];
 	file_write->flags = O_WRONLY;
 	file_write->node = node;
 
-//	proc->fd_table[fd[0]] = file_read;
-//	proc->fd_table[fd[1]] = file_write;
-//	fd[0] = 
+	if (copy_to_user_wrap(fd, kernel_fd, sizeof(kernel_fd)) == -1)
+	{
+		fd_free(proc, kernel_fd[0]);
+		fd_free(proc, kernel_fd[1]);
+		return (kfree(buf_ring), kfree(node), -1);
+	}
+	kprintf("el valor de los fd asignados -> %d -> %d\n", fd[0], fd[1]);
 	return (0);
 }
 

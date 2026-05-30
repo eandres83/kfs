@@ -17,6 +17,8 @@ struct vfs_node
 	uint32_t	size;	// tamano en bytes
 	uint32_t	inode;
 	uint32_t	links; // hard-links
+	uint32_t	uid;
+	uint32_t	gid;
 	uint32_t	rights;
 	void		*fs_info;
 	enum types	type;
@@ -29,8 +31,8 @@ struct vfs_node
 
 struct ops
 {
-	char *(*read) (struct vfs_node *);
-	size_t (*write) (struct vfs_node *, char *, size_t);
+	ssize_t (*read) (struct vfs_node *, char *, size_t, size_t);
+	ssize_t (*write) (struct vfs_node *, char *, size_t, size_t);
 	ssize_t (*open) (struct vfs_node *);
 	size_t (*close) (struct vfs_node *);
 	void (*readdir) (struct vfs_node *);

@@ -10,7 +10,7 @@ struct proc;
 struct file
 {
 	struct vfs_node *node;
-	uint32_t	indx;
+	uint32_t	offset;
 	uint32_t	flags;
 	uint32_t	ref_count;
 };
