@@ -29,5 +29,7 @@ char 	*kstrcat(char *dest, const char *str);
 size_t	kstrrchr(const char *str, char c);
 size_t	kstrchr(const char *str, char c);
 size_t	katoi(char *str);
+uint32_t min3(uint32_t num1, uint32_t num2, uint32_t num3);
+uint32_t min2(uint32_t num1, uint32_t num2);
 
 #endif

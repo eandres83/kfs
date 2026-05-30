@@ -40,7 +40,7 @@ extern void reload_tlb(void *virt);
 void	vmm_initialize();
 void	vmm_map_page(void *phys, void *virt, bool is_user);
 void	vmm_unmap_page(void *virt);
-bool	check_addr(uint32_t virt);
+bool	check_user_addr(uint32_t virt);
 void	vmm_remove_mapping(void *virt);
 
 // process function

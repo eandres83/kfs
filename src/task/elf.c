@@ -99,8 +99,11 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 	struct vfs_node *node = get_vfs_node_path(file_path);
 	if (node == 0x0)
 		return (-1);
-	char *content = node->ops->read(node);
+	char *content = (char*)kmalloc(node->size);
 	if (!content)
+		return (-1);
+	ssize_t res = node->ops->read(node, content, node->size, 0);
+	if (res == -1)
 		return (-1);
 	struct elf32_ehdr *elf = (struct elf32_ehdr*)content;
 	if (check_binary(elf) == false)
@@ -144,7 +147,7 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 			for (uint32_t j = 0; j < nb_page; j++)
 			{
 				void *virt_addr = (void*)(start_page + (j * 4096));
-				if (check_addr((uint32_t)virt_addr) == false)
+				if (check_user_addr((uint32_t)virt_addr) == false)
 				{
 					void *phys = pmm_map_page();
 					if (!phys)
