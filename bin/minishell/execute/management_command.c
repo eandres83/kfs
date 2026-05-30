@@ -62,3 +62,4 @@ void	execute_one_command(t_mini *mini)
 		update_exit_status(status);
 	}
 }
+

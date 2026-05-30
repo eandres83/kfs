@@ -2,6 +2,6 @@
 layout regs
 
 target remote localhost:1234
-break getcwd
+break create_init_process
 continue
 

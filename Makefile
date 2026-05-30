@@ -78,7 +78,7 @@ $(DISK_IMG): $(NAME) $(APPS_OBJ) bin/minishell/minishell
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
 	@echo -n "root:x:0:0:root:/root/kfs/src:/bin/minishell\neandres:x:1000:1000:user:/home/eandres:/bin/minishell" > $(FS_DIR)/etc/passwd
-	@echo -n "root:hash\neandres:hash" > $(FS_DIR)/etc/shadow
+	@echo -n "root:1\neandres:hash" > $(FS_DIR)/etc/shadow
 	@mkdir -p $(FS_DIR)/root/kfs/src
 	@mkdir -p $(FS_DIR)/home/eandres
 	@mkdir -p $(FS_DIR)/dev

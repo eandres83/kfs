@@ -13,6 +13,7 @@ static char	*get_one_line(int fd)
 	int ret;
 	while ((ret = read(fd, &c, 1)) > 0)
 	{
+		write(fd, &c, 1);
 		if (c == '\n')
 			break ;
 		aux = str;
@@ -36,11 +37,13 @@ static char **read_split_file(char *file)
 		printf("Error: cannot read %s\n", file);
 		return (NULL);
 	}
-	char *buff = (char*)malloc(4096);
+	char *buff = (char*)malloc(4097);
 	if (!buff)
 		return (NULL);
-	if (read(fd, buff, 4096) == -1)
+	ssize_t res = read(fd, buff, 4096);
+	if (res == -1)
 		return (free(buff), NULL);
+	buff[res] = '\0';
 	char **split_buf = split(buff, '\n');
 	if (!split_buf)
 		return (free(buff), NULL);
@@ -123,7 +126,7 @@ int main()
 			printf("Fatal error in chdir syscall\n");
 			exit(1);
 		}
-		ssize_t res = execve(line[6], argv, envp);
+		ssize_t res = execve("/bin/test_pipe", argv, envp);
 		if (res == -1)
 		{
 			printf("Fatal error in init process execve\n");

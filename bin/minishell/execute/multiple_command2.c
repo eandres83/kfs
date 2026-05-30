@@ -55,3 +55,4 @@ void	execute_command(t_mini *mini)
 		exit(0);
 	}
 }
+
