@@ -3,6 +3,7 @@
 
 #include <utils.h>
 #include "fs/vfs/vfs.h"
+#include "arch/i386/lib/uaccess.h"
 
 struct vfs_node;
 
@@ -17,7 +18,7 @@ void	init_tyy();
 void	tty_push_char(char c);
 char 	tty_read_char();
 
-size_t	tty_vfs_write(struct vfs_node *node, char *str, size_t len);
-char	*tty_vfs_read(struct vfs_node *node);
+ssize_t	tty_vfs_write(struct vfs_node *node, char *str, size_t len, size_t offset);
+ssize_t	tty_vfs_read(struct vfs_node *node, char *buff, size_t len, size_t offset);
 
 #endif

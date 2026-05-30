@@ -41,23 +41,21 @@ char	tty_read_char()
 	return (c);
 }
 
-size_t	tty_vfs_write(struct vfs_node *node, char *str, size_t len)
+ssize_t	tty_vfs_write(struct vfs_node *node, char *str, size_t len, size_t offset)
 {
 	(void)node;
+	(void)offset;
 	terminal_write(str, len);
-	return (1);
+	return (len);
 }
 
-char	*tty_vfs_read(struct vfs_node *node)
+ssize_t	tty_vfs_read(struct vfs_node *node, char *buff, size_t len, size_t offset)
 {
 	(void)node;
-	char *buff = (char*)kmalloc(3);
-	if (!buff)
-		return (NULL);
-
+	(void)buff;
+	(void)offset;
+	(void)len;
 	buff[0] = tty_read_char();
-	terminal_putchar(buff[0]);
-	buff[1] = '\0';
-	return (buff);
+	return (1);
 }
 
