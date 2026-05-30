@@ -1,16 +1,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <kmalloc.h>
 #include "drivers/vga.h"
 #include "drivers/keyboard.h"
 #include "arch/i386/idt.h"
 #include "arch/i386/timer.h"
 #include "mm/slab.h"
-#include "task/task.h"
-#include "fs/vfs/vfs.h"
-#include "fs/ext2/ext2.h"
-#include "kernel/command.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -22,7 +17,6 @@
 #error "This code needs to be compiled with a ix86-elf compiler"
 #endif
 
-enum system_state sys_state = LOGIN_MODE;
 extern uint32_t	get_stack_pointer();
 
 static void	print_splash()
@@ -80,14 +74,10 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	init_timer(1000);
 
 	init_vfs();
-//	set_current_process();
-
 	create_init_process();
 
 	asm volatile ("sti");
 	while (1)
 		asm volatile ("hlt");
-
-//	prompt();
 }
 

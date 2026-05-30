@@ -126,7 +126,7 @@ int main()
 			printf("Fatal error in chdir syscall\n");
 			exit(1);
 		}
-		ssize_t res = execve("/bin/test_pipe", argv, envp);
+		ssize_t res = execve("/bin/test_memory_security", argv, envp);
 		if (res == -1)
 		{
 			printf("Fatal error in init process execve\n");
