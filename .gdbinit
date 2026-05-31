@@ -2,6 +2,7 @@
 layout regs
 
 target remote localhost:1234
-break isr_handler
+break sys_open
+ignore 1 2
 continue
 

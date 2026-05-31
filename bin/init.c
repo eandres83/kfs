@@ -121,12 +121,15 @@ int main()
 	ssize_t pid = fork();
 	if (pid == 0)
 	{
+		setuid(atoi(line[2]));
+		setgid(atoi(line[3]));
+		printf("el uid -> %s, el gid -> %s\n", line[2], line[3]);
 		if (chdir(line[5]) == -1)
 		{
 			printf("Fatal error in chdir syscall\n");
 			exit(1);
 		}
-		ssize_t res = execve("/bin/test_memory_security", argv, envp);
+		ssize_t res = execve("/bin/test_permisions", argv, envp);
 		if (res == -1)
 		{
 			printf("Fatal error in init process execve\n");

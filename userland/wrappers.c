@@ -69,9 +69,18 @@ ssize_t chdir(char *path)
 	return (ret);
 }
 
-void getuid()
+ssize_t setuid(uint32_t new_uid)
 {
-	asm volatile("int $0x80" : : "a" (SYS_getuid) : "memory");
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_setuid), "b" (new_uid) : "memory");
+	return (ret);
+}
+
+ssize_t getuid()
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getuid) : "memory");
+	return (ret);
 }
 
 ssize_t access(char *file_name, int mode)
@@ -99,6 +108,20 @@ ssize_t	pipe(int *fd)
 {
 	ssize_t ret;
 	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_pipe), "b" (fd) : "memory");
+	return (ret);
+}
+
+ssize_t setgid(uint32_t new_gid)
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_setgid), "b" (new_gid) : "memory");
+	return (ret);
+}
+
+ssize_t	getgid()
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getgid) : "memory");
 	return (ret);
 }
 

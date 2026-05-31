@@ -26,7 +26,10 @@ ssize_t	signal(uint32_t num, void (*function)());
 ssize_t	dup2(uint32_t oldfd, uint32_t newfd);
 void	*mmap(size_t size);
 ssize_t munmap(void *addr, size_t size);
-void	getuid();
+ssize_t	setuid(uint32_t new_uid);
+ssize_t	getuid();
+ssize_t	setgid(uint32_t new_gid);
+ssize_t	getgid();
 char	*getcwd(void *buff, size_t size);
 ssize_t	chdir(char *path);
 
