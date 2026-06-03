@@ -1,14 +1,29 @@
 #include "fs/fd.h"
 #include "task/task.h"
 
+#define MAX_OPEN_FILES 64
+
+struct file global_files[MAX_OPEN_FILES];
+
+struct file *file_allocate()
+{
+	for (int i = 0; i < MAX_OPEN_FILES; i++)
+	{
+		if (global_files[i].ref_count == 0)
+		{
+			kmemset(&global_files[i], 0, sizeof(struct file));
+			global_files[i].ref_count = 1;
+			return (&global_files[i]);
+		}
+	}
+	return (NULL);
+}
+
 int32_t	fd_allocate(proc_t *proc)
 {
-	struct file *new_fd = kmalloc(sizeof(struct file));
+	struct file *new_fd = file_allocate();
 	if (!new_fd)
 		return (-1);
-
-	kmemset(new_fd, 0, sizeof(struct file));
-	new_fd->ref_count++;
 
 	for (int i = 0; i < MAX_FD; i++)
 	{
@@ -18,7 +33,7 @@ int32_t	fd_allocate(proc_t *proc)
 			return (i);
 		}
 	}
-	kfree(new_fd);
+	new_fd->ref_count = 0;
 	return (-1);
 }
 
@@ -32,14 +47,21 @@ struct file	*fd_get(proc_t *proc, int fd)
 
 void	fd_free(proc_t *proc, int fd)
 {
-	if (fd >= MAX_FD || fd < 0)
+	if (fd >= MAX_FD || fd < 0 || proc->fd_table[fd] == NULL)
 		return ;
-	if (proc->fd_table[fd] == NULL)
-		return ;
-	proc->fd_table[fd]->ref_count--;
-	if (proc->fd_table[fd]->ref_count == 0)
-		kfree(proc->fd_table[fd]);
+	struct file *global_file = proc->fd_table[fd];
+	global_file->ref_count--;
 	proc->fd_table[fd] = NULL;
+
+	if (global_file->ref_count == 0)
+	{
+		if (global_file->node)
+		{
+			if (global_file->node->ops->close != NULL)
+				global_file->node->ops->close(global_file->node);
+		}
+		kmemset(global_file, 0, sizeof(struct file));
+	}
 }
 
 static struct ops tty_fake_ops = {
@@ -59,32 +81,25 @@ void	create_init_fd(proc_t *proc)
 	kmemset(node, 0, sizeof(struct vfs_node));
 	node->ops = &tty_fake_ops;
 
-	struct file *file_stdin = kmalloc(sizeof(struct file));
+	struct file *file_stdin = file_allocate();
 	if (!file_stdin)
 		return ;
-	kmemset(file_stdin, 0, sizeof(struct file));
-	file_stdin->ref_count++;
 	file_stdin->flags = O_RDONLY;
 	file_stdin->node = node;
+	proc->fd_table[0] = file_stdin;
 
-	struct file *file_stdout = kmalloc(sizeof(struct file));
+	struct file *file_stdout = file_allocate();
 	if (!file_stdout)
 		return ;
-	kmemset(file_stdout, 0, sizeof(struct file));
-	file_stdout->ref_count++;
 	file_stdout->flags = O_WRONLY;
 	file_stdout->node = node;
+	proc->fd_table[1] = file_stdout;
 
-	struct file *file_stderr = kmalloc(sizeof(struct file));
+	struct file *file_stderr = file_allocate();
 	if (!file_stderr)
 		return ;
-	kmemset(file_stderr, 0, sizeof(struct file));
-	file_stderr->ref_count++;
 	file_stderr->node = node;
 	file_stderr->flags = O_WRONLY;
-
-	proc->fd_table[0] = file_stdin;
-	proc->fd_table[1] = file_stdout;
 	proc->fd_table[2] = file_stderr;
 }
 

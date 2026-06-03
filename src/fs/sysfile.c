@@ -1,7 +1,6 @@
 #include "sysfile.h"
 
-ssize_t dup(int32_t fd)
-{
+ssize_t dup(int32_t fd) {
 	proc_t *proc = get_current_process();
 	if ((fd >= MAX_FD || fd < 0) || proc->fd_table[fd] == NULL)
 		return (-1);
@@ -37,7 +36,6 @@ ssize_t dup2(int32_t oldfd, int32_t newfd)
 
 ssize_t pipe_read(struct vfs_node *node, char *buff, size_t len, size_t offset)
 {
-	(void)node;
 	(void)offset;
 	struct buf_ring *pipe_buf = (struct buf_ring *)node->fs_info;
 	size_t i;
@@ -55,7 +53,6 @@ ssize_t pipe_read(struct vfs_node *node, char *buff, size_t len, size_t offset)
 
 ssize_t pipe_write(struct vfs_node *node, char *str, size_t size, size_t offset)
 {
-	(void)node;
 	(void)offset;
 	struct buf_ring *pipe_buf = (struct buf_ring *)node->fs_info;
 	size_t i;
@@ -71,11 +68,21 @@ ssize_t pipe_write(struct vfs_node *node, char *str, size_t size, size_t offset)
 	return (i);
 }
 
+size_t	pipe_close(struct vfs_node *node)
+{
+	struct buf_ring *pipe_buf = (struct buf_ring *)node->fs_info;
+
+	pipe_buf->fds--;
+	if (pipe_buf->fds == 0)
+		kfree(node);
+	return (0);
+}
+
 static struct ops buf_ring = {
 	.read = pipe_read,
 	.write = pipe_write,
 	.open = NULL,
-	.close = NULL,
+	.close = pipe_close,
 	.readdir = NULL,
 	.finddir = NULL,
 };
@@ -95,6 +102,7 @@ ssize_t pipe(int *fd)
 		return (kfree(node), -1);
 	kmemset(buf_ring, 0, sizeof(struct buf_ring));
 	buf_ring->size = 4096;
+	buf_ring->fds = 2;
 	node->fs_info = buf_ring;
 
 	kernel_fd[0] = fd_allocate(proc);

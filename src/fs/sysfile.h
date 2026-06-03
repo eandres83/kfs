@@ -12,6 +12,7 @@ struct buf_ring
 	uint32_t	tail;
 	uint32_t	size;
 	uint32_t	count;
+	uint32_t	fds;
 };
 
 ssize_t dup(int32_t fd);
