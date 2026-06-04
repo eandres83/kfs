@@ -32,6 +32,9 @@ ssize_t	setgid(uint32_t new_gid);
 ssize_t	getgid();
 char	*getcwd(void *buff, size_t size);
 ssize_t	chdir(char *path);
+ssize_t socketpair(int domain, int type, int protocol, int *sv);
+ssize_t sendmsg(int fd_socket, const struct msghdr *msg, int flags);
+ssize_t	recvmsg(int fd_socket, struct msghdr *msg, int flags);
 
 // other function
 void	printf(const char *format, ...);

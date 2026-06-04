@@ -15,13 +15,41 @@ static int32_t put_file(struct file *new_file, proc_t *process)
 	return (-1);
 }
 
+static void empty_fds(struct socket_direct *direct)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		if (direct->shared_fds[i] != NULL)
+		{
+			direct->shared_fds[i]->ref_count--;
+			if (direct->shared_fds[i]->ref_count == 0)
+			{
+				if (direct->shared_fds[i]->node->ops->close != NULL)
+					direct->shared_fds[i]->node->ops->close(direct->shared_fds[i]->node);
+				kmemset(direct->shared_fds[i], 0, sizeof(struct file));
+			}
+		}
+	}
+}
+
 size_t	socket_close(struct vfs_node *node)
 {
 	struct socket_channel *socket = (struct socket_channel *)node->fs_info;
 
+	struct socket_direct *direction_ab = &socket->socket_ab;
+	struct socket_direct *direction_ba = &socket->socket_ba;
+	if (direction_ab->waiting_process != NULL)
+		direction_ab->waiting_process->state = RUNNABLE;
+	if (direction_ba->waiting_process != NULL)
+		direction_ba->waiting_process->state = RUNNABLE;
+
 	socket->fds_count--;
 	if (socket->fds_count == 0)
+	{
+		empty_fds(direction_ab);
+		empty_fds(direction_ba);
 		kfree(node->fs_info);
+	}
 	kfree(node);
 	return (0);
 }
@@ -40,13 +68,15 @@ ssize_t socketpair(int domain, int type, int protocol, int *sv)
 	proc_t *process = get_current_process();
 	int kernel_socket[2];
 
-	if (domain != 1 || type != 2 || protocol != 0)
+	if (domain != 1 || (type != 2 && type != 1) || protocol != 0)
 		return (-1);
 
 	struct socket_channel *socket = kmalloc(sizeof(struct socket_channel));
 	if (!socket)
 		return (-1);
 	kmemset(socket, 0, sizeof(struct socket_channel));
+	socket->socket_ab.text_buff.size = 4096;
+	socket->socket_ba.text_buff.size = 4096;
 	socket->fds_count = 2;
 
 	struct vfs_node *node_ab = kmalloc(sizeof(struct vfs_node));
@@ -128,6 +158,7 @@ ssize_t sendmsg(int fd_socket, const struct msghdr *msg, int flags)
 				direction->shared_fds[i] = fd_get(process, fd);
 				if (direction->shared_fds[i] == NULL)
 					return (-1);
+				direction->shared_fds[i]->ref_count++;
 				break;
 			}
 		}
@@ -150,7 +181,22 @@ ssize_t sendmsg(int fd_socket, const struct msghdr *msg, int flags)
 			}
 		}
 	}
+	if (direction->waiting_process != NULL)
+	{
+		direction->waiting_process->state = RUNNABLE;
+		direction->waiting_process = NULL;
+	}
 	return (bytes_read);
+}
+
+static int check_fd(struct socket_direct *direction)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		if (direction->shared_fds[i] != NULL)
+			return (1);
+	}
+	return (0);
 }
 
 ssize_t	recvmsg(int fd_socket, struct msghdr *msg, int flags)
@@ -167,6 +213,15 @@ ssize_t	recvmsg(int fd_socket, struct msghdr *msg, int flags)
 	else
 		direction = &socket->socket_ab;
 
+	struct buf_ring *buffer = &direction->text_buff;
+	while (buffer->count == 0 && check_fd(direction) == 0)
+	{
+		if (socket->fds_count < 2)
+			break;
+		direction->waiting_process = process;
+		process->state = SLEEPING;
+		yield();
+	}
 	if (flags == SCM_RIGHTS)
 	{
 		int i;
@@ -174,18 +229,17 @@ ssize_t	recvmsg(int fd_socket, struct msghdr *msg, int flags)
 		{
 			if (direction->shared_fds[i] != NULL)
 			{
-				int32_t fd = put_file(direction->shared_fds[i], process);
+				int fd = put_file(direction->shared_fds[i], process);
 				if (fd == -1)
 					return (-1);
 				direction->shared_fds[i] = NULL;
-				msg->msg_control = (void*)fd;
+				copy_to_user_wrap(msg->msg_control, (void*)&fd, sizeof(fd));
 				break;
 			}
 		}
 		if (i == 8)
 			return (-1);
 	}
-	struct buf_ring *buffer = &direction->text_buff;
 	for (size_t i = 0; i < msg->msg_iovlen; i++)
 	{
 		struct iovec *vec = msg->msg_iov + i;

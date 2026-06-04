@@ -2,6 +2,7 @@
 #define UAPI_H
 
 typedef int32_t ssize_t;
+typedef uint32_t socklen_t;
 
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
@@ -47,5 +48,33 @@ typedef int32_t ssize_t;
 #define SYS_mmap	90
 #define SYS_munmap	91
 #define SYS_getcwd	183
+#define SYS_socketpair	360
+#define SYS_sendmsg	370
+#define SYS_recvmsg	372
+
+// socket struct and defines
+struct iovec
+{
+	void	*iov_base; // Starting address
+	size_t	iov_len;   // size of the memory pointed to by iov_base
+};
+
+struct msghdr
+{
+	void		*msg_name;	// address
+	socklen_t	len_namelen;	// size of address
+	struct iovec	*msg_iov;	// scatter/gather vector
+	size_t		msg_iovlen;	// elements in msg_iov
+	void		*msg_control;	// ancillary data
+	size_t		msg_controllen;	// ancillary data buffer size
+	int32_t		msg_flags;	// flags on received message
+};
+
+#define AF_UNIX  1
+#define AF_LOCAL 1
+
+#define SOCK_STREAM 2
+
+#define SCM_RIGHTS 0x01
 
 #endif

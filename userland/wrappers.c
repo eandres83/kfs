@@ -162,3 +162,24 @@ char	*getcwd(void *buff, size_t size)
 	return (ret);
 }
 
+ssize_t	socketpair(int domain, int type, int protocol, int *sv)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_socketpair), "b" (domain), "c" (type), "d" (protocol), "S" (sv) : "memory");
+	return (ret);
+}
+
+ssize_t	sendmsg(int socket, const struct msghdr *msg, int flags)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_sendmsg), "b" (socket), "c" (msg), "d" (flags) : "memory");
+	return (ret);
+}
+
+ssize_t	recvmsg(int socket, struct msghdr *msg, int flags)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_recvmsg), "b" (socket), "c" (msg), "d" (flags) : "memory");
+	return (ret);
+}
+

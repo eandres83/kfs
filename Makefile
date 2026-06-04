@@ -24,7 +24,7 @@ SRCS_MINISHELL = $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins
 SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard src/kernel/*.c) \
 	$(wildcard src/lib/*.c) $(wildcard src/mm/*.c) $(wildcard src/arch/i386/*.c) $(wildcard src/task/*.c) \
 	$(wildcard src/fs/ext2/*.c) $(wildcard src/fs/vfs/*.c) $(wildcard src/fs/*.c) $(wildcard src/drivers/tty/*.c) \
-	$(wildcard src/arch/i386/lib/*.c)
+	$(wildcard src/arch/i386/lib/*.c) $(wildcard src/ipc/*.c)
 SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i386/*.s) $(wildcard src/task/*.s) $(wildcard src/arch/i386/lib/*.s)
 
 KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \

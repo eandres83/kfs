@@ -231,6 +231,12 @@ static uint32_t clear_process(proc_t *process, uint32_t *status)
 	if (status != NULL)
 		*status = process->exit_status;
 	uint32_t tmp_pid = process->pid;
+
+	for (int i = 0; i < MAX_FD; i++)
+	{
+		if (process->fd_table[i] != NULL)
+			fd_free(process, i);
+	}
 	if (process->kstack)
 		kfree(process->kstack);
 	if (process->pd)

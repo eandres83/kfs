@@ -3,6 +3,7 @@
 #include "task/elf.h"
 #include "arch/i386/lib/uaccess.h"
 #include "fs/sysfile.h"
+#include "ipc/socket.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -138,7 +139,22 @@ ssize_t	sys_getcwd(registers_t *regs)
 	return ((ssize_t)getcwd((char*)regs->ebx, regs->ecx));
 }
 
-static ssize_t	(*syscall[200])(registers_t*) =
+ssize_t	sys_socketpair(registers_t *regs)
+{
+	return (socketpair(regs->ebx, regs->ecx, regs->edx, (int*)regs->esi));
+}
+
+ssize_t	sys_sendmsg(registers_t *regs)
+{
+	return (sendmsg(regs->ebx, (const struct msghdr*)regs->ecx, regs->edx));
+}
+
+ssize_t	sys_recvmsg(registers_t *regs)
+{
+	return (recvmsg(regs->ebx, (struct msghdr*)regs->ecx, regs->edx));
+}
+
+static ssize_t	(*syscall[384])(registers_t*) =
 {
 	[SYS_exit] 	= sys_exit,
 	[SYS_fork] 	= sys_fork,
@@ -162,7 +178,10 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[SYS_dup2] 	= sys_dup2,
 	[SYS_mmap] 	= sys_mmap,
 	[SYS_munmap]	= sys_munmap,
-	[SYS_getcwd] 	= sys_getcwd
+	[SYS_getcwd] 	= sys_getcwd,
+	[SYS_socketpair]= sys_socketpair,
+	[SYS_sendmsg]	= sys_sendmsg,
+	[SYS_recvmsg]	= sys_recvmsg,
 };
 
 void 	syscall_callback(registers_t *regs)
@@ -170,7 +189,7 @@ void 	syscall_callback(registers_t *regs)
 //	kprintf("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
-	if (regs->eax < 200 && syscall[regs->eax] != NULL)
+	if (regs->eax < 384 && syscall[regs->eax] != NULL)
 		regs->eax = syscall[regs->eax](regs);
 	else
 		kprintf("Error: Syscall not implemented.\n");
