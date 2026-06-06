@@ -153,6 +153,20 @@ ssize_t	munmap(void *addr, size_t size)
 	return (ret);
 }
 
+ssize_t	info_tty()
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_info_tty) : "memory");
+	return (ret);
+}
+
+ssize_t	yield()
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_yield) : "memory");
+	return (ret);
+}
+
 char	*getcwd(void *buff, size_t size)
 {
 	char *ret;
