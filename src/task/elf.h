@@ -1,9 +1,11 @@
 #ifndef ELF_H
 #define ELF_H
 
+struct registers_t;
+
 #include <utils.h>
-#include "fs/vfs/vfs.h"
 #include "mm/vmm.h"
+#include "arch/i386/idt.h"
 
 typedef uint32_t 	Elf32_Addr; // Unsigned program address
 typedef uint16_t 	Elf32_Half; // Unsigned medium integer

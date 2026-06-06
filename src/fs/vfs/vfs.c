@@ -1,5 +1,6 @@
 #include "vfs.h"
 #include "fs/ext2/ext2.h"
+#include "task/task.h"
 
 struct vfs_node *vfs = NULL;
 

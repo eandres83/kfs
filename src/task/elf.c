@@ -1,4 +1,5 @@
 #include "task/elf.h"
+#include "task/task.h"
 
 bool	check_binary(struct elf32_ehdr *elf)
 {

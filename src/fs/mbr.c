@@ -1,4 +1,6 @@
+#include <kmalloc.h>
 #include "fs/mbr.h"
+#include "drivers/ide/ide.h"
 
 struct mbr_entry	*partition(uint32_t num_partition)
 {
@@ -11,8 +13,8 @@ struct mbr_entry	*partition(uint32_t num_partition)
 	ide_read_sector(0, buffer);
 
 	kmemcpy(entry, ((char*)buffer + (446 + (num_partition * 16))), sizeof(struct mbr_entry));
-	kprintf("mbr_entry lba_start -> %d\n", entry->lba_start);
-	kprintf("mbr_entry nb_sector -> %d\n", entry->nb_sector);
+//	kprintf("mbr_entry lba_start -> %d\n", entry->lba_start);
+//	kprintf("mbr_entry nb_sector -> %d\n", entry->nb_sector);
 
 	return (entry);
 }

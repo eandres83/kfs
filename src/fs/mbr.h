@@ -2,7 +2,6 @@
 #define MBR_H
 
 #include <utils.h>
-#include "drivers/ide/ide.h"
 
 // mbr = Master Boot Record
 struct mbr_entry

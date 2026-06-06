@@ -1,4 +1,5 @@
 #include <utils.h>
+#include <kmalloc.h>
 
 static char **free_error(char **str)
 {

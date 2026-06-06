@@ -1,4 +1,5 @@
 #include <utils.h>
+#include <kmalloc.h>
 
 void	double_free(char **str)
 {

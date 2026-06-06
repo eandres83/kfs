@@ -1,4 +1,5 @@
 #include "arch/i386/lib/uaccess.h"
+#include "mm/vmm.h"
 
 // copy_to/from_user return the number of bytes that failed
 extern uint32_t copy_from_user(void *dest, const void *str, size_t size);

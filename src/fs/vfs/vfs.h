@@ -3,8 +3,6 @@
 
 #include <utils.h>
 #include <kmalloc.h>
-#include "drivers/io.h"
-#include "task/task.h"
 #include "fs/fd.h"
 
 extern struct vfs_node *vfs;

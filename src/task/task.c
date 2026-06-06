@@ -1,4 +1,8 @@
 #include "task.h"
+#include "mm/vmm.h"
+#include "mm/gdt.h"
+#include "fs/fd.h"
+#include "task/elf.h"
 
 static uint32_t next_pid = 1;
 struct context *scheduler_context;

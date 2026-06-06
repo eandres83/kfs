@@ -5,11 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <kmalloc.h>
-
-typedef int32_t ssize_t;
 
 #define PANIC(msg) panic(msg, __FILE__, __LINE__)
+typedef int32_t ssize_t;
 
 // noreturn es para que el compilador sepa que el programa acaba siempre que se llama a esta funcion
 void	panic(char *msg, const char *file, uint32_t line) __attribute__((noreturn));
