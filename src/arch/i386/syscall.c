@@ -134,19 +134,6 @@ ssize_t sys_munmap(registers_t *regs)
 	return (munmap((void*)regs->ebx, regs->ecx));
 }
 
-ssize_t	sys_info_tty(registers_t *regs)
-{
-	(void)regs;
-	return (check_info_tty());
-}
-
-ssize_t	sys_sched_yield(registers_t *regs)
-{
-	(void)regs;
-	yield();
-	return (0);
-}
-
 ssize_t	sys_getcwd(registers_t *regs)
 {
 	return ((ssize_t)getcwd((char*)regs->ebx, regs->ecx));
@@ -191,8 +178,6 @@ static ssize_t	(*syscall[384])(registers_t*) =
 	[SYS_dup2]	= sys_dup2,
 	[SYS_mmap] 	= sys_mmap,
 	[SYS_munmap]	= sys_munmap,
-	[SYS_info_tty]	= sys_info_tty,
-	[SYS_yield]	= sys_sched_yield,
 	[SYS_getcwd] 	= sys_getcwd,
 	[SYS_socketpair]= sys_socketpair,
 	[SYS_sendmsg]	= sys_sendmsg,
