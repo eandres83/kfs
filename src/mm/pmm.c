@@ -85,7 +85,7 @@ void	init_pmm(multiboot_info_t *mboot_info)
 	// protect the kernel
 	pmm_reserver_kernel();
 
-	kprintf("PMM Initialized. Total RAM Pages: %d\n", total_ram_frames);
+	kdebug("PMM Initialized. Total RAM Pages: %d\n", total_ram_frames);
 }
 
 // find the first free page in the bitmap (next-fit)
@@ -150,13 +150,15 @@ void	meminfo()
 		}
 	}
 
+#ifdef KERNEL_DEBUG
 	uint32_t total_kb = (total_frames * PAGE_SIZE) / 1024;
 	uint32_t used_kb = (used_frames * PAGE_SIZE) / 1024;
 	uint32_t free_kb = (free_frames * PAGE_SIZE) / 1024;
+#endif
 
-	kprintf("--- MEMORY INFO ---\n");
-	kprintf("Total RAM: %d KB (%d pages)\n", total_kb, total_frames);
-	kprintf("Used RAM : %d KB (%d pages)\n", used_kb, used_frames);
-	kprintf("Free RAM : %d KB (%d pages)\n", free_kb, free_frames);
+	kdebug("--- MEMORY INFO ---\n");
+	kdebug("Total RAM: %d KB (%d pages)\n", total_kb, total_frames);
+	kdebug("Used RAM : %d KB (%d pages)\n", used_kb, used_frames);
+	kdebug("Free RAM : %d KB (%d pages)\n", free_kb, free_frames);
 }
 

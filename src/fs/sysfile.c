@@ -125,7 +125,7 @@ ssize_t pipe(int *fd)
 		fd_free(proc, kernel_fd[1]);
 		return (kfree(buf_ring), kfree(node), -1);
 	}
-	kprintf("el valor de los fd asignados -> %d -> %d\n", fd[0], fd[1]);
+	kdebug("el valor de los fd asignados -> %d -> %d\n", fd[0], fd[1]);
 	return (0);
 }
 

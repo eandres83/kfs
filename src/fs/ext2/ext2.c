@@ -66,7 +66,7 @@ uint32_t find_block(struct ext2_fs_info *fs_info, uint32_t addr_block)
 		}
 	}
 	kfree(bitmap);
-	kprintf("Esto no se deberia de ver :(\n");
+	kdebug("Esto no se deberia de ver :(\n");
 	return (0);
 }
 
@@ -138,7 +138,7 @@ ssize_t ext2_write(struct vfs_node *node, char *str, size_t len, size_t offset)
 
 		if (block_index >= 12)
 		{
-			kprintf("Error: file to large :(\n");
+			kdebug("Error: file to large :(\n");
 			break;
 		}
 		if (inode->direct_block[block_index] == 0)
@@ -146,7 +146,7 @@ ssize_t ext2_write(struct vfs_node *node, char *str, size_t len, size_t offset)
 			inode->direct_block[block_index] = find_block(fs_info, fs_info->bgdt->addr_inode_bitmap);
 			if (inode->direct_block[block_index] == 0)
 			{
-				kprintf("Error: cannot find a free block\n");
+				kdebug("Error: cannot find a free block\n");
 				break;
 			}
 		}
@@ -176,7 +176,7 @@ ssize_t ext2_write(struct vfs_node *node, char *str, size_t len, size_t offset)
 			kfree(table_buffer);
 		}
 		else
-			kprintf("Error: cannot read inode table\n");
+			kdebug("Error: cannot read inode table\n");
 	}
 	kfree(inode);
 	return (bytes_written);
@@ -190,7 +190,7 @@ size_t ext2_create(struct vfs_node *node, char *str, char *file, uint32_t rights
 	// write new block
 	uint32_t indx = find_block(fs_info, fs_info->bgdt->addr_block_bitmap);
 	if (indx == 0)
-		return (kprintf("block not found\n"), 1);
+		return (kdebug("block not found\n"), 1);
 	char buf[fs_info->size_block];
 	kmemset(buf, 0, fs_info->size_block);
 	kstrcpy(buf, str);
@@ -199,7 +199,7 @@ size_t ext2_create(struct vfs_node *node, char *str, char *file, uint32_t rights
 	// create new inode for new block
 	uint32_t indx_inode = find_block(fs_info, fs_info->bgdt->addr_inode_bitmap);
 	if (indx_inode == 0)
-		return (kprintf("block not found\n"), 1);
+		return (kdebug("block not found\n"), 1);
 
 	struct ext2_inode *new_inode = kmalloc(sizeof(struct ext2_inode));
 	if (!new_inode)
@@ -246,7 +246,7 @@ size_t ext2_create(struct vfs_node *node, char *str, char *file, uint32_t rights
 	real_size = ((real_size + 3) / 4) * 4; // round up
 
 	if (fs_info->size_block - bytes_read - real_size < real_size)
-		return (kprintf("Error: no left space\n"), 1);
+		return (kdebug("Error: no left space\n"), 1);
 	uint32_t original_size = dir_entry->entry_size;
 	dir_entry->entry_size = real_size;
 
@@ -406,7 +406,7 @@ struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name)
 			}
 			if (dir_entry->entry_size == 0)
 			{
-				kprintf("Errro: finddir entry size == 0\n");
+				kdebug("Errro: finddir entry size == 0\n");
 				break;
 			}
 			bytes_read += dir_entry->entry_size;
@@ -453,7 +453,7 @@ void ext2_readdir(struct vfs_node *dir_node)
 			}
 			if (dir_entry->entry_size == 0)
 			{
-				kprintf("Error: readdir entry size == 0\n");
+				kdebug("Error: readdir entry size == 0\n");
 				break;
 			}
 			bytes_read += dir_entry->entry_size;
@@ -482,7 +482,7 @@ static struct ext2_fs_info *init_ext2(uint32_t lba_offset)
 
 	kmemcpy(fs_info->sb, buffer, sizeof(struct ext2_sb));
 	if (fs_info->sb->magic_nb == 0xef53)
-		kprintf("El numero -> %x\n", fs_info->sb->magic_nb);
+		kdebug("El numero -> %x\n", fs_info->sb->magic_nb);
 
 	if (fs_info->sb->version_major == 0)
 		fs_info->sb->inode_size = 128;

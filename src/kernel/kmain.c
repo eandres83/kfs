@@ -6,6 +6,8 @@
 #include "arch/i386/idt.h"
 #include "arch/i386/timer.h"
 #include "mm/slab.h"
+#include "mm/gdt.h"
+#include "task/task.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
@@ -57,7 +59,7 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 
 	// Make sure the magic number matches for memory mapping
 	if (magic != 0x2BADB002)
-		kprintf("error");
+		kdebug("error");
 
 	init_pmm(boot_info);
 
@@ -67,8 +69,8 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 
 	init_kmalloc();
 
-	kprintf("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
-	kprintf("Memory map address: 0x%x\n", boot_info->mmap_addr);
+	kdebug("Multiboot info address: 0x%x\n", (uint32_t)boot_info);
+	kdebug("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	init_keyboard();
 	init_timer(1000);

@@ -67,7 +67,7 @@ void create_init_process()
 	int32_t res = execve("/bin/init", argv, envp, &regs);
 	if (res == -1)
 	{
-		kprintf("Fatal error when init_main_process execve, soo bad :(\n");
+		kdebug("Fatal error when init_main_process execve, soo bad :(\n");
 		return ;
 	}
 	char *stack_top = new_proc->kstack + 4096;
@@ -99,8 +99,8 @@ void yield()
 
 void kill_process(char *motivo)
 {
-	
-	kprintf("[Kernel] Porceso PID %d asesinado por exception: %s \n",
+	(void)motivo;
+	kdebug("[Kernel] Porceso PID %d asesinado por exception: %s \n",
 		current_process->pid, motivo);
 	kill(current_process->pid, 9);
 	exit_process(139);
@@ -391,7 +391,7 @@ ssize_t	chdir(char *path)
 		return (kfree(new_pwd), -1);
 	if (node->type != VFS_DIRECTORY && node->type != VFS_MOUNTPOINT)
 	{
-		kprintf("Error: Not a directory\n");
+		kdebug("Error: Not a directory\n");
 		return (kfree(new_pwd), -1);
 	}
 	set_new_node(node);

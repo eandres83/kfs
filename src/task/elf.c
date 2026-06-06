@@ -4,13 +4,13 @@
 bool	check_binary(struct elf32_ehdr *elf)
 {
 	if (elf->e_ident[EI_MAG0] != 0x7f || elf->e_ident[EI_MAG1] != 'E' || elf->e_ident[EI_MAG2] != 'L' || elf->e_ident[EI_MAG3] != 'F')
-		return (kprintf("Error: not a elf file :(\n"), false);
+		return (kdebug("Error: not a elf file :(\n"), false);
 	if (elf->e_ident[EI_CLASS] != 1) // 
-		return (kprintf("Error: not a 32 bits file\n"), false);
+		return (kdebug("Error: not a 32 bits file\n"), false);
 	if (elf->e_type != 2) // check file type
-		return (kprintf("Error: not a executable file\n"), false);
+		return (kdebug("Error: not a executable file\n"), false);
 	if (elf->e_machine != 3) // check intel architecture
-		return (kprintf("Error: not x86/i386 architecture\n"), false);
+		return (kdebug("Error: not x86/i386 architecture\n"), false);
 	return (true);
 }
 

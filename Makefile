@@ -7,6 +7,10 @@ CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs $(INCLUDES)
 
+ifeq ($(DEBUG), 1)
+	CFLAGS += -DKERNEL_DEBUG
+endif
+
 export USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -g -fno-builtin -nostdlib -nodefaultlibs -I userland
 LDFLAGS = -T linker.ld
 

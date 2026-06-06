@@ -63,7 +63,7 @@ ssize_t sys_execve(registers_t *regs)
 {
 	ssize_t res = execve((char*)regs->ebx, (char**)regs->ecx, (char**)regs->edx, regs);
 	if (res == -1)
-		kprintf("Error: something wrong in execve :(\n");
+		kdebug("Error: something wrong in execve :(\n");
 	return (res);
 }
 
@@ -186,12 +186,12 @@ static ssize_t	(*syscall[384])(registers_t*) =
 
 void 	syscall_callback(registers_t *regs)
 {
-//	kprintf("Syscall %d requested!\n", regs->eax);
+//	kdebug("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
 	if (regs->eax < 384 && syscall[regs->eax] != NULL)
 		regs->eax = syscall[regs->eax](regs);
 	else
-		kprintf("Error: Syscall not implemented.\n");
+		kdebug("Error: Syscall not implemented.\n");
 }
 

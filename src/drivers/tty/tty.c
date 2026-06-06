@@ -1,4 +1,5 @@
 #include "drivers/tty/tty.h"
+#include "drivers/vga.h"
 
 static struct tty tty_inst;
 
