@@ -1,92 +1,61 @@
 # KFS - Kernel From Scratch
 
-![Arch](https://img.shields.io/badge/arch-x86-lightgrey)
-![Kernel](https://img.shields.io/badge/kernel-Monolithic-red)
-![Language](https://img.shields.io/badge/language-C%20%2F%20Assembly-blue)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow)
+Monolithic 32-bit x86 Operating System kernel built from bare metal. This repository details the step-by-step engineering process of constructing a Unix-like operating system environment, enforcing strict hardware isolation, memory abstraction, and preemptive process multitasking.
 
-<br />
-<p align="center">
-  <h3 align="center">Writing a 32-bit Unix-like Operating System from scratch</h3>
-</p>
+## Architectural Overview
 
-## 🗣️ About The Project
+KFS implements a classic monolithic architecture where core system infrastructure—including memory management, interrupt handling, persistent filesystems, and process scheduling—runs inside the highly privileged CPU Ring 0 execution state. The system guarantees stability and security by executing applications within an unprivileged Ring 3 state, sanitizing all boundary transitions via a single software interrupt vector gateway.
 
-**KFS** is a comprehensive systems engineering project focused on building a fully functional Operating System kernel starting from bare metal. Unlike standard application development, this project requires managing every bit of hardware, memory, and CPU execution state manually.
+**Execution Hierarchy:**
+* **User Space (Ring 3):** User Applications and custom static LibC.
+* **The Boundary:** Syscall Gateway (`INT 0x80`) equipped with real-time `uaccess` memory verification.
+* **Kernel Space (Ring 0):** Kernel Core, Virtual Memory Manager, Preemptive Scheduler, and the Ext2/VFS Storage Subsystem.
 
-The goal is to progress from a simple bootloader to a multitasking system capable of running user-space shell programs, following the evolution of the **x86 architecture**.
+## Project Roadmap
 
----
+The milestones within this project track the development sequence necessary to move from bare hardware control to a multi-user, interactive system.
 
-## 🗺️ Project Roadmap & Modules
-
-Development is divided into strict milestones (branches). This `main` branch contains the latest development snapshot.
-
-| Module | Focus | Status | Key Engineering Concepts |
+| Milestone | Target Domain | Status | Core Architectural Focus |
 | :--- | :--- | :--- | :--- |
-| **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | **Memory** | ✅ Completed | Virtual Memory (Paging), PMM, Custom Heap (`kmalloc`), Panics. |
-| **[KFS-4](https://github.com/eandres83/kfs/tree/kfs-4)** | **Interrupts** | ✅ Completed | IDT, ISRs, PIC Remapping, Hardware IRQs. |
-| **[KFS-5](https://github.com/eandres83/kfs/tree/kfs-5)** | **Processes** | ✅ Completed | Multitasking, Context Switch, Scheduler, TCB, Syscalls. |
-| **[KFS-6](https://github.com/eandres83/kfs/tree/kfs-6)** | **Filesystem** | ✅ Completed | VFS, Ext2 Driver, IDE/PATA Controller, MBR Partitions. |
-| **KFS-7** | **User Space** | 🚧 In Progress | Ring 3 Execution, ELF Loader, Advanced Syscalls. |
+| **[KFS-1](https://github.com/eandres83/kfs/tree/kfs-1)** | Boot & Primitive I/O | Completed | Multiboot compliance, stack establishment, low-level VGA buffer. |
+| **[KFS-2](https://github.com/eandres83/kfs/tree/kfs-2)** | CPU Segmentation | Completed | Global Descriptor Table (GDT), kernel segment registers. |
+| **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | Memory Architecture | Completed | Physical Abstraction (PMM), Virtual Paging (VMM), Zone Heap. |
+| **[KFS-4](https://github.com/eandres83/kfs/tree/kfs-4)** | Asynchronous I/O | Completed | Interrupt Descriptor Table (IDT), 8259 PIC remapping, IRQs. |
+| **[KFS-5](https://github.com/eandres83/kfs/tree/kfs-5)** | Process Subsystem | Completed | Task Control Blocks (TCB), hardware state virtualization, Scheduler. |
+| **[KFS-6](https://github.com/eandres83/kfs/tree/kfs-6)** | Non-Volatile Storage | Completed | Virtual File System (VFS), Ext2 specification, IDE/PATA driver. |
+| **[KFS-7](https://github.com/eandres83/kfs/tree/kfs-7)** | User Space & Security | Completed | Ring 3 transition, ELF binary parsing, uaccess memory fault recovery. |
 
----
+## Current System Capabilities
 
-### 📂 Directory Structure
-~~~text
-.
-├── src/
-│   ├── arch/i386/     # Architecture-specific (IDT, PIC, Timer, Syscalls)
-│   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── fs/            # VFS, Ext2 parsing, MBR, and Mount points
-│   ├── kernel/        # Core kernel logic (kmain, shell, panic)
-│   ├── mm/            # Memory Management (PMM, VMM, kmalloc/slab)
-│   ├── task/          # Process Management (Scheduler, Context Switch)
-│   ├── drivers/       # Hardware drivers (VGA, Keyboard, IDE/Storage)
-│   └── lib/           # Custom standard library (kprintf, strings)
-├── include/           # System-wide header files
-├── linker.ld          # Memory layout definition (Higher Half Kernel)
-└── Makefile           # Build automation and QEMU integration
+* **Hardware Acknowledged Memory Safety (`uaccess`):** Real-time isolation verification during kernel/user boundary copies (`copy_to_user` / `copy_from_user`) using specialized Page Fault interception stubs.
+* **ELF Executable Architecture:** Full standard 32-bit Executable and Linkable Format (ELF) binary loader parsing program headers, setting up proper segment protections, and initializing runtime stacks.
+* **Virtual File System & Ext2 Driver:** Multi-partition Master Boot Record (MBR) layout processing, dynamic mounting support, and complete asynchronous read/write interfaces over native Ext2 structures.
+* **Preemptive Concurrency Control:** Continuous scheduler ticks managed via the Programmable Interval Timer (PIT IRQ0), tracking task states and saving thread registers into distinct kernel-level stacks.
+
+## Compilation and Deployment
+
+### Cross-Compilation Toolchain
+To build the monolithic image without relying on host distribution runtime libraries, an independent cross-compilation environment targeting bare-metal execution is required.
+
+* **Target Engine:** `i686-elf-gcc` / `i686-elf-ld`
+* **Supported Assembler:** `nasm`
+
+### Execution Commands
+
+Compile the system image and userland binaries:
+~~~bash
+make
+~~~
+
+Launch the kernel image within a virtualized platform using a hardware-isolated disk image:
+~~~bash
+make run
+~~~
+
+Initiate source-level remote debugging sessions via GDB loops:
+~~~bash
+make debug
 ~~~
 
 ---
-
-## 🚀 Current Capabilities (Main Branch)
-
-Running the latest build allows you to:
-* **Persistent Storage:** Fully functional IDE (PATA) driver interacting with a Virtual File System (VFS) and parsing Ext2 formatted disks.
-* **Preemptive Multitasking:** A custom Round-Robin scheduler driven by the PIT (IRQ0). Can concurrently run, pause, and schedule multiple processes.
-* **Interrupt-Driven Architecture:** Complete x86 **IDT** implementation. Handles CPU exceptions, hardware interrupts, and software interrupts (`int 0x80`).
-* **Memory Management:** Full physical and virtual memory managers (x86 Paging) supporting isolation, custom block-based Heap Allocator (`kmalloc`), and memory mapping (`mmap`).
-* **Interactive Shell:** A CLI environment supporting filesystem commands (`cat`, `cd`, `pwd`) and memory debugging tools.
-
----
-
-## 🛠️ Installation & Usage
-
-### ⚠️ Critical Requirement: Cross-Compiler
-You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
-
-* **Compiler:** `i686-elf-gcc`
-* **ASM:** `i686-elf-as`
-
-### Build Instructions
-
-1.  **Clone the repository:**
-    ~~~bash
-    git clone https://github.com/eandres83/kfs.git
-    cd kfs
-    ~~~
-
-2.  **Compile the Kernel:**
-    ~~~bash
-    make
-    ~~~
-
-3.  **Run the OS (QEMU):**
-    ~~~bash
-    make run
-    ~~~
-
----
-*Author: Eleder Andres. "Where there is a shell, there is a way."*
+*Systems Engineering Repository maintained by Eleder Andres.*
