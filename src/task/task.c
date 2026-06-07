@@ -1,4 +1,8 @@
 #include "task.h"
+#include "mm/vmm.h"
+#include "mm/gdt.h"
+#include "fs/fd.h"
+#include "task/elf.h"
 
 static uint32_t next_pid = 1;
 struct context *scheduler_context;
@@ -14,62 +18,11 @@ static proc_t *find_process()
 		{
 			process[i].state = EMBRYO;
 			process[i].id = i;
-			process[i].uid = 0; // root process
 			process[i].pid = next_pid++;
 			return (&process[i]);
 		}
 	}
 	return (NULL);
-}
-
-static void start_user_process()
-{
-	void *phys_stack = pmm_map_page();
-	void *virt_stack = (void *)(0xBFFFF000);
-	vmm_map_page(phys_stack, virt_stack, true);
-	if (!virt_stack)
-		return ;
-	current_process->user_stack = (char*)virt_stack + 4096;
-	uint32_t entry_point = (uint32_t)(size_t)current_process->user_eip;
-
-	jump_to_usermode(entry_point, (uint32_t)current_process->user_stack);
-}
-
-void create_process(void (*function)())
-{
-	proc_t *proc = find_process();
-	if (proc == NULL)
-		return ;
-	// create kernel stack for a process
-	proc->kstack = (char*)kmalloc(4096);
-	if (!proc->kstack)
-		return ;
-
-	// request page directory
-	create_memory_process(proc);
-
-	// calcular el top stack
-	char *stack_top = proc->kstack + 4096;
-	// restar 1 struct context para que quede justo el tamano exacto
-	proc->context = (struct context *)stack_top - 1;
-
-	proc->context->edi = 0;
-	proc->context->esi = 0;
-	proc->context->ebx = 0;
-	proc->context->ebp = 0;
-
-	// donde tiene que saltar la CPU al hacer el ret
-	proc->user_eip = (char*)function;
-	// create user stack
-	proc->context->eip = (uint32_t)start_user_process;
-
-	kmemset(proc->pwd, 0, 256);
-	kstrcpy(proc->pwd, "/");
-
-	proc->node = vfs;
-
-	proc->mmap_count = 0;
-	proc->state = RUNNABLE;
 }
 
 void scheduler()
@@ -108,13 +61,13 @@ void create_init_process()
 		return ;
 	current_process = new_proc;
 
-	char *argv[] = {"/bin/minishell", NULL};
-	char *envp[] = {"PATH=/bin", "TERM=linux", "USER=root", NULL};
+	char *argv[] = {"/bin/init", NULL};
+	char *envp[] = {"PATH=/bin:/usr/bin", "TERM=linux", "USER=root", NULL};
 	registers_t regs;
-	int32_t res = execve("/bin/minishell", argv, envp, &regs);
+	int32_t res = execve("/bin/init", argv, envp, &regs);
 	if (res == -1)
 	{
-		kprintf("Fatal error when init_main_process execve, soo bad :(\n");
+		kdebug("Fatal error when init_main_process execve, soo bad :(\n");
 		return ;
 	}
 	char *stack_top = new_proc->kstack + 4096;
@@ -128,6 +81,9 @@ void create_init_process()
 	new_proc->context->eip = (uint32_t)enter_user_mode;
 	new_proc->user_eip = (char*)regs.eip;
 	new_proc->user_stack = (char*)regs.useresp;
+
+	new_proc->node = vfs;
+	new_proc->mmap_count = 0;
 
 	new_proc->state = RUNNABLE;
 	scheduler();
@@ -143,8 +99,8 @@ void yield()
 
 void kill_process(char *motivo)
 {
-	
-	kprintf("[Kernel] Porceso PID %d asesinado por exception: %s \n",
+	(void)motivo;
+	kdebug("[Kernel] Porceso PID %d asesinado por exception: %s \n",
 		current_process->pid, motivo);
 	kill(current_process->pid, 9);
 	exit_process(139);
@@ -160,6 +116,8 @@ ssize_t fork(registers_t *regs)
 		{
 			process[i].parent = current_process;
 			process[i].pid = next_pid++;
+			process[i].ruid = current_process->ruid;
+			process[i].euid = current_process->euid;
 			process[i].kstack = kmalloc(4096);
 			if (!process[i].kstack)
 				return (-1);
@@ -192,7 +150,6 @@ ssize_t fork(registers_t *regs)
 			process[i].mmap_count = current_process->mmap_count;
 			process[i].state = RUNNABLE;
 			process[i].node = current_process->node;
-			kstrcpy(process[i].pwd, current_process->pwd);
 
 			for (int j = 0; j < 63; j++)
 			{
@@ -238,24 +195,23 @@ ssize_t mmap(ssize_t size)
 		virt_addr += 4096;
 	}
 
-	current_process->mmap_allocation[index] = virt_addr;
-	current_process->mmap_count++;
+	current_process->mmap_allocation[index] = start_vaddr;
+	current_process->mmap_count += total_size;
 
 	return ((ssize_t)start_vaddr);
 }
 
 ssize_t munmap(void *addr, size_t size)
 {
-	for (uint32_t i = 0; i < size; i++)
+	size_t real_size = ((size + 4095) / 4096);
+	for (uint32_t i = 0; i < real_size; i++)
 	{
-
 		vmm_unmap_page(addr);
-		for (int i = 0; i < 32; i++)
+		for (int j = 0; j < 32; j++)
 		{
-			if (current_process->mmap_allocation[i] == (uint32_t)addr)
+			if (current_process->mmap_allocation[j] == (uint32_t)addr)
 			{
-				current_process->mmap_allocation[i] = 0;
-				current_process->mmap_count--;
+				current_process->mmap_allocation[j] = 0;
 				break;
 			}
 		}
@@ -279,15 +235,17 @@ static uint32_t clear_process(proc_t *process, uint32_t *status)
 	if (status != NULL)
 		*status = process->exit_status;
 	uint32_t tmp_pid = process->pid;
+
+	for (int i = 0; i < MAX_FD; i++)
+	{
+		if (process->fd_table[i] != NULL)
+			fd_free(process, i);
+	}
 	if (process->kstack)
 		kfree(process->kstack);
 	if (process->pd)
 		pmm_free_page(process->pd);
-	for (int a = 0; a < 32; a++)
-	{
-		if (process->mmap_allocation[a] != 0)
-			munmap((void*)process->mmap_allocation[a], 4096);
-	}
+	free_page_directory(process->pd);
 	kmemset(process, 0, sizeof(proc_t));
 	return (tmp_pid);
 }
@@ -336,9 +294,7 @@ ssize_t wait(uint32_t *status)
 			{
 				child = true;
 				if (process[i].state == ZOMBIE)
-				{
 					return (clear_process(&process[i], status));
-				}
 			}
 		}
 		if (child == false)
@@ -371,20 +327,135 @@ ssize_t kill(uint32_t pid, uint32_t signal)
 	return (-1);
 }
 
+static char *pwd_right(char *path)
+{
+	char new_pwd[256];
+	kmemset(new_pwd, 0, 256);
+	if (path[0] != '/')
+	{
+		// ruta relativa
+		if (getcwd(new_pwd, 256) == NULL)
+			return (NULL);
+		if (new_pwd[kstrlen(new_pwd) - 1] != '/')
+			kstrcat(new_pwd, "/");
+		kstrcat(new_pwd, path);
+	}
+	else
+		kstrcpy(new_pwd, path);
+	char **array = ksplit(new_pwd, '/');
+	if (!array)
+		return (NULL);
+
+	char *pila[256];
+	int top = 0;
+	for (int i = 0; array[i] != NULL; i++)
+	{
+		if (kstrcmp(array[i], ".") == 0 || kstrlen(array[i]) == 0)
+			continue;
+		else if (kstrcmp(array[i], "..") == 0)
+		{
+			if (top > 0)
+				top--;
+		}
+		else
+		{
+			pila[top] = array[i];
+			top++;
+		}
+	}
+	double_free(array);
+	char *pwd = (char*)kmalloc(sizeof(char) * 256);
+	if (!pwd)
+		return (NULL);
+	kmemset(pwd, 0, 256);
+	kstrcpy(pwd, "/");
+	for (int i = 0; i < top; i++)
+	{
+		kstrcat(pwd, pila[i]);
+		if (i < top -1)
+			kstrcat(pwd, "/");
+	}
+	return (pwd);
+}
+
+ssize_t	chdir(char *path)
+{
+	if (!path)
+		return (-1);
+	char *new_pwd = pwd_right(path);
+	if (new_pwd == NULL)
+		return (-1);
+
+	struct vfs_node *node = get_vfs_node_path(new_pwd);
+	if (node == 0x0)
+		return (kfree(new_pwd), -1);
+	if (node->type != VFS_DIRECTORY && node->type != VFS_MOUNTPOINT)
+	{
+		kdebug("Error: Not a directory\n");
+		return (kfree(new_pwd), -1);
+	}
+	set_new_node(node);
+	return (0);
+}
+
 char	*getcwd(char *buf, size_t size)
 {
-	char pwd[256] = {0};
-	kstrcpy(pwd, current_process->pwd);
+	struct vfs_node *node = current_process->node;
 	kmemset(buf, 0, size);
-	if (kstrlen(pwd) > size)
-		return (NULL);
-	kstrcpy(buf, pwd);
+	if (node->father == NULL)
+	{
+		buf[0] = '/';
+		return (buf);
+	}
+	// tmp pointer
+	char *p = buf + size -1;
+	*p = '\0';
+	while (node->father != NULL)
+	{
+		int len  = kstrlen(node->name);
+		if (p - buf < len + 1)
+			return (NULL);
+		p -= len;
+		kmemcpy(p, node->name, len);
+		p--;
+		*p = '/';
+		node = node->father;
+	}
+	int total_len = kstrlen(p);
+	kmemcpy(buf, p, total_len + 1);
 	return (buf);
+}
+
+ssize_t setuid(uint32_t new_uid)
+{
+	if (current_process->euid == 0)
+	{
+		current_process->euid = new_uid;
+		current_process->ruid = new_uid;
+		return (0);
+	}
+	else if (current_process->ruid == new_uid)
+	{
+		current_process->euid = new_uid;
+		return (0);
+	}
+	return (-1);
 }
 
 ssize_t getuid()
 {
-	return (current_process->uid);
+	return (current_process->euid);
+}
+
+ssize_t setgid(uint32_t gid)
+{
+	current_process->gid = gid;
+	return (0);
+}
+
+ssize_t	getgid()
+{
+	return (current_process->gid);
 }
 
 void find_signal(registers_t *regs)
@@ -415,18 +486,10 @@ void find_signal(registers_t *regs)
 	}
 }
 
-// helper function por fs
+// setters and getters
 proc_t	*get_current_process()
 {
 	return (current_process);
-}
-
-void	set_current_process()
-{
-	current_process = kmalloc(sizeof(proc_t));
-	current_process->node = vfs;
-	kmemset(current_process->pwd, 0, 256);
-	kstrcpy(current_process->pwd, "/");
 }
 
 struct vfs_node *get_current_node()
@@ -437,11 +500,5 @@ struct vfs_node *get_current_node()
 void set_new_node(struct vfs_node *new_node)
 {
 	current_process->node = new_node;
-}
-
-void set_new_pwd(char *path)
-{
-	kmemset(current_process->pwd, 0, 256);
-	kstrcpy(current_process->pwd, path);
 }
 

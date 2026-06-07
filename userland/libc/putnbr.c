@@ -33,7 +33,7 @@ void	putnbr(long n, int base)
 	while (i > 0)
 	{
 		i--;
-		printf("%c", buffer[i]);
+		write(1, &buffer[i], 1);
 	}
 }
 

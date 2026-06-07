@@ -1,9 +1,11 @@
 #ifndef ELF_H
 #define ELF_H
 
+struct registers_t;
+
 #include <utils.h>
-#include "fs/vfs/vfs.h"
 #include "mm/vmm.h"
+#include "arch/i386/idt.h"
 
 typedef uint32_t 	Elf32_Addr; // Unsigned program address
 typedef uint16_t 	Elf32_Half; // Unsigned medium integer
@@ -31,6 +33,7 @@ struct elf32_ehdr
 	Elf32_Off	e_phoff;		// program header table's file offset in bytes
 	Elf32_Off	e_shoff;		// section header tabls's file offset in bytes
 	Elf32_Word	e_flags;		// processor-specific flags
+	Elf32_Half	e_ehsize;
 	Elf32_Half	e_phentsize;		// size of one entry in the file's program header table
 	Elf32_Half	e_phnum;		// number of entries in the program header table
 	Elf32_Half	e_shentsize;		// section header size in bytes

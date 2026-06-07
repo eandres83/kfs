@@ -62,9 +62,25 @@ ssize_t execve(char *file_path, char **argv, char **envp)
 	return (ret);
 }
 
-void getuid()
+ssize_t chdir(char *path)
 {
-	asm volatile("int $0x80" : : "a" (SYS_getuid) : "memory");
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_chdir), "b" (path) : "memory");
+	return (ret);
+}
+
+ssize_t setuid(uint32_t new_uid)
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_setuid), "b" (new_uid) : "memory");
+	return (ret);
+}
+
+ssize_t getuid()
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getuid) : "memory");
+	return (ret);
 }
 
 ssize_t access(char *file_name, int mode)
@@ -92,6 +108,20 @@ ssize_t	pipe(int *fd)
 {
 	ssize_t ret;
 	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_pipe), "b" (fd) : "memory");
+	return (ret);
+}
+
+ssize_t setgid(uint32_t new_gid)
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_setgid), "b" (new_gid) : "memory");
+	return (ret);
+}
+
+ssize_t	getgid()
+{
+	ssize_t ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getgid) : "memory");
 	return (ret);
 }
 
@@ -129,6 +159,27 @@ char	*getcwd(void *buff, size_t size)
 	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getcwd), "b" (buff), "c" (size) : "memory");
 	if (ret == 0)
 		return (NULL);
+	return (ret);
+}
+
+ssize_t	socketpair(int domain, int type, int protocol, int *sv)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_socketpair), "b" (domain), "c" (type), "d" (protocol), "S" (sv) : "memory");
+	return (ret);
+}
+
+ssize_t	sendmsg(int socket, const struct msghdr *msg, int flags)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_sendmsg), "b" (socket), "c" (msg), "d" (flags) : "memory");
+	return (ret);
+}
+
+ssize_t	recvmsg(int socket, struct msghdr *msg, int flags)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_recvmsg), "b" (socket), "c" (msg), "d" (flags) : "memory");
 	return (ret);
 }
 

@@ -1,8 +1,10 @@
 #include "arch/i386/idt.h"
+#include <uapi.h>
 #include "task/task.h"
 #include "task/elf.h"
 #include "arch/i386/lib/uaccess.h"
 #include "fs/sysfile.h"
+#include "ipc/socket.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -40,27 +42,45 @@ ssize_t sys_close(registers_t *regs)
 
 ssize_t sys_waitpid(registers_t *regs)
 {
-	waitpid(regs->ebx, &regs->ecx, regs->edx);
-	return (regs->ecx);
+	uint32_t status;
+	ssize_t pid = waitpid(regs->ebx, &status, regs->edx);
+	if (!check_user_addr(regs->ecx))
+		return (-1);
+	*(uint32_t*)regs->ecx = status;
+	return (pid);
 }
 
 ssize_t sys_wait(registers_t *regs)
 {
-	wait(&regs->ebx);
-	return (regs->ebx);
+	uint32_t status;
+	ssize_t pid = wait(&status);
+	if (!check_user_addr(regs->ebx))
+		return (-1);
+	*(uint32_t*)regs->ebx = status;
+	return (pid);
 }
 
 ssize_t sys_execve(registers_t *regs)
 {
 	ssize_t res = execve((char*)regs->ebx, (char**)regs->ecx, (char**)regs->edx, regs);
 	if (res == -1)
-		kprintf("Error: something wrong in execve :(\n");
+		kdebug("Error: something wrong in execve :(\n");
 	return (res);
+}
+
+ssize_t	sys_chdir(registers_t *regs)
+{
+	return (chdir((char*)regs->ebx));
 }
 
 ssize_t	sys_access(registers_t *regs)
 {
 	return (access((char *)regs->ebx, regs->ecx));
+}
+
+ssize_t	sys_setuid(registers_t *regs)
+{
+	return (setuid(regs->ebx));
 }
 
 ssize_t sys_getuid(registers_t *regs)
@@ -82,6 +102,17 @@ ssize_t sys_dup(registers_t *regs)
 ssize_t sys_pipe(registers_t *regs)
 {
 	return (pipe((int*)regs->ebx));
+}
+
+ssize_t	sys_setgid(registers_t *regs)
+{
+	return (setgid(regs->ebx));
+}
+
+ssize_t	sys_getgid(registers_t *regs)
+{
+	(void)regs;
+	return (getgid());
 }
 
 ssize_t sys_signal(registers_t *regs)
@@ -109,7 +140,22 @@ ssize_t	sys_getcwd(registers_t *regs)
 	return ((ssize_t)getcwd((char*)regs->ebx, regs->ecx));
 }
 
-static ssize_t	(*syscall[200])(registers_t*) =
+ssize_t	sys_socketpair(registers_t *regs)
+{
+	return (socketpair(regs->ebx, regs->ecx, regs->edx, (int*)regs->esi));
+}
+
+ssize_t	sys_sendmsg(registers_t *regs)
+{
+	return (sendmsg(regs->ebx, (const struct msghdr*)regs->ecx, regs->edx));
+}
+
+ssize_t	sys_recvmsg(registers_t *regs)
+{
+	return (recvmsg(regs->ebx, (struct msghdr*)regs->ecx, regs->edx));
+}
+
+static ssize_t	(*syscall[384])(registers_t*) =
 {
 	[SYS_exit] 	= sys_exit,
 	[SYS_fork] 	= sys_fork,
@@ -120,26 +166,33 @@ static ssize_t	(*syscall[200])(registers_t*) =
 	[SYS_waitpid]	= sys_waitpid,
 	[SYS_wait] 	= sys_wait,
 	[SYS_execve] 	= sys_execve,
+	[SYS_chdir]	= sys_chdir,
+	[SYS_setuid]	= sys_setuid,
 	[SYS_getuid] 	= sys_getuid,
 	[SYS_access] 	= sys_access,
 	[SYS_kill] 	= sys_kill,
 	[SYS_dup] 	= sys_dup,
 	[SYS_pipe] 	= sys_pipe,
+	[SYS_setgid]	= sys_setgid,
+	[SYS_getgid]	= sys_getgid,
 	[SYS_signal] 	= sys_signal,
-	[SYS_dup2] 	= sys_dup2,
+	[SYS_dup2]	= sys_dup2,
 	[SYS_mmap] 	= sys_mmap,
 	[SYS_munmap]	= sys_munmap,
-	[SYS_getcwd] 	= sys_getcwd
+	[SYS_getcwd] 	= sys_getcwd,
+	[SYS_socketpair]= sys_socketpair,
+	[SYS_sendmsg]	= sys_sendmsg,
+	[SYS_recvmsg]	= sys_recvmsg,
 };
 
 void 	syscall_callback(registers_t *regs)
 {
-//	kprintf("Syscall %d requested!\n", regs->eax);
+//	kdebug("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
-	if (regs->eax < 200 && syscall[regs->eax] != NULL)
+	if (regs->eax < 384 && syscall[regs->eax] != NULL)
 		regs->eax = syscall[regs->eax](regs);
 	else
-		kprintf("Error: Syscall not implemented.\n");
+		kdebug("Error: Syscall not implemented.\n");
 }
 

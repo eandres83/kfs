@@ -7,6 +7,10 @@ CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs $(INCLUDES)
 
+ifeq ($(DEBUG), 1)
+	CFLAGS += -DKERNEL_DEBUG
+endif
+
 export USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -g -fno-builtin -nostdlib -nodefaultlibs -I userland
 LDFLAGS = -T linker.ld
 
@@ -24,8 +28,8 @@ SRCS_MINISHELL = $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins
 SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard src/kernel/*.c) \
 	$(wildcard src/lib/*.c) $(wildcard src/mm/*.c) $(wildcard src/arch/i386/*.c) $(wildcard src/task/*.c) \
 	$(wildcard src/fs/ext2/*.c) $(wildcard src/fs/vfs/*.c) $(wildcard src/fs/*.c) $(wildcard src/drivers/tty/*.c) \
-	$(wildcard src/arch/i386/lib/*.c)
-SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i386/*.s) $(wildcard src/task/*.s) 
+	$(wildcard src/arch/i386/lib/*.c) $(wildcard src/ipc/*.c)
+SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i386/*.s) $(wildcard src/task/*.s) $(wildcard src/arch/i386/lib/*.s)
 
 KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \
 	$(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
@@ -68,7 +72,7 @@ bin/%: bin/%.c $(CRT0_OBJ) $(USER_OBJS_C)
 	@echo "Compiling user apps: $*"
 	@$(CC) $(USER_CFLAGS) -c $< -o $(BUILD_DIR)/apps/$*.o
 	@echo "Linking app: $*"
-	@$(LD) -Ttext 0x08048000 -o $@ $(CRT0_OBJ) $(BUILD_DIR)/apps/$*.o $(USER_OBJS_C)
+	@$(LD) -T userland/userland.ld -o $@ $(CRT0_OBJ) $(BUILD_DIR)/apps/$*.o $(USER_OBJS_C)
 
 bin/minishell/minishell: $(CRT0_OBJ) $(USER_OBJS_C) $(SRCS_MINISHELL)
 	@$(MAKE) -C bin/minishell
@@ -77,9 +81,11 @@ $(DISK_IMG): $(NAME) $(APPS_OBJ) bin/minishell/minishell
 	@echo "Creating a temporary directory structure"
 	@mkdir -p $(FS_DIR)/home/kfs/fs
 	@mkdir -p $(FS_DIR)/etc
-	@echo -n "root:root1\neandres:1234\nfuck:oian\n1:1\n" > $(FS_DIR)/etc/passwd
-	@mkdir -p $(FS_DIR)/sys
-	@mkdir -p $(FS_DIR)/var
+	@echo -n "root:x:0:0:root:/root/kfs/src:/bin/minishell\neandres:x:1000:1000:user:/home/eandres:/bin/minishell" > $(FS_DIR)/etc/passwd
+	@echo -n "root:1\neandres:hash" > $(FS_DIR)/etc/shadow
+	@chmod 400 $(FS_DIR)/etc/shadow
+	@mkdir -p $(FS_DIR)/root/kfs/src
+	@mkdir -p $(FS_DIR)/home/eandres
 	@mkdir -p $(FS_DIR)/dev
 	@echo -n "Mierdon\n" > $(FS_DIR)/dev/file.txt
 	@mkdir -p $(FS_DIR)/proc

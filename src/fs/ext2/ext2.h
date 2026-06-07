@@ -6,6 +6,7 @@
 #include "drivers/ide/ide.h"
 #include "fs/vfs/vfs.h"
 #include "fs/mbr.h"
+#include "arch/i386/lib/uaccess.h"
 
 // superblock data struct
 struct ext2_sb

@@ -2,14 +2,9 @@
 #define UACCESS
 
 #include <utils.h>
-#include <uapi.h>
-#include "drivers/vga.h"
-#include "drivers/tty/tty.h"
-#include "mm/vmm.h"
-#include "task/task.h"
-#include "fs/fd.h"
 
-ssize_t	copy_to_user(char *kernel, char *str, size_t count);
+ssize_t	copy_to_user_wrap(void *user_addr, const void *kernel_addr, size_t count);
+ssize_t	copy_from_user_wrap(void *kernel_addr, const void *user_addr, size_t count);
 
 // syscall
 ssize_t	read(int fd, void *buffer, size_t count);

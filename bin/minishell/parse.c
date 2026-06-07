@@ -42,7 +42,6 @@ t_mini	*process_input(t_mini *mini, char *line, char **envp)
 		error(1, "Error: Failed splitting input line");
 		return (NULL);
 	}
-	array = expand(mini, array);
 	array = extract_operators(array, "<|>");
 	if (check_syntax(array) != 0)
 		return (free_array(array), NULL);

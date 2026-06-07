@@ -1,5 +1,6 @@
 #include "vfs.h"
 #include "fs/ext2/ext2.h"
+#include "task/task.h"
 
 struct vfs_node *vfs = NULL;
 
@@ -38,7 +39,7 @@ struct vfs_node *get_vfs_node_path(char *path)
 				current_node = NULL;
 		}
 		if (current_node == 0x0)
-			return (kprintf("Error: No such file or directory\n"), double_free(word), NULL);
+			return (kdebug("Error: No such file or directory\n"), double_free(word), NULL);
 	}
 	double_free(word);
 	return (current_node);

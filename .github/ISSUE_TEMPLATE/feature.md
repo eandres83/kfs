@@ -7,9 +7,10 @@ assignees: ''
 ---
 
 ### Goal
-A short description of what needs to be implemented.
+A short sentence explaining the feature (e.g., Implement dup and dup2 to support fd duplication).
 
 ### Tasks
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
+- [ ] Register the feature (syscall ID, headers, table).
+- [ ] Implement core logic.
+- [ ] Handle edge cases and error codes (e.g., return -EBADF, -EINVAL).
+- [ ] Test functionality from user space.

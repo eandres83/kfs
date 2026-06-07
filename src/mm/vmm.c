@@ -306,7 +306,7 @@ void	free_page_directory(void *pagedir)
 	pmm_free_page(pagedir);
 }
 
-bool	check_addr(uint32_t virt)
+bool	check_user_addr(uint32_t virt)
 {
 	page_directory *pd = _cur_directory;
 	pd_entry *pde = &pd->m_entries[PD_INDEX(virt)];

@@ -8,6 +8,8 @@
 #include "malloc/malloc.h"
 #include "../include/uapi.h"
 
+#define MAX_TTYS 32
+
 // wrappers for syscall
 void	exit(uint32_t status);
 ssize_t	fork();
@@ -26,8 +28,15 @@ ssize_t	signal(uint32_t num, void (*function)());
 ssize_t	dup2(uint32_t oldfd, uint32_t newfd);
 void	*mmap(size_t size);
 ssize_t munmap(void *addr, size_t size);
-void	getuid();
+ssize_t	setuid(uint32_t new_uid);
+ssize_t	getuid();
+ssize_t	setgid(uint32_t new_gid);
+ssize_t	getgid();
 char	*getcwd(void *buff, size_t size);
+ssize_t	chdir(char *path);
+ssize_t socketpair(int domain, int type, int protocol, int *sv);
+ssize_t sendmsg(int fd_socket, const struct msghdr *msg, int flags);
+ssize_t	recvmsg(int fd_socket, struct msghdr *msg, int flags);
 
 // other function
 void	printf(const char *format, ...);
@@ -55,5 +64,6 @@ void	*bzero(void *s, size_t n);
 int	isalnum(char c);
 int	isalpha(char c);
 int 	isdigit(char c);
+void	dfree(char **str);
 
 #endif

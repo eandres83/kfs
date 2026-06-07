@@ -1,58 +1,5 @@
 #include "../minishell.h"
 
-void	h_m_c(int pipefd[2], int last_fd, t_mini *mini, t_mini *next_cmd)
-{
-	ssize_t	pid;
-
-	pid = fork();
-	if (pid == -1)
-	{
-		error(1, "fork");
-		exit(EXIT_FAILURE);
-	}
-	if (pid == 0)
-	{
-		pipe_input(last_fd);
-		if (next_cmd)
-			pipe_output(pipefd);
-		handle_redirection1(mini);
-		handle_redirection2(mini);
-		if (mini->is_builtin)
-			management_builtins(mini);
-		else
-			execute_external_command(mini);
-		exit(EXIT_SUCCESS);
-	}
-	mini->pid = pid;
-}
-
-void	execute_multiples_command(t_mini *mini)
-{
-	int	last_fd;
-	int	pipefd[2];
-	int	status;
-	t_mini	*current;
-
-	last_fd = STDIN_FILENO;
-	current = mini;
-	while (current)
-	{
-		if (current->next)
-		{
-			waitpid(mini->pid, &status, 0);
-			if (create_pipes(pipefd) == -1)
-				return ;
-		}
-		h_m_c(pipefd, last_fd, current, current->next);
-		close_pipe(pipefd, last_fd);
-		if (current->next)
-			last_fd = pipefd[0];
-		current = current->next;
-	}
-	while (wait(&status) > 0)
-		update_exit_status(status);
-}
-
 void	reset_mini_state(t_mini *mini)
 {
 	mini->is_builtin = 0;
@@ -98,8 +45,6 @@ void	process_command2(t_mini *mini)
 	}
 	else if (mini->next == NULL)
 		execute_one_command(mini);
-	else
-		execute_multiples_command(mini);
 	reset_mini_state(mini);
 }
 

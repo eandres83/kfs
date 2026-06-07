@@ -6,8 +6,9 @@ _start:
 	# ebx = esp + 4
 
 	# sintaxis offset(registro_base, registro_indice, multiplicador)
+	# eax = argc, to skip argv
 	leal 8(%esp, %eax, 4), %ecx
-	# ecx = (%eax + %esp * 4) + 8
+	# ecx = %esp + (%eax * 4) + 8
 
 	pushl %ecx
 	pushl %ebx

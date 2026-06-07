@@ -5,11 +5,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <kmalloc.h>
-
-typedef int32_t ssize_t;
 
 #define PANIC(msg) panic(msg, __FILE__, __LINE__)
+
+#ifdef KERNEL_DEBUG
+	#define kdebug(format, ...) kprintf(format, ##__VA_ARGS__)
+#else
+	#define kdebug(format, ...) ((void)0)
+#endif
+
+typedef int32_t ssize_t;
 
 // noreturn es para que el compilador sepa que el programa acaba siempre que se llama a esta funcion
 void	panic(char *msg, const char *file, uint32_t line) __attribute__((noreturn));
@@ -29,5 +34,7 @@ char 	*kstrcat(char *dest, const char *str);
 size_t	kstrrchr(const char *str, char c);
 size_t	kstrchr(const char *str, char c);
 size_t	katoi(char *str);
+uint32_t min3(uint32_t num1, uint32_t num2, uint32_t num3);
+uint32_t min2(uint32_t num1, uint32_t num2);
 
 #endif

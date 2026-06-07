@@ -1,15 +1,16 @@
 #include "task/elf.h"
+#include "task/task.h"
 
 bool	check_binary(struct elf32_ehdr *elf)
 {
 	if (elf->e_ident[EI_MAG0] != 0x7f || elf->e_ident[EI_MAG1] != 'E' || elf->e_ident[EI_MAG2] != 'L' || elf->e_ident[EI_MAG3] != 'F')
-		return (kprintf("Error: not a elf file :(\n"), false);
+		return (kdebug("Error: not a elf file :(\n"), false);
 	if (elf->e_ident[EI_CLASS] != 1) // 
-		return (kprintf("Error: not a 32 bits file\n"), false);
+		return (kdebug("Error: not a 32 bits file\n"), false);
 	if (elf->e_type != 2) // check file type
-		return (kprintf("Error: not a executable file\n"), false);
+		return (kdebug("Error: not a executable file\n"), false);
 	if (elf->e_machine != 3) // check intel architecture
-		return (kprintf("Error: not x86/i386 architecture\n"), false);
+		return (kdebug("Error: not x86/i386 architecture\n"), false);
 	return (true);
 }
 
@@ -99,8 +100,11 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 	struct vfs_node *node = get_vfs_node_path(file_path);
 	if (node == 0x0)
 		return (-1);
-	char *content = node->ops->read(node);
+	char *content = (char*)kmalloc(node->size);
 	if (!content)
+		return (-1);
+	ssize_t res = node->ops->read(node, content, node->size, 0);
+	if (res == -1)
 		return (-1);
 	struct elf32_ehdr *elf = (struct elf32_ehdr*)content;
 	if (check_binary(elf) == false)
@@ -117,6 +121,12 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 	// cambiar al nuevo pd y destruir el antiguo
 	proc_t	*current_process = get_current_process();
 	void *old_pd = current_process->pd;
+	current_process->mmap_count = 0;
+
+	for (int i = 0; i < 32; i++)
+		current_process->mmap_allocation[i] = 0;
+	for (int i = 0; i < 32; i++)
+		current_process->signal_handlers[i] = 0;
 
 	create_memory_process(current_process);
 	vmm_load_process_directory(current_process->pd);
@@ -135,16 +145,16 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 			uint32_t end_vaddr = program->p_vaddr + program->p_memsz;
 			uint32_t end_page = (end_vaddr + 4095) & 0xFFFFF000;
 			uint32_t nb_page = (end_page - start_page) / 4096;
-//			kprintf("Segmento %d: memsz -> %x, pide -> %d paginas\n", i, program->p_memsz, nb_page);
 			for (uint32_t j = 0; j < nb_page; j++)
 			{
 				void *virt_addr = (void*)(start_page + (j * 4096));
-				if (check_addr((uint32_t)virt_addr) == false)
+				if (check_user_addr((uint32_t)virt_addr) == false)
 				{
 					void *phys = pmm_map_page();
 					if (!phys)
 						return (double_free(argv), double_free(envp), kfree(content), -1);
 					vmm_map_page(phys, virt_addr, true);
+					kmemset(virt_addr, 0, 4096);
 				}
 			}
 			if (program->p_filesz > 0)
@@ -155,19 +165,8 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 		program = (struct elf32_phdr*)((char*)program + elf->e_phentsize);
 	}
 	char *user_stack = make_stack(envp, argv);
-
 	regs->useresp = (uint32_t)user_stack;
 	regs->eip = elf->e_entry;
-
-	// --- DEBUG ZONE ---
-//	page_directory *pd = (page_directory*)0xFFFFF000;
-//	pd_entry pde = pd->m_entries[PD_INDEX(elf->e_entry)];
-//
-//	page_table *pt = (page_table*)(0xFFC00000 + (PD_INDEX(elf->e_entry) * 4096));
-//	pt_entry pte = pt->m_entries[PT_INDEX(elf->e_entry)];
-//
-//	kprintf("PDE: %x (Present: %d, User: %d, RW: %d)\n", pde, (pde & PDE_PRESENT) != 0, (pde & PDE_USER) != 0, (pde & PDE_WRITABLE) != 0);
-//	kprintf("PTE: %x (Present: %d, User: %d, RW: %d)\n", pte, (pte & PTE_PRESENT) != 0, (pte & PTE_USER) != 0, (pte & PTE_WRITABLE) != 0);
 
 	if (old_pd != NULL)
 		free_page_directory(old_pd);

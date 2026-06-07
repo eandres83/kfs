@@ -20,7 +20,14 @@ SECTIONS
 	{
 		*(.multiboot)
 		*(.text)
+		. = ALIGN(4);
+		__start_exception_tables = .;
+		KEEP(*(__ex_table));
+		__stop_exception_tables = .;
+		*(.fixup)
 	}
+
+	. = ALIGN(4K);
 	
 	/* Read-only data. */
 	.rodata ALIGN(4K) : AT(ADDR(.rodata) - 0xC0000000)

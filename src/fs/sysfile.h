@@ -3,8 +3,21 @@
 
 #include <utils.h>
 
-ssize_t dup(uint32_t fd);
-ssize_t dup2(uint32_t oldfd, uint32_t newfd);
+struct buf_ring
+{
+	char		buff[4096];
+	uint32_t	head;
+	uint32_t	tail;
+	uint32_t	size;
+	uint32_t	count;
+	uint32_t	fds;
+};
+
+ssize_t dup(int32_t fd);
+ssize_t dup2(int32_t oldfd, int32_t newfd);
 ssize_t	pipe(int *fd);
+
+// buffer ring function
+void	init_buf_ring(int size);
 
 #endif
