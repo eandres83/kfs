@@ -1,4 +1,5 @@
 #include "arch/i386/idt.h"
+#include <uapi.h>
 #include "task/task.h"
 #include "task/elf.h"
 #include "arch/i386/lib/uaccess.h"

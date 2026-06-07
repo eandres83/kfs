@@ -1,6 +1,7 @@
 #include "uaccess.h"
 #include "fs/ext2/ext2.h"
 #include "task/task.h"
+#include "fs/fd.h"
 
 static	int check_permission(uint16_t permission, uint32_t offset, int mode)
 {

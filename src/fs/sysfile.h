@@ -2,8 +2,6 @@
 #define SYSFILE_H
 
 #include <utils.h>
-#include "task/task.h"
-#include "arch/i386/lib/uaccess.h"
 
 struct buf_ring
 {

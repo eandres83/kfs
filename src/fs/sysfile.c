@@ -1,6 +1,10 @@
 #include "sysfile.h"
+#include "task/task.h"
+#include "arch/i386/lib/uaccess.h"
+#include "fs/fd.h"
 
-ssize_t dup(int32_t fd) {
+ssize_t dup(int32_t fd)
+{
 	proc_t *proc = get_current_process();
 	if ((fd >= MAX_FD || fd < 0) || proc->fd_table[fd] == NULL)
 		return (-1);

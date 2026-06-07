@@ -3,7 +3,6 @@
 
 #include <utils.h>
 #include <kmalloc.h>
-#include "fs/fd.h"
 
 extern struct vfs_node *vfs;
 

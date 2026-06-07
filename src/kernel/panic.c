@@ -6,8 +6,6 @@ void	panic(char *msg, const char *file, uint32_t line)
 	terminal_setcolor(VGA_COLOR_RED);
 	asm volatile("cli");
 
-//	terminal_initialize();
-
 	terminal_writestring("\n\n*** KERNEL PANIC ***\n\n");
 
 	kprintf("Message: %s\n", msg);

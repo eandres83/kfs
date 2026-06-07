@@ -1,4 +1,6 @@
 #include "socket.h"
+#include "fs/fd.h"
+#include "arch/i386/lib/uaccess.h"
 
 // TODO: Implement bind, socket and connect function to better manage about the socket
 

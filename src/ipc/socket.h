@@ -2,9 +2,10 @@
 #define SOCKET_H
 
 #include <utils.h>
+#include <uapi.h>
+#include "task/task.h"
 #include "fs/vfs/vfs.h"
 #include "fs/sysfile.h"
-#include "task/task.h"
 
 #define O_SOCKET_SIDE_A 1
 #define O_SOCKET_SIDE_B 2

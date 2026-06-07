@@ -3,13 +3,6 @@
 
 static struct tty tty_inst;
 
-void	init_tty()
-{
-	kmemset(tty_inst.buff, 0, 256);
-	tty_inst.head = 0;
-	tty_inst.tail = 0;
-}
-
 void	tty_push_char(char c)
 {
 	asm volatile("cli");
