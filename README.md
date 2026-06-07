@@ -1,92 +1,47 @@
-# KFS - Kernel From Scratch
+# KFS-7 - User Space, ELF Loading & Memory Abstraction Safety
 
-![Arch](https://img.shields.io/badge/arch-x86-lightgrey)
-![Kernel](https://img.shields.io/badge/kernel-Monolithic-red)
-![Language](https://img.shields.io/badge/language-C%20%2F%20Assembly-blue)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow)
+This development module establishes complete isolation between application logic and kernel space. By separating CPU execution levels into Ring 0 (Supervisor) and Ring 3 (User), the system ensures that user-space programs cannot directly manipulate kernel memory structures or physical hardware interfaces.
 
-<br />
-<p align="center">
-  <h3 align="center">Writing a 32-bit Unix-like Operating System from scratch</h3>
-</p>
+## The Core Problem: The Ring 0 / Ring 3 Memory Boundary
 
-## 🗣️ About The Project
+When a user program invokes a system call (e.g., sys_read or sys_write), it passes pointers referencing memory locations inside its own virtual address space. Because the kernel runs in Ring 0, it has the technical capability to read and write anywhere within the mapped memory pages.
 
-**KFS** is a comprehensive systems engineering project focused on building a fully functional Operating System kernel starting from bare metal. Unlike standard application development, this project requires managing every bit of hardware, memory, and CPU execution state manually.
+However, accepting arbitrary user-space pointers introduces critical security flaws:
+1. The Poisoned Pointer Vulnerability: A malicious or erroneous user space application could pass a pointer pointing directly into kernel memory space (e.g., above 0xC0000000). If the kernel dereferences this pointer directly without verification, it could overwrite its own structures, leading to a system crash or privilege escalation.
+2. Unmapped Address Panics: If the user application passes a valid user-space address that happens to be currently unmapped or swapped out, the CPU hardware MMU triggers a Page Fault (#PF) immediately upon dereference. If this occurs inside kernel space execution flow without specific safety hooks, the kernel enters an unrecoverable Panic state.
 
-The goal is to progress from a simple bootloader to a multitasking system capable of running user-space shell programs, following the evolution of the **x86 architecture**.
+## The Architectural Solution: Safe uaccess via Page Fault Interception
 
----
+To maximize efficiency and avoid checking every single byte limit manually via software loops prior to copying, KFS-7 utilizes hardware-assisted software protection routines modeled after enterprise-grade monolithic production kernels.
 
-## 🗺️ Project Roadmap & Modules
+Instead of pre-validating addresses through expensive software verifications, the kernel attempts the copy directly but intercepts any hardware exceptions if the pointer proves to be invalid or forbidden.
 
-Development is divided into strict milestones (branches). This `main` branch contains the latest development snapshot.
+The Verification Flow Sequence:
+1. System Call Invocation: A user application triggers INT 0x80, passing a data memory pointer.
+2. Assembly Trampoline: The kernel initiates a direct memory copy using specialized low-level assembly functions (copy_to_user_asm.s).
+3. Hardware MMU Intervention: If the pointer points to an invalid, unmapped, or supervisor-only page, the CPU instantly generates a Page Fault Exception (#PF).
+4. IDT Interception: The Interrupt Descriptor Table (Vector 14) catches the fault and extracts the saved Instruction Pointer (EIP) from the stack.
+5. Exception Cache Range Check: The handler cross-references this faulting EIP against the exact instruction boundaries reserved for our memory copy routines.
+6. Graceful Error Injection: Since a match is confirmed, the handler rewrites the saved EIP context on the stack to point directly to a safe recovery stub. The execution resumes at this stub, forcing the operation to exit cleanly and return an internal error code (-EFAULT) instead of crashing the operating system.
 
-| Module | Focus | Status | Key Engineering Concepts |
-| :--- | :--- | :--- | :--- |
-| **[KFS-3](https://github.com/eandres83/kfs/tree/kfs-3)** | **Memory** | ✅ Completed | Virtual Memory (Paging), PMM, Custom Heap (`kmalloc`), Panics. |
-| **[KFS-4](https://github.com/eandres83/kfs/tree/kfs-4)** | **Interrupts** | ✅ Completed | IDT, ISRs, PIC Remapping, Hardware IRQs. |
-| **[KFS-5](https://github.com/eandres83/kfs/tree/kfs-5)** | **Processes** | ✅ Completed | Multitasking, Context Switch, Scheduler, TCB, Syscalls. |
-| **[KFS-6](https://github.com/eandres83/kfs/tree/kfs-6)** | **Filesystem** | ✅ Completed | VFS, Ext2 Driver, IDE/PATA Controller, MBR Partitions. |
-| **KFS-7** | **User Space** | 🚧 In Progress | Ring 3 Execution, ELF Loader, Advanced Syscalls. |
+## Implemented Infrastructure
 
----
+### 1. ELF Binary Parser & Loader
+The execution framework parses standard binary files using the native 32-bit ELF specification:
+* Validates the ELF magic identity sequence (0x7F 'E' 'L' 'F').
+* Loops through the compiled Program Headers to identify loadable segments (PT_LOAD).
+* Maps code, data, and uninitialized BSS space allocations directly into isolated process page tables using virtual memory flags matching requested access configurations (Executable, Writable, User).
 
-### 📂 Directory Structure
-~~~text
-.
-├── src/
-│   ├── arch/i386/     # Architecture-specific (IDT, PIC, Timer, Syscalls)
-│   ├── boot/          # Assembly entry points and Multiboot headers
-│   ├── fs/            # VFS, Ext2 parsing, MBR, and Mount points
-│   ├── kernel/        # Core kernel logic (kmain, shell, panic)
-│   ├── mm/            # Memory Management (PMM, VMM, kmalloc/slab)
-│   ├── task/          # Process Management (Scheduler, Context Switch)
-│   ├── drivers/       # Hardware drivers (VGA, Keyboard, IDE/Storage)
-│   └── lib/           # Custom standard library (kprintf, strings)
-├── include/           # System-wide header files
-├── linker.ld          # Memory layout definition (Higher Half Kernel)
-└── Makefile           # Build automation and QEMU integration
-~~~
+### 2. User Space LibC (userland/)
+To allow programs to run natively in Ring 3, an internal, isolated userland static runtime environment was constructed from scratch:
+* System Call Wrappers: Custom assembly functions that wrap direct hardware context preparation, moving arguments to registers before calling the INT 0x80 hardware gateway.
+* Independent User Heap Allocator: A freestanding user-space heap implementation completely decoupled from the kernel's allocator, allowing sandboxed data mutations.
+
+### 3. Verification Suite & Userland Shell
+The filesystem contains a suite of test binaries executed from a dedicated user-space application loop (init and minishell):
+* test_memory_security: Intentional validation binary that attempts to read from protected kernel regions or write to unmapped pages from Ring 3. The system demonstrates resilience by terminating the offending process while keeping the root kernel shell alive.
+* test_pipe & test_socket: Inter-Process Communication validation testing data replication safety using memory structures mapped across scheduling operations.
+* test_permissions: Verifies access right checks based on initialized structures.
 
 ---
-
-## 🚀 Current Capabilities (Main Branch)
-
-Running the latest build allows you to:
-* **Persistent Storage:** Fully functional IDE (PATA) driver interacting with a Virtual File System (VFS) and parsing Ext2 formatted disks.
-* **Preemptive Multitasking:** A custom Round-Robin scheduler driven by the PIT (IRQ0). Can concurrently run, pause, and schedule multiple processes.
-* **Interrupt-Driven Architecture:** Complete x86 **IDT** implementation. Handles CPU exceptions, hardware interrupts, and software interrupts (`int 0x80`).
-* **Memory Management:** Full physical and virtual memory managers (x86 Paging) supporting isolation, custom block-based Heap Allocator (`kmalloc`), and memory mapping (`mmap`).
-* **Interactive Shell:** A CLI environment supporting filesystem commands (`cat`, `cd`, `pwd`) and memory debugging tools.
-
----
-
-## 🛠️ Installation & Usage
-
-### ⚠️ Critical Requirement: Cross-Compiler
-You **cannot** compile this kernel with your system's standard GCC. You must use a cross-compiler targeting `i686-elf` to avoid linking against host OS libraries.
-
-* **Compiler:** `i686-elf-gcc`
-* **ASM:** `i686-elf-as`
-
-### Build Instructions
-
-1.  **Clone the repository:**
-    ~~~bash
-    git clone https://github.com/eandres83/kfs.git
-    cd kfs
-    ~~~
-
-2.  **Compile the Kernel:**
-    ~~~bash
-    make
-    ~~~
-
-3.  **Run the OS (QEMU):**
-    ~~~bash
-    make run
-    ~~~
-
----
-*Author: Eleder Andres. "Where there is a shell, there is a way."*
+*Developed by Eleder Andres.*
