@@ -1,4 +1,5 @@
 #include "../userland/minilib.h"
+
 static char	*get_one_line(int fd)
 {
 	char	c;
@@ -48,6 +49,7 @@ static char **read_split_file(char *file)
 	if (!split_buf)
 		return (free(buff), NULL);
 	free(buff);
+	close(fd);
 	return (split_buf);
 }
 
@@ -123,13 +125,12 @@ int main()
 	{
 		setuid(atoi(line[2]));
 		setgid(atoi(line[3]));
-		printf("el uid -> %s, el gid -> %s\n", line[2], line[3]);
 		if (chdir(line[5]) == -1)
 		{
 			printf("Fatal error in chdir syscall\n");
 			exit(1);
 		}
-		ssize_t res = execve("/bin/minishell", argv, envp);
+		ssize_t res = execve("/bin/test_socket", argv, envp);
 		if (res == -1)
 		{
 			printf("Fatal error in init process execve\n");
@@ -140,8 +141,6 @@ int main()
 	{
 		int status = 0;
 		waitpid(pid, &status, 0);
-		if (status == 1)
-			printf("Fuera de mi puta shell bro\n");
 	}
 	dfree(line);
 	return (0);

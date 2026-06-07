@@ -8,16 +8,16 @@ int main()
 
 	if (pipe(fd) == -1)
 	{
-		printf("Fallo critico: No se pudo crear el pipe en el kernel.\n");
+		printf("Critical failure: pipe could no be created\n");
 		return (1);
 	}
-	printf("Pipe creado: fd_read=%d, fd_write=%d\n", fd[0], fd[1]);
+	printf("Pipe created: fd_read=%d, fd_write=%d\n", fd[0], fd[1]);
 
 	ssize_t pid = fork();
 
 	if (pid < 0)
 	{
-		printf("Fallo critico: Error en el fork.\n");
+		printf("Critical failure: Error in the fork.\n");
 		return (1);
 	}
 
@@ -25,13 +25,13 @@ int main()
 	{
 		close(fd[0]); // El hijo no va a leer cerramos su extremo de lectura
 
-		char *msg = "Hola padre, el pipe funciona perfectamente!";
-		ssize_t bytes_escritos = write(fd[1], msg, 43); 
+		char *msg = "Hi father, the pipe is working fine!\n";
+		ssize_t bytes_escritos = write(fd[1], msg, strlen(msg)); 
 
 		if (bytes_escritos > 0)
-			printf("Hijo: He escrito %d bytes en el pipe.\n", (int)bytes_escritos);
+			printf("Son: I wrote %d bytes in the pipe.\n", (int)bytes_escritos);
 		else
-			printf("Hijo: Fallo al escribir en el pipe.\n");
+			printf("Son: Failed to write in the pipe.\n");
 
 		close(fd[1]);
 		exit(0);
@@ -45,14 +45,14 @@ int main()
 		if (bytes_leidos > 0)
 		{
 			buffer[bytes_leidos] = '\0';
-			printf("Padre: Recibi el mensaje -> '%s'\n", buffer);
+			printf("Father: reciv the message -> '%s'\n", buffer);
 		}
 		else
-			printf("Padre: No se leyo nada o hubo un error en read.\n");
+			printf("Father: I couldn't read something.\n");
 
 		close(fd[0]);
 		wait(&status);
-		printf("Test finalizado con exito.\n");
+		printf("Finish tests.\n");
 	}
 
 	return (0);
