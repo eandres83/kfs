@@ -59,7 +59,6 @@ void	execute_one_command(t_mini *mini)
 		if (mini->outfile != STDOUT_FILENO)
 			close(mini->outfile);
 		waitpid(pid, &status, 0);
-		update_exit_status(status);
 	}
 }
 

@@ -67,12 +67,11 @@ int	management_cd(t_mini *mini)
 		error(1, "Error: cd");
 		return (EXIT_FAILURE);
 	}
-	// TODO: implementar chdir de verdad como en command.c
-//	if (chdir(target_dir) == -1)
-//	{
-//		error(1, "Error: cd");
-//		return (EXIT_FAILURE);
-//	}
+	if (chdir(target_dir) == -1)
+	{
+		error(1, "Error: cd");
+		return (EXIT_FAILURE);
+	}
 	update_pwd_variables(oldpwd, mini);
 	return (0);
 }

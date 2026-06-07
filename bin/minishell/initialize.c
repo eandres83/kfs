@@ -57,11 +57,9 @@ bool	check_redirections(t_mini *node, char **array)
 		&& array[i + 2])
 	{
 		node->limit = strdup(array[i + 2]);
-//		create_tmp(node);
 	}
 	else if (array && array[i] && *array[i] == '<')
-		node->infile = open(array[i + 1], 1, 1);
-//		node->infile = open(array[i + 1], O_RDONLY);
+		node->infile = open(array[i + 1], O_RDONLY, 1);
 	while (array[i])
 	{
 		if (*array[i] == '|')

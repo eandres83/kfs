@@ -91,14 +91,12 @@ bool	check_redirections_util(t_mini *node, char **array)
 	if (len - 3 >= 0 && *array[len - 3] == '>' && *array[len - 2] == '>')
 	{
 		node->outfile = open(array[len - 1], 1, 1);
-//		node->outfile = open(array[len - 1], O_CREAT | O_APPEND | O_WRONLY, 0644);
 		if (node->outfile == -1)
 			return (false);
 	}
 	else if (array && len - 2 >= 0 && *array[len - 2] == '>')
 	{
 		node->outfile = open(array[len - 1], 1, 1);
-//		node->outfile = open(array[len - 1], O_CREAT | O_TRUNC | O_WRONLY, 0644);
 		if (node->outfile == -1)
 			return (false);
 	}

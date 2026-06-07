@@ -99,10 +99,6 @@ int	main(int argc, char **argv, char **env)
 
 	(void)argv;
 	(void)argc;
-//	setup_signals();
-	printf("Estoy en mi puta minishell desde ring3\n");
-	for (int i = 0; env[i] != NULL; i++)
-		printf("el puto env -> %s\n", env[i]);
 	mini = initialize_mini_node(env);
 	while (1)
 	{
