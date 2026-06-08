@@ -11,6 +11,15 @@ ifeq ($(DEBUG), 1)
 	CFLAGS += -DKERNEL_DEBUG
 endif
 
+REQUIRED_BINS := i686-elf-gcc i686-elf-as i686-elf-ld
+
+ifneq ($(MAKECMDGOALS),toolchain)
+        MISSING_BINS := $(foreach bin,$(REQUIRED_BINS),$(if $(shell command -v $(bin) 2> /dev/null),,$(bin)))
+        ifneq ($(strip $(MISSING_BINS)),)
+                $(error "Error: no $(MISSING_BINS) in your system. Execute make toolchain")
+        endif
+endif
+
 export USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -g -fno-builtin -nostdlib -nodefaultlibs -I userland
 LDFLAGS = -T linker.ld
 
@@ -57,6 +66,9 @@ $(BUILD_DIR)/src/%.o: src/%.s
 	@mkdir -p $(dir $@)
 	@echo "Compiling ASM: $<"
 	$(AS) -o $@ $<
+
+toolchain:
+	@bash .build_cross_compiler.sh
 
 # USERLAND
 $(BUILD_DIR)/userland/%.o: userland/%.c
@@ -132,4 +144,4 @@ debug:
 
 re: fclean all
 
-.PHONY: all clean fclean re run debug iso
+.PHONY: all clean fclean re run debug iso toolchain
