@@ -7,16 +7,17 @@ CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
 	 -fno-builtin -fno-exceptions -fno-stack-protector \
 	 -nostdlib -nodefaultlibs $(INCLUDES)
 
+# flag to print debug msg or not
 ifeq ($(DEBUG), 1)
 	CFLAGS += -DKERNEL_DEBUG
 endif
 
+# check if user has cross compiler
 REQUIRED_BINS := i686-elf-gcc i686-elf-as i686-elf-ld
-
 ifneq ($(MAKECMDGOALS),toolchain)
         MISSING_BINS := $(foreach bin,$(REQUIRED_BINS),$(if $(shell command -v $(bin) 2> /dev/null),,$(bin)))
         ifneq ($(strip $(MISSING_BINS)),)
-                $(error "Error: no $(MISSING_BINS) in your system. Execute make toolchain")
+                $(error "Error: no $(MISSING_BINS) in your system. Execute make toolchain, this process may take a few minutes, but it's essential")
         endif
 endif
 
