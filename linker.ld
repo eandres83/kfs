@@ -44,10 +44,15 @@ SECTIONS
 	. = ALIGN(4K);
 
 	/* Read-write data (uninitialized) and stack */
-	.bss ALIGN(4K) : AT(ADDR(.data) - 0xC0000000)
+	.bss ALIGN(4K) : AT(ADDR(.bss) - 0xC0000000)
 	{
 		*(COMMON)
 		*(.bss)
+	}
+
+	.kernel_symbols ALIGN(4K) : AT(ADDR(.kernel_symbols) - 0xC0000000)
+	{
+		*(.kernel_symbols)
 	}
 
 	_end = .;
