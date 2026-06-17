@@ -39,21 +39,22 @@ KERNEL_FINAL = kernel.bin
 SYM_SCRIPT = script/generate_table.sh
 SYM_C = src/symbol_table.c
 SYM_OBJ = $(BUILD_DIR)/src/symbol_table.o
+DUMMY_OBJ = $(BUILD_DIR)/src/modules/dummy_symbols.o
 
 export BUILD_DIR = .obj
 
-SRCS_MINISHELL = $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins/*.c) $(wildcard bin/minishell/execute/*.c)
+SRCS_MINISHELL = $(foreach dir, $(shell find bin/minishell -type d), $(wildcard $(dir)/*.c))
 
-DIRECTORIES = $(shell find src -type d)
+SRCS_C = $(foreach dir, $(shell find src -type d), $(wildcard $(dir)/*.c))
+SRCS_S = $(foreach dir, $(shell find src -type d), $(wildcard $(dir)/*.s))
 
-SRCS_C = $(foreach dir, $(DIRECTORIES), $(wildcard $(dir)/*.c))
-SRCS_S = $(foreach dir, $(DIRECTORIES), $(wildcard $(dir)/*.s))
+ALL_RAW_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) $(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
+CORE_OBJS := $(filter-out %dummy_symbols.o %symbol_table.o,$(ALL_RAW_OBJS))
 
-KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \
-	$(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
-BASE_OBJS := $(filter-out $(SYM_OBJ),$(KERNEL_OBJS))
+SRCS_MODULE = $(shell find modules -type f -name "*.c")
+OBJS_MODULE = $(patsubst modules/%.c, $(BUILD_DIR)/modules/%.o, $(SRCS_MODULE))
 
-USER_SRCS_C = $(wildcard userland/libc/*.c) $(wildcard userland/malloc/*.c) $(wildcard userland/*.c)
+USER_SRCS_C = $(foreach dir, $(shell find userland -type d), $(wildcard $(dir)/*.c))
 export USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
 export CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
 
@@ -63,7 +64,7 @@ APPS_OBJ = $(patsubst bin/%.c, bin/%, $(APPS_SRCS))
 all: $(KERNEL_FINAL) $(DISK_IMG)
 
 # KERNEL
-$(KERNEL_DRAFT): $(BASE_OBJS)
+$(KERNEL_DRAFT): $(CORE_OBJS) $(DUMMY_OBJ)
 	$(CC) $(LDFLAGS) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
 $(SYM_C): $(KERNEL_DRAFT)
@@ -72,7 +73,7 @@ $(SYM_C): $(KERNEL_DRAFT)
 $(SYM_OBJ): $(SYM_C)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(KERNEL_FINAL): $(KERNEL_OBJS) $(SYM_OBJ)
+$(KERNEL_FINAL): $(CORE_OBJS) $(SYM_OBJ)
 	@echo "Linking kernel..."
 	$(CC) $(LDFLAGS) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
@@ -135,6 +136,15 @@ $(DISK_IMG): $(PART1_IMG) $(PART2_IMG)
 	@dd if=$(PART1_IMG) of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
 	@dd if=$(PART2_IMG) of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
 	@echo "$(DISK_IMG) done!"
+
+$(BUILD_DIR)/modules/%.o: modules/%.c
+	@mkdir -p $(dir $@)
+	@echo "Compiling modules :$*"
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: modules
+modules: $(OBJS_MODULE)
+	@cp $^ $(FS_DIR)/bin/
 
 .PHONY: clean
 clean:

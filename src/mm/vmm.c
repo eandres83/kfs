@@ -31,6 +31,7 @@ static void	vmm_free_page(pt_entry *e)
 	if (p)
 		pmm_free_page(p);
 
+//	e = 0;
 	pt_entry_del_attrib(e, PTE_PRESENT);
 }
 
@@ -48,6 +49,27 @@ void	vmm_remove_mapping(void *virt)
 	pt_entry_del_attrib(page, PTE_PRESENT);
 	pt_entry_set_frame(page, 0);
 
+	reload_tlb(virt);
+}
+
+void 	set_attributes(void *virt, uint32_t nb, bool write)
+{
+	for (size_t i = 0; i < nb; i++)
+	{
+		void *phys = pmm_map_page();
+		if (!phys)
+			PANIC("Out of memory");
+		// get physical table
+		page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX(((uint32_t)virt) + (i * 4096)) * PAGE_SIZE));
+		// get page
+		pt_entry *page = &table->m_entries[PT_INDEX(((uint32_t) virt) + (i * 4096))];
+	
+		pt_entry_set_frame(page, (physical_addr)phys);
+		pt_entry_add_attrib(page, PTE_PRESENT);
+		if (write)
+			pt_entry_add_attrib(page, PTE_WRITABLE);
+	}
+	
 	reload_tlb(virt);
 }
 

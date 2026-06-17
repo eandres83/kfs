@@ -13,6 +13,7 @@ typedef uint32_t	Elf32_Off; // Unsigned file offset
 typedef int32_t		Elf32_Sword;  // Signed large integer
 typedef uint32_t	Elf32_Word; // Unsigned large integer
 
+// e_ident
 #define EI_MAG0		0  // first 4 bytes hold a magic number
 #define EI_MAG1		1  // first 4 bytes hold a magic number
 #define EI_MAG2		2  // first 4 bytes hold a magic number
@@ -23,9 +24,15 @@ typedef uint32_t	Elf32_Word; // Unsigned large integer
 #define EI_PAD		7  // mark the beginning of the unused bytes in e_ident
 #define EI_NIDENT	16 // unused bytes
 
+// magic number
+#define ELFMAG0 0x7f
+#define ELFMAG1 'E'
+#define ELFMAG2 'L'
+#define ELFMAG3 'F'
+
 struct elf32_ehdr
 {
-	unsigned char	e_ident[EI_NIDENT];	// 
+	unsigned char	e_ident[EI_NIDENT];
 	Elf32_Half	e_type; 		// object file type
 	Elf32_Half	e_machine;		// required architecture for an individual file
 	Elf32_Word	e_version;		// object file version
@@ -40,6 +47,59 @@ struct elf32_ehdr
 	Elf32_Half	e_shnum;		// number of entries in the section header table
 	Elf32_Half	e_shstrndx;		// section header table index of the entry associated with the section name string table
 };
+
+struct elf32_shdr
+{
+	Elf32_Word	sh_name;
+	Elf32_Word	sh_type;
+	Elf32_Word	sh_flags;
+	Elf32_Addr	sh_addr;
+	Elf32_Off	sh_offset;
+	Elf32_Word	sh_size;
+	Elf32_Word	sh_link;
+	Elf32_Word	sh_info;
+	Elf32_Word	sh_addralign;
+	Elf32_Word	sh_entsize;
+};
+
+// sh_type
+#define SHT_NULL	0 // inactive header
+#define SHT_PROGBITS	1 // info defined by the program
+#define SHT_SYMTAB	2 // sections hold a symbol table
+#define SHT_SYRTAB	3 // sections hold a symbol table
+#define SHT_RELA	4 // realocation entries with explicit addends
+#define SHT_HASH	5 // symbol hash table
+#define SHT_DYNAMIC	6 // info for dynamic linking
+#define SHT_NOTE	7 // info that marks the file in some way
+#define SHT_NOBITS	8 // this type occupies no space in the file
+#define SHT_REL		9 // realocation entries with explicit addends like efl32_rel
+
+// sh_flags
+#define SHF_WRITE	0x1 // contains data that should be writable during process execution
+#define SHF_ALLOC	0x2 // occupies memory during process execution
+#define SHF_EXECINSTR	0x4 // contains executable machine instructions
+
+struct elf32_rel
+{
+	Elf32_Addr	r_offset;
+	Elf32_Word	r_info;
+};
+
+#define ELF32_R_SYM(i)	((i)>>8)
+#define ELF32_R_TYPE(i)	((unsigned char)(i))
+
+struct elf32_sym
+{
+	Elf32_Word	st_name;
+	Elf32_Addr	st_value;
+	Elf32_Word	st_size;
+	unsigned char	st_info;
+	unsigned char	st_other;
+	Elf32_Half	st_shndx;
+};
+
+#define EFL32_ST_BIND(i) ((i)>>4)
+#define ELF32_ST_TYPE(i) ((i)&0xf)
 
 struct elf32_phdr
 {
@@ -66,5 +126,6 @@ struct elf32_phdr
 
 extern void reload_tlb(void *virt);
 ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t *regs);
+bool	check_binary(struct elf32_ehdr *elf);
 
 #endif 
