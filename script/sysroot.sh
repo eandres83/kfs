@@ -16,7 +16,7 @@ mkdir -p "$1/boot"
 echo -n "root:x:0:0:root:/root:/bin/minishell\neandres:x:1000:1000:user:/home/eandres:/bin/minishell" > $1/etc/passwd
 
 echo -n "root:1\neandres:1234" > $1/etc/shadow
-chmod 400 $1/etc/shadow
+#chmod 400 $1/etc/shadow
 
 echo -n "Mierdon\n" > $1/dev/file.txt
 echo -n "Hola desde el dico duro" > $1/home/kfs/file.txt
