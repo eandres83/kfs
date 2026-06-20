@@ -3,7 +3,7 @@
 
 #include <utils.h>
 
-#define ALIGN(x) ((x + (PAGE_SIZE - 1)) / PAGE_SIZE)
+#define ALIGN_PAGE(x) ((x + (PAGE_SIZE - 1)) / PAGE_SIZE)
 #define MAX_MODULES 64
 
 #define MODULE_VADDR_START 0xD0000000
@@ -37,5 +37,7 @@ struct symbol_table
 
 extern struct symbol_table array_symbols[];
 extern uint32_t	size_symbols;
+
+ssize_t	insmod(char *binary);
 
 #endif

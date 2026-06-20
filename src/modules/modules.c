@@ -27,7 +27,7 @@ void	module_free(void *addr, size_t nb)
 	}
 }
 
-void	*module_alloc(size_t nb, uint32_t flags)
+void	*module_alloc(size_t nb)
 {
 	size_t cont = 0;
 	size_t j = 0;
@@ -58,12 +58,24 @@ calculate_addr:
 
 	for (i = 0; i < nb; i++)
 		bitmap_set_bit(final_idx + i);
-
-	if (flags & SHF_WRITE)	
-		set_attributes(virt_addr, nb, true);
-	if (flags & SHF_EXECINSTR)
-		set_attributes(virt_addr, nb, false);
+	set_attributes(virt_addr, nb);
 	return (virt_addr);
+}
+
+void	remove_permision(char *content, struct elf32_ehdr *elf, uint32_t *tmp_array)
+{
+	struct elf32_shdr *section = (struct elf32_shdr*)((char*)content + elf->e_shoff);
+	for (int i = 0; i < elf->e_shnum; i++)
+	{
+		if ((section->sh_type == SHT_PROGBITS) && (section->sh_flags & (SHF_ALLOC | SHF_EXECINSTR)) && (section->sh_size > 0))
+		{
+			kdebug("Estoy dentro del removedor de putas\n");
+			void *addr = (void*)tmp_array[i];
+			if (!(section->sh_flags & SHF_WRITE))
+				remove_attribute(addr, ALIGN_PAGE(section->sh_size));
+		}
+		section = (struct elf32_shdr*)((char*)section + elf->e_shentsize);
+	}
 }
 
 ssize_t	alloc_sections(char *content, struct elf32_ehdr *elf, uint32_t *tmp_array)
@@ -72,32 +84,31 @@ ssize_t	alloc_sections(char *content, struct elf32_ehdr *elf, uint32_t *tmp_arra
 	for (int i = 0; i < elf->e_shnum; i++)
 	{
 		char *real_offset = (char*)content + section->sh_offset;
-		if ((section->sh_type == SHT_NOBITS) && (section->sh_flags & (SHF_ALLOC | SHF_WRITE)))
+		if ((section->sh_type == SHT_NOBITS) && (section->sh_flags & SHF_ALLOC) && (section->sh_size > 0))
 		{
-			void *addr = module_alloc(ALIGN(section->sh_size), section->sh_flags);
+			kdebug("El puto page alineao -> %d\n", ALIGN_PAGE(section->sh_size));
+			void *addr = module_alloc(ALIGN_PAGE(section->sh_size));
 			if (!addr)
 				return (-1);
 			kmemset(addr, 0, section->sh_size);
 			tmp_array[i] = (uint32_t)addr;
 		}
-		else if (section->sh_type == SHT_PROGBITS)
+		else if (section->sh_type == SHT_PROGBITS && (section->sh_size > 0))
 		{
-			if (section->sh_flags & (SHF_ALLOC | SHF_WRITE))
+			if (section->sh_flags & SHF_ALLOC)
 			{
-				void *addr = module_alloc(ALIGN(section->sh_size), section->sh_flags);
+				kdebug("El puto page alineao -> %d\n", ALIGN_PAGE(section->sh_size));
+				void *addr = module_alloc(ALIGN_PAGE(section->sh_size));
 				if (!addr)
 					return (-1);
 				kmemcpy(addr, real_offset, section->sh_size);
 				tmp_array[i] = (uint32_t)addr;
+				kdebug("Seccion %d mapeada -> Type: %d, Size; %d, Addr: %x\n", i, section->sh_type,
+					section->sh_size, tmp_array[i]);
 			}
-			else if (section->sh_flags & (SHF_ALLOC | SHF_EXECINSTR))
-			{
-				void *addr = module_alloc(ALIGN(section->sh_size), section->sh_flags);
-				if (!addr)
-					return (-1);
-				kmemcpy(addr, real_offset, section->sh_size);
-				tmp_array[i] = (uint32_t)addr;
-			}
+			else
+				kdebug("Seccion %d IGNORADA -> Type: %d, Flags; %d\n", i, section->sh_type,
+					section->sh_flags);
 		}
 		section = (struct elf32_shdr*)((char*)section + elf->e_shentsize);
 	}
@@ -130,7 +141,10 @@ ssize_t	realocation_symbols(char *content, struct elf32_ehdr *elf, uint32_t *tmp
 						if (kstrcmp(array_symbols[x].name, name) == 0)
 						{
 							struct symbol_table *table = &array_symbols[x];
+							kdebug("dentro del puto kstrcmp -> %x\n", array_symbols[x].addr);
+							kdebug("dentro del puto kstrcmp -> %s\n", array_symbols[x].name);
 							S = table->addr; 
+							break;
 						}
 					}
 				}
@@ -138,9 +152,13 @@ ssize_t	realocation_symbols(char *content, struct elf32_ehdr *elf, uint32_t *tmp
 					S = tmp_array[tmp_sym->st_shndx] + tmp_sym->st_value;
 				uint32_t P = tmp_array[section->sh_info] + tmp_rel->r_offset;
 				uint32_t A = *(uint32_t*)P;
-				if (ELF32_R_TYPE(tmp_rel->r_info) == 1)
+				if (ELF32_R_TYPE(tmp_rel->r_info) == R_386_32)
+				{
+					kdebug("Parchenado R_386_32: shndx=%d, S=%x, A=%x, P=%x, FInal=%x\n", tmp_sym->st_shndx,
+						S, A, P, S + A);
 					*(uint32_t*)P = S + A;
-				else
+				}
+				else if (ELF32_R_TYPE(tmp_rel->r_info) == R_386_PC32)
 					*(uint32_t*)P = S + A - P;
 			}
 		}
@@ -216,13 +234,18 @@ ssize_t	insmod(char *binary)
 		return (kfree(content), kfree(tmp_array), -1);
 
 	if (search_init_function(content, elf, tmp_array, module) == -1)
-		return (kfree(content), kfree(tmp_array), 1);
+		return (kfree(content), kfree(tmp_array), -1);
 
 	if (module->init == NULL || module->cleanup == NULL)
-		return (kfree(content), kfree(tmp_array), 1);
+		return (kfree(content), kfree(tmp_array), -1);
+	remove_permision(content, elf, tmp_array);
+
 	int retur = module->init();
 	if (retur != 0)
-		return (kfree(content), kfree(tmp_array), 1);
+	{
+		kprintf("El result -> %d\n", retur);
+		return (kfree(content), kfree(tmp_array), -1);
+	}
 	module->state = MOD_STATE_LIVE;
 	kfree(content);
 	return (0);

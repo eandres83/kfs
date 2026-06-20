@@ -85,8 +85,13 @@ struct elf32_rel
 	Elf32_Word	r_info;
 };
 
+// macros to get info
 #define ELF32_R_SYM(i)	((i)>>8)
 #define ELF32_R_TYPE(i)	((unsigned char)(i))
+
+// realocation types
+#define R_386_32	1
+#define R_386_PC32	2
 
 struct elf32_sym
 {

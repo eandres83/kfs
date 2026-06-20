@@ -3,13 +3,19 @@ AS = i686-elf-as
 LD = i686-elf-ld
 
 INCLUDES = -I include -I src
-CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
-	 -fno-builtin -fno-exceptions -fno-stack-protector \
-	 -nostdlib -nodefaultlibs $(INCLUDES)
+CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g -fno-builtin -fno-pie -fno-pic \
+	-fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs $(INCLUDES)
 
 # flag to print debug msg or not
 ifeq ($(DEBUG), 1)
-	CFLAGS += -DKERNEL_DEBUG endif
+        CFLAGS += -DKERNEL_DEBUG
+endif
+
+# make modules
+ifeq ($(filter modules,$(MAKECMDGOALS)),modules)
+        PART1_DEPS = $(MODULES_STAMP) $(GENEXT2FS_BIN)
+else
+        PART1_DEPS = $(SYSROOT_STAMP) $(GENEXT2FS_BIN)
 endif
 
 # check if user has cross compiler
@@ -33,6 +39,9 @@ PART1_IMG = $(TMP_DIR)/part.img
 PART2_IMG = $(TMP_DIR)/part2.img
 GENEXT2FS_BIN = $(HOME)/sgoinfre/cross/bin/genext2fs
 
+SYSROOT_STAMP = $(TMP_DIR)/.sysroot_stamp
+MODULES_STAMP = $(TMP_DIR)/.modules_stamp
+
 KERNEL_DRAFT = kernel_draft.bin
 KERNEL_FINAL = kernel.bin
 
@@ -52,7 +61,7 @@ ALL_RAW_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) $(patsubst s
 CORE_OBJS := $(filter-out %dummy_symbols.o %symbol_table.o,$(ALL_RAW_OBJS))
 
 SRCS_MODULE = $(shell find modules -type f -name "*.c")
-OBJS_MODULE = $(patsubst modules/%.c, $(BUILD_DIR)/modules/%.o, $(SRCS_MODULE))
+OBJS_MODULE = $(patsubst modules/%.c, $(BUILD_DIR)/modules/%.ko, $(SRCS_MODULE))
 
 USER_SRCS_C = $(foreach dir, $(shell find userland -type d), $(wildcard $(dir)/*.c))
 export USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
@@ -110,15 +119,21 @@ bin/%: bin/%.c $(CRT0_OBJ) $(USER_OBJS_C)
 bin/minishell/minishell: $(CRT0_OBJ) $(USER_OBJS_C) $(SRCS_MINISHELL)
 	@$(MAKE) -C bin/minishell
 
-$(FS_DIR): $(KERNEL_FINAL) $(APPS_OBJ) bin/minishell/minishell
+$(SYSROOT_STAMP): $(KERNEL_FINAL) $(APPS_OBJ) bin/minishell/minishell
 	@echo "Creating a temporary directory structure"
 	@sh script/sysroot.sh $(FS_DIR)
 	@find bin -type f ! -name "*.c" ! -name "*.h" ! -name "Makefile" ! -name "*.o" ! -name "*.s" -exec cp {} $(FS_DIR)/bin/ \;
+	@touch $(SYSROOT_STAMP)
+
+$(MODULES_STAMP): $(SYSROOT_STAMP) $(OBJS_MODULE)
+	@mkdir -p $(FS_DIR)/bin/
+	@cp $(OBJS_MODULE) $(FS_DIR)/bin/
+	@touch $@
 
 $(GENEXT2FS_BIN):
 	@bash script/build_cross_compiler.sh genext2fs
 
-$(PART1_IMG): $(FS_DIR) $(GENEXT2FS_BIN)
+$(PART1_IMG): $(PART1_DEPS)
 	@mkdir -p $(TMP_DIR)
 	@genext2fs -N 1024 -b 4096 -d $(FS_DIR) $(PART1_IMG)
 
@@ -137,19 +152,18 @@ $(DISK_IMG): $(PART1_IMG) $(PART2_IMG)
 	@dd if=$(PART2_IMG) of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
 	@echo "$(DISK_IMG) done!"
 
-$(BUILD_DIR)/modules/%.o: modules/%.c
+$(BUILD_DIR)/modules/%.ko: modules/%.c
 	@mkdir -p $(dir $@)
-	@echo "Compiling modules :$*"
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@echo "Compiling modules: $*"
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: modules
-modules: $(OBJS_MODULE)
-	@cp $^ $(FS_DIR)/bin/
+modules: $(DISK_IMG)
 
 .PHONY: clean
 clean:
 	@rm -rf $(BUILD_DIR) $(TMP_DIR)
-	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' -delete
+	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' ! -name "*.ko" -delete
 
 .PHONY: fclean
 fclean: clean 

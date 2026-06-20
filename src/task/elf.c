@@ -7,7 +7,7 @@ bool	check_binary(struct elf32_ehdr *elf)
 		return (kdebug("Error: not a elf file :(\n"), false);
 	if (elf->e_ident[EI_CLASS] != 1) // 
 		return (kdebug("Error: not a 32 bits file\n"), false);
-	if (elf->e_type != 2) // check file type
+	if (elf->e_type != 2 && elf->e_type != 1) // check file type
 		return (kdebug("Error: not a executable file\n"), false);
 	if (elf->e_machine != 3) // check intel architecture
 		return (kdebug("Error: not x86/i386 architecture\n"), false);
