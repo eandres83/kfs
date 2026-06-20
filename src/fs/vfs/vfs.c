@@ -19,6 +19,8 @@ struct vfs_node *get_vfs_node_path(char *path)
 	{
 		if (kstrlen(word[i]) <= 0)
 			continue;
+		if (current_node->type != VFS_DIRECTORY)
+			return (kprintf("No es un puto directorio\n"), NULL);
 		struct vfs_node *child = current_node->children;
 		bool found = false;
 		while (child != NULL)
@@ -34,7 +36,10 @@ struct vfs_node *get_vfs_node_path(char *path)
 		if (!found)
 		{
 			if (current_node->ops != NULL && current_node->ops->finddir != NULL)
+			{
+//				kprintf("los putos datos de current_node -> %x, %x\n", &current_node->ops, &current_node->ops->finddir);
 				current_node = current_node->ops->finddir(current_node, word[i]);
+			}
 			else
 				current_node = NULL;
 		}

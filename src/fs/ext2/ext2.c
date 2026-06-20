@@ -384,6 +384,8 @@ struct vfs_node *ext2_finddir(struct vfs_node *dir_node, char *name)
 		return (NULL);
 
 	uint32_t nb_block = inode->lower_size / fs_info->size_block;
+	if (inode->lower_size % fs_info->size_block == 0)
+		nb_block++;
 	for (int i = 0; i < (int)nb_block; i++)
 	{
 		char *block = ext2_read_block(inode->direct_block[i], fs_info);
@@ -426,6 +428,8 @@ void ext2_readdir(struct vfs_node *dir_node)
 		return ;
 
 	uint32_t nb_block = inode->lower_size / fs_info->size_block;
+	if (inode->lower_size % fs_info->size_block == 0)
+		nb_block++;
 	for (int i = 0; i < (int)nb_block; i++)
 	{
 		char *block = ext2_read_block(inode->direct_block[i], fs_info);
