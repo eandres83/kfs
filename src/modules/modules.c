@@ -78,37 +78,45 @@ void	remove_permision(char *content, struct elf32_ehdr *elf, uint32_t *tmp_array
 	}
 }
 
-ssize_t	alloc_sections(char *content, struct elf32_ehdr *elf, uint32_t *tmp_array)
+ssize_t	count_and_alloc_module(char *content, struct elf32_ehdr *elf, struct modules *module)
 {
+	struct elf32_shdr *section = (struct elf32_shdr*)((char*)content + elf->e_shoff);
+	module->nb_page = 0;
+	for (int i = 0; i < elf->e_shnum; i++)
+	{
+		if (((section->sh_type == SHT_NOBITS) || (section->sh_type == SHT_PROGBITS)) && (section->sh_flags & SHF_ALLOC) && (section->sh_size > 0))
+		{
+			module->nb_page += ALIGN_PAGE(section->sh_size);
+		}
+		section = (struct elf32_shdr*)((char*)section + elf->e_shentsize);
+	}
+	if (module->nb_page == 0)
+		return (-1);
+
+	module->base_address = module_alloc(module->nb_page);
+	if (!module->base_address)
+		return (-1);
+	kprintf("el total de paginas que pido -> %d\n", module->nb_page);
+	return (0);
+}
+
+ssize_t	alloc_sections(char *content, struct elf32_ehdr *elf, uint32_t *tmp_array, struct modules *module)
+{
+	if (count_and_alloc_module(content, elf, module) == -1)
+		return (-1);
+	char *current_dest = (char*)module->base_address;
 	struct elf32_shdr *section = (struct elf32_shdr*)((char*)content + elf->e_shoff);
 	for (int i = 0; i < elf->e_shnum; i++)
 	{
 		char *real_offset = (char*)content + section->sh_offset;
-		if ((section->sh_type == SHT_NOBITS) && (section->sh_flags & SHF_ALLOC) && (section->sh_size > 0))
+		if (((section->sh_type == SHT_NOBITS) || (section->sh_type == SHT_PROGBITS)) && (section->sh_flags & SHF_ALLOC) && (section->sh_size > 0))
 		{
-			kdebug("El puto page alineao -> %d\n", ALIGN_PAGE(section->sh_size));
-			void *addr = module_alloc(ALIGN_PAGE(section->sh_size));
-			if (!addr)
-				return (-1);
-			kmemset(addr, 0, section->sh_size);
-			tmp_array[i] = (uint32_t)addr;
-		}
-		else if (section->sh_type == SHT_PROGBITS && (section->sh_size > 0))
-		{
-			if (section->sh_flags & SHF_ALLOC)
-			{
-				kdebug("El puto page alineao -> %d\n", ALIGN_PAGE(section->sh_size));
-				void *addr = module_alloc(ALIGN_PAGE(section->sh_size));
-				if (!addr)
-					return (-1);
-				kmemcpy(addr, real_offset, section->sh_size);
-				tmp_array[i] = (uint32_t)addr;
-				kdebug("Seccion %d mapeada -> Type: %d, Size; %d, Addr: %x\n", i, section->sh_type,
-					section->sh_size, tmp_array[i]);
-			}
+			tmp_array[i] = (uint32_t)current_dest;
+			if (section->sh_type == SHT_NOBITS)
+				kmemset(current_dest, 0, section->sh_size);
 			else
-				kdebug("Seccion %d IGNORADA -> Type: %d, Flags; %d\n", i, section->sh_type,
-					section->sh_flags);
+				kmemcpy(current_dest, real_offset, section->sh_size);
+			current_dest += (ALIGN_PAGE(section->sh_size) * 4096);
 		}
 		section = (struct elf32_shdr*)((char*)section + elf->e_shentsize);
 	}
@@ -208,9 +216,11 @@ ssize_t	insmod(char *binary)
 	}
 	if (module == NULL)
 		return (-1);
+	kmemset(module, 0, sizeof(struct modules));
 	struct vfs_node *node = get_vfs_node_path(binary);
 	if (node == 0x0)
 		return (-1);
+	kstrlcpy(module->name, node->name, 255);
 	char *content = (char*)kmalloc(node->size);
 	if (!content)
 		return (-1);
@@ -227,27 +237,57 @@ ssize_t	insmod(char *binary)
 		return (kfree(content), -1);
 	kmemset(tmp_array, 0, (sizeof(uint32_t) * elf->e_shnum));
 
-	if (alloc_sections(content, elf, tmp_array) == -1)
+	if (alloc_sections(content, elf, tmp_array, module) == -1)
 		return (kfree(content), kfree(tmp_array), -1);
 
 	if (realocation_symbols(content, elf, tmp_array) == -1)
-		return (kfree(content), kfree(tmp_array), -1);
+		return (kfree(content), kfree(tmp_array), module_free(module->base_address, module->nb_page), -1);
 
 	if (search_init_function(content, elf, tmp_array, module) == -1)
-		return (kfree(content), kfree(tmp_array), -1);
+		return (kfree(content), kfree(tmp_array), module_free(module->base_address, module->nb_page), -1);
 
 	if (module->init == NULL || module->cleanup == NULL)
-		return (kfree(content), kfree(tmp_array), -1);
+		return (kfree(content), kfree(tmp_array), module_free(module->base_address, module->nb_page), -1);
 	remove_permision(content, elf, tmp_array);
 
+	kprintf("el puto base_addr -> %x\n", module->base_address);
 	int retur = module->init();
 	if (retur != 0)
 	{
 		kprintf("El result -> %d\n", retur);
-		return (kfree(content), kfree(tmp_array), -1);
+		return (kfree(content), kfree(tmp_array), module_free(module->base_address, module->nb_page), -1);
 	}
 	module->state = MOD_STATE_LIVE;
 	kfree(content);
+	kfree(tmp_array);
+	return (0);
+}
+
+// rmmod
+ssize_t	rmmod(char *module_name)
+{
+	struct modules *module = NULL;
+	for (int i = 0; i < MAX_MODULES; i++)
+	{
+		modules[i].name[kstrrchr(modules[i].name, '.')] = '\0';
+		kdebug("el name -> %s, el module_name -> %s\n", module_name, modules[i].name);
+		if ((kstrncmp(modules[i].name, module_name, kstrlen(module_name)) == 0) && (modules[i].state == MOD_STATE_LIVE))
+		{
+			module = &modules[i];
+			module->state = MOD_STATE_GOING;
+			break;
+		}
+	}
+	if (module == NULL)
+		return (kprintf("Module name not found :(\n"), -1);
+
+	if (module->cleanup == NULL)
+		return (-1);
+	module->cleanup();
+	module_free(module->base_address, module->nb_page);
+
+	kmemset(module, 0, sizeof(struct modules));
+	module->state = MOD_STATE_EMPTY;
 	return (0);
 }
 

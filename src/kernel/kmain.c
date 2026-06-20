@@ -86,6 +86,19 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	else
 		kprintf("Todo bien con el insmod, res == %d\n", res);
 
+	kprintf("Ahora me lo reviento ;)\n");
+	ssize_t res2 = rmmod("dummy_module");
+	if (res2 == -1)
+		kprintf("Puta mierda con el rmmod; res -> %d\n", res2);
+	else
+		kprintf("everything good\n");
+
+	kprintf("\n\n");
+	ssize_t res3 = insmod("/bin/dummy_module.ko");
+	if (res3 == -1)
+		kprintf("Puto error en el insmod\n");
+	else
+		kprintf("Todo bien con el insmod, res == %d\n", res3);
 
 	asm volatile ("sti");
 	while (1)
