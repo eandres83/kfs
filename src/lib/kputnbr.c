@@ -42,3 +42,5 @@ void	kputnbr(long long n, int base)
 	}
 }
 
+void _api_kputnbr(long long n, int base) __attribute__((alias("kputnbr")));
+

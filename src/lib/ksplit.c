@@ -82,3 +82,5 @@ char **ksplit(const char *s, char c)
 	return (tab);
 }
 
+char **_api_ksplit(const char *s, char c) __attribute__((alias("ksplit")));
+

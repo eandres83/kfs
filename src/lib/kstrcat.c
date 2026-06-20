@@ -17,3 +17,5 @@ char	*kstrcat(char *dest, const char *str)
 	return (dest);
 }
 
+char *_api_kstrcat(char *dest, const char *str) __attribute__((alias("kstrcat")));
+

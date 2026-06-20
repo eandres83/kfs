@@ -17,3 +17,5 @@ char *kstrcpy(char *dest, const char *src)
 	return (dest);
 }
 
+char *_api_kstrcpy(char *dest, const char *src) __attribute__((alias("kstrcpy")));
+

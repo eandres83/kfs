@@ -14,3 +14,5 @@ void	*kmemset(void *dest, int c, size_t n)
 	return (dest);
 }
 
+void *_api_kmemset(void *dest, int c, size_t n) __attribute__((alias("kmemset")));
+

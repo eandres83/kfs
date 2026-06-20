@@ -1,7 +1,7 @@
 #include <utils.h>
 #include "drivers/vga.h"
 
-void	kprintf(const char *format, ...)
+void	kprintf(const char *format, ...) 
 {
 	va_list args;
 	va_start(args, format);
@@ -34,4 +34,6 @@ void	kprintf(const char *format, ...)
 	terminal_setcolor(VGA_COLOR_LIGHT_CYAN);
 	va_end(args);
 }
+
+void _api_kprintf(const char *format, ...) __attribute__((alias("kprintf")));
 

@@ -19,3 +19,5 @@ int	kstrcmp(const char *s1, const char *s2)
 	return (0);
 }
 
+int _api_kstrcmp(const char *s1, const char *s2) __attribute__((alias("kstrcmp")));
+

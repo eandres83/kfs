@@ -19,3 +19,5 @@ size_t	kstrncmp(const char *s1, const char *s2, size_t n)
 	return (0);
 }
 
+size_t _api_kstrncmp(const char *s1, const char *s2, size_t n) __attribute__((alias("kstrncmp")));
+
