@@ -47,6 +47,8 @@ typedef uint32_t socklen_t;
 #define SYS_dup2	63
 #define SYS_mmap	90
 #define SYS_munmap	91
+#define SYS_init_module 128
+#define SYS_del_module	129
 #define SYS_getcwd	183
 #define SYS_socketpair	360
 #define SYS_sendmsg	370

@@ -1,6 +1,7 @@
 #include "modules.h"
 #include "task/task.h"
 #include "task/elf.h"
+#include "arch/i386/lib/uaccess.h"
 
 struct modules modules[MAX_MODULES];
 
@@ -14,6 +15,14 @@ static inline void bitmap_set_bit(size_t indx)
 static inline void bitmap_unset_bit(size_t indx)
 {
 	module_bitmap[indx / 32] &= ~(1 << (indx % 32));
+}
+
+static bool check_if_root()
+{
+	proc_t *process = get_current_process();
+	if (process->euid != 0)
+		return (false);
+	return (true);
 }
 
 void	module_free(void *addr, size_t nb)
@@ -69,7 +78,6 @@ void	remove_permision(char *content, struct elf32_ehdr *elf, uint32_t *tmp_array
 	{
 		if ((section->sh_type == SHT_PROGBITS) && (section->sh_flags & (SHF_ALLOC | SHF_EXECINSTR)) && (section->sh_size > 0))
 		{
-			kdebug("Estoy dentro del removedor de putas\n");
 			void *addr = (void*)tmp_array[i];
 			if (!(section->sh_flags & SHF_WRITE))
 				remove_attribute(addr, ALIGN_PAGE(section->sh_size));
@@ -96,7 +104,7 @@ ssize_t	count_and_alloc_module(char *content, struct elf32_ehdr *elf, struct mod
 	module->base_address = module_alloc(module->nb_page);
 	if (!module->base_address)
 		return (-1);
-	kprintf("el total de paginas que pido -> %d\n", module->nb_page);
+	kdebug("el total de paginas que pido -> %d\n", module->nb_page);
 	return (0);
 }
 
@@ -129,7 +137,7 @@ ssize_t	realocation_symbols(char *content, struct elf32_ehdr *elf, uint32_t *tmp
 	struct elf32_shdr *section_base = section;
 	for (int i = 0; i < elf->e_shnum; i++)
 	{
-		if (section->sh_type == SHT_REL)
+		if (section->sh_type == SHT_REL && tmp_array[section->sh_info] != 0)
 		{
 			struct elf32_shdr *tmp_section = &section_base[section->sh_link];
 			struct elf32_shdr *sect = &section_base[tmp_section->sh_link];
@@ -156,16 +164,14 @@ ssize_t	realocation_symbols(char *content, struct elf32_ehdr *elf, uint32_t *tmp
 						}
 					}
 				}
+				else if (tmp_sym->st_shndx >= 0xFF00)
+					S = tmp_sym->st_value;
 				else
 					S = tmp_array[tmp_sym->st_shndx] + tmp_sym->st_value;
 				uint32_t P = tmp_array[section->sh_info] + tmp_rel->r_offset;
 				uint32_t A = *(uint32_t*)P;
 				if (ELF32_R_TYPE(tmp_rel->r_info) == R_386_32)
-				{
-					kdebug("Parchenado R_386_32: shndx=%d, S=%x, A=%x, P=%x, FInal=%x\n", tmp_sym->st_shndx,
-						S, A, P, S + A);
 					*(uint32_t*)P = S + A;
-				}
 				else if (ELF32_R_TYPE(tmp_rel->r_info) == R_386_PC32)
 					*(uint32_t*)P = S + A - P;
 			}
@@ -204,7 +210,16 @@ ssize_t	search_init_function(char *content, struct elf32_ehdr *elf, uint32_t *tm
 
 ssize_t	insmod(char *binary)
 {
+	if (!check_if_root())
+		return (-1);
+	char *kernel_addr = kmalloc(256);
+	if (!kernel_addr)
+		return (-1);
+	copy_from_user_wrap((void*)kernel_addr, (void*)binary, 256);
+	kernel_addr[255] = '\0';
+
 	struct modules *module = NULL;
+	asm volatile ("cli");
 	for (int i = 0; i < MAX_MODULES; i++)
 	{
 		if (modules[i].state == MOD_STATE_EMPTY)
@@ -214,19 +229,21 @@ ssize_t	insmod(char *binary)
 			break;
 		}
 	}
+	asm volatile ("sti");
 	if (module == NULL)
 		return (-1);
 	kmemset(module, 0, sizeof(struct modules));
-	struct vfs_node *node = get_vfs_node_path(binary);
+	struct vfs_node *node = get_vfs_node_path(kernel_addr);
 	if (node == 0x0)
-		return (-1);
+		return (kfree(kernel_addr), -1);
+	kfree(kernel_addr);
 	kstrlcpy(module->name, node->name, 255);
 	char *content = (char*)kmalloc(node->size);
 	if (!content)
-		return (-1);
+		return (kfree(node), -1);
 	ssize_t res = node->ops->read(node, content, node->size, 0);
 	if (res == -1)
-		return (kfree(content), -1);
+		return (kfree(content), kfree(node), -1);
 	kfree(node);
 	struct elf32_ehdr *elf = (struct elf32_ehdr*)content;
 	if (check_binary(elf) == false)
@@ -263,21 +280,30 @@ ssize_t	insmod(char *binary)
 	return (0);
 }
 
-// rmmod
 ssize_t	rmmod(char *module_name)
 {
+	if (!check_if_root())
+		return (-1);
+	char *kernel_addr = kmalloc(256);
+	if (!kernel_addr)
+		return (-1);
+	copy_from_user_wrap((void*)kernel_addr, (void*)module_name, 256);
+	kernel_addr[255] = '\0';
+
 	struct modules *module = NULL;
+	asm volatile ("cli");
 	for (int i = 0; i < MAX_MODULES; i++)
 	{
-		modules[i].name[kstrrchr(modules[i].name, '.')] = '\0';
-		kdebug("el name -> %s, el module_name -> %s\n", module_name, modules[i].name);
-		if ((kstrncmp(modules[i].name, module_name, kstrlen(module_name)) == 0) && (modules[i].state == MOD_STATE_LIVE))
+		kdebug("el name -> %s, el module_name -> %s\n", kernel_addr, modules[i].name);
+		if ((kstrcmp(modules[i].name, kernel_addr) == 0) && (modules[i].state == MOD_STATE_LIVE))
 		{
 			module = &modules[i];
 			module->state = MOD_STATE_GOING;
 			break;
 		}
 	}
+	asm volatile ("sti");
+	kfree(kernel_addr);
 	if (module == NULL)
 		return (kprintf("Module name not found :(\n"), -1);
 

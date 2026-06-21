@@ -9,8 +9,6 @@
 #include "mm/gdt.h"
 #include "task/task.h"
 
-#include "modules/modules.h"
-
 /* Check if the compiler thinks you are targeting the wrong operating system. */
 #if defined(__linux__)
 #error "You are not using a cross-compiler, you will most certainly run into trouble"
@@ -75,30 +73,10 @@ void	kernel_main(uint32_t magic, multiboot_info_t *boot_info)
 	kdebug("Memory map address: 0x%x\n", boot_info->mmap_addr);
 
 	init_keyboard();
-//	init_timer(1000);
+	init_timer(1000);
 
 	init_vfs();
-//	create_init_process();
-
-	ssize_t res = insmod("/bin/dummy_module.ko");
-	if (res == -1)
-		kprintf("Puto error en el insmod\n");
-	else
-		kprintf("Todo bien con el insmod, res == %d\n", res);
-
-	kprintf("Ahora me lo reviento ;)\n");
-	ssize_t res2 = rmmod("dummy_module");
-	if (res2 == -1)
-		kprintf("Puta mierda con el rmmod; res -> %d\n", res2);
-	else
-		kprintf("everything good\n");
-
-	kprintf("\n\n");
-	ssize_t res3 = insmod("/bin/dummy_module.ko");
-	if (res3 == -1)
-		kprintf("Puto error en el insmod\n");
-	else
-		kprintf("Todo bien con el insmod, res == %d\n", res3);
+	create_init_process();
 
 	asm volatile ("sti");
 	while (1)
