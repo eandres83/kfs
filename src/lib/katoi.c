@@ -22,3 +22,5 @@ size_t	katoi(char *str)
 	return (result * sign);
 }
 
+size_t _api_katoi(char *str) __attribute__((alias("katoi")));
+

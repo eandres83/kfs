@@ -19,3 +19,5 @@ void	*kmemcpy(void *dest, const void *src, size_t n)
 	return (dest);
 }
 
+void *_api_kmemcpy(void *dest, const void *src, size_t n) __attribute__((alias("kmemcpy")));
+

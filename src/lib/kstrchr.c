@@ -14,3 +14,5 @@ size_t	kstrchr(const char *str, char c)
 	return (-1);
 }
 
+size_t _api_kstrchr(const char *str, char c) __attribute__((alias("kstrchr")));
+

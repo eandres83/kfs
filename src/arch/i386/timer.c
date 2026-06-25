@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "task/task.h"
+#include "modules/events.h"
 
 uint32_t tick = 0;
 
@@ -10,6 +11,7 @@ void timer_callback(registers_t *regs)
 		find_signal(regs);
 
 	yield();
+	execute_callback(EVENT_TIMER, (void*)tick);
 }
 
 void	init_timer(uint32_t hz_value)

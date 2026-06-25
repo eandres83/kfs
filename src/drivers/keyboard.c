@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "modules/events.h"
 
 static int	shift_status = 0;
 
@@ -188,6 +189,8 @@ void	keyboard_callback(registers_t *regs)
 		tty_push_char(current_layout[data]);
 	else
 		tty_push_char(current_shift_layout[data]);
+
+	execute_callback(EVENT_KEYBOARD, (void*)&data);
 }
 
 void	set_keyboard_layout(char *str)

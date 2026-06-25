@@ -1,6 +1,7 @@
 #include "socket.h"
 #include "fs/fd.h"
 #include "arch/i386/lib/uaccess.h"
+#include "modules/events.h"
 
 // TODO: Implement bind, socket and connect function to better manage about the socket
 
@@ -131,6 +132,7 @@ ssize_t socketpair(int domain, int type, int protocol, int *sv)
 		fd_free(process, kernel_socket[1]);
 		return (kfree(node_ab), kfree(socket), kfree(node_ba), -1);
 	}
+	execute_callback(EVENT_SOCKET, (void*)kernel_socket);
 	return (0);
 }
 

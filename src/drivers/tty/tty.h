@@ -18,5 +18,6 @@ char 	tty_read_char();
 
 ssize_t	tty_vfs_write(struct vfs_node *node, char *str, size_t len, size_t offset);
 ssize_t	tty_vfs_read(struct vfs_node *node, char *buff, size_t len, size_t offset);
+size_t	tty_vfs_close(struct vfs_node *node);
 
 #endif

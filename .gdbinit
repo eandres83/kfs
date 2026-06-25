@@ -2,7 +2,7 @@
 layout regs
 
 target remote localhost:1234
-break sys_open
+break insmod
 ignore 1 2
 continue
 

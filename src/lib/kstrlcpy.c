@@ -17,3 +17,5 @@ size_t kstrlcpy(char *dest, const char *src, size_t size)
 	return (n);
 }
 
+size_t _api_kstrlcpy(char *dest, const char *src, size_t size) __attribute__((alias("kstrlcpy")));
+

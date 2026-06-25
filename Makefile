@@ -3,12 +3,28 @@ AS = i686-elf-as
 LD = i686-elf-ld
 
 INCLUDES = -I include -I src
-CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g \
-	 -fno-builtin -fno-exceptions -fno-stack-protector \
-	 -nostdlib -nodefaultlibs $(INCLUDES)
+CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g -fno-builtin -fno-pie -fno-pic \
+	-fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs $(INCLUDES)
 
+# flag to print debug msg or not
 ifeq ($(DEBUG), 1)
-	CFLAGS += -DKERNEL_DEBUG
+        CFLAGS += -DKERNEL_DEBUG
+endif
+
+# make modules
+ifeq ($(filter modules,$(MAKECMDGOALS)),modules)
+        PART1_DEPS = $(MODULES_STAMP) $(GENEXT2FS_BIN)
+else
+        PART1_DEPS = $(SYSROOT_STAMP) $(GENEXT2FS_BIN)
+endif
+
+# check if user has cross compiler
+REQUIRED_BINS := i686-elf-gcc i686-elf-as i686-elf-ld genext2fs
+ifneq ($(MAKECMDGOALS),toolchain)
+        MISSING_BINS := $(foreach bin,$(REQUIRED_BINS),$(if $(shell command -v $(bin) 2> /dev/null),,$(bin)))
+        ifneq ($(strip $(MISSING_BINS)),)
+                $(error "Error: no $(MISSING_BINS) in your system. Execute make toolchain, this process may take a few minutes, but it's essential")
+        endif
 endif
 
 export USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -g -fno-builtin -nostdlib -nodefaultlibs -I userland
@@ -17,34 +33,56 @@ LDFLAGS = -T linker.ld
 export PROJECT_ROOT := $(CURDIR)
 
 DISK_IMG = disk.img
-FS_DIR = rootfs
+TMP_DIR = .tmp_build
+FS_DIR = $(TMP_DIR)/sysroot
+PART1_IMG = $(TMP_DIR)/part.img
+PART2_IMG = $(TMP_DIR)/part2.img
+GENEXT2FS_BIN = $(HOME)/sgoinfre/cross/bin/genext2fs
 
-NAME = kernel.bin
+SYSROOT_STAMP = $(TMP_DIR)/.sysroot_stamp
+MODULES_STAMP = $(TMP_DIR)/.modules_stamp
+
+KERNEL_DRAFT = kernel_draft.bin
+KERNEL_FINAL = kernel.bin
+
+SYM_SCRIPT = script/generate_table.sh
+SYM_C = src/symbol_table.c
+SYM_OBJ = $(BUILD_DIR)/src/symbol_table.o
+DUMMY_OBJ = $(BUILD_DIR)/src/modules/dummy_symbols.o
 
 export BUILD_DIR = .obj
 
-SRCS_MINISHELL = $(wildcard bin/minishell/*.c) $(wildcard bin/minishell/builtins/*.c) $(wildcard bin/minishell/execute/*.c)
+SRCS_MINISHELL = $(foreach dir, $(shell find bin/minishell -type d), $(wildcard $(dir)/*.c))
 
-SRCS_C = $(wildcard src/drivers/*.c) $(wildcard src/drivers/ide/*.c) $(wildcard src/kernel/*.c) \
-	$(wildcard src/lib/*.c) $(wildcard src/mm/*.c) $(wildcard src/arch/i386/*.c) $(wildcard src/task/*.c) \
-	$(wildcard src/fs/ext2/*.c) $(wildcard src/fs/vfs/*.c) $(wildcard src/fs/*.c) $(wildcard src/drivers/tty/*.c) \
-	$(wildcard src/arch/i386/lib/*.c) $(wildcard src/ipc/*.c)
-SRCS_S = $(wildcard src/boot/*.s) $(wildcard src/mm/*.s) $(wildcard src/arch/i386/*.s) $(wildcard src/task/*.s) $(wildcard src/arch/i386/lib/*.s)
+SRCS_C = $(foreach dir, $(shell find src -type d), $(wildcard $(dir)/*.c))
+SRCS_S = $(foreach dir, $(shell find src -type d), $(wildcard $(dir)/*.s))
 
-KERNEL_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) \
-	$(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
+ALL_RAW_OBJS = $(patsubst src/%.c, $(BUILD_DIR)/src/%.o, $(SRCS_C)) $(patsubst src/%.s, $(BUILD_DIR)/src/%.o, $(SRCS_S))
+CORE_OBJS := $(filter-out %dummy_symbols.o %symbol_table.o,$(ALL_RAW_OBJS))
 
-USER_SRCS_C = $(wildcard userland/libc/*.c) $(wildcard userland/malloc/*.c) $(wildcard userland/*.c)
+SRCS_MODULE = $(shell find modules -type f -name "*.c")
+OBJS_MODULE = $(patsubst modules/%.c, $(BUILD_DIR)/modules/%.ko, $(SRCS_MODULE))
+
+USER_SRCS_C = $(foreach dir, $(shell find userland -type d), $(wildcard $(dir)/*.c))
 export USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
 export CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
 
 APPS_SRCS = $(wildcard bin/*.c)
 APPS_OBJ = $(patsubst bin/%.c, bin/%, $(APPS_SRCS))
 
-all: $(DISK_IMG) $(NAME)
+all: $(KERNEL_FINAL) $(DISK_IMG)
 
 # KERNEL
-$(NAME): $(KERNEL_OBJS)
+$(KERNEL_DRAFT): $(CORE_OBJS) $(DUMMY_OBJ)
+	$(CC) $(LDFLAGS) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
+
+$(SYM_C): $(KERNEL_DRAFT)
+	nm $< | $(SYM_SCRIPT) > $@
+
+$(SYM_OBJ): $(SYM_C)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(KERNEL_FINAL): $(CORE_OBJS) $(SYM_OBJ)
 	@echo "Linking kernel..."
 	$(CC) $(LDFLAGS) -o $@ -ffreestanding -O2 -nostdlib $^ -lgcc
 
@@ -57,6 +95,10 @@ $(BUILD_DIR)/src/%.o: src/%.s
 	@mkdir -p $(dir $@)
 	@echo "Compiling ASM: $<"
 	$(AS) -o $@ $<
+
+.PHONY: toolchain
+toolchain:
+	@bash script/build_cross_compiler.sh
 
 # USERLAND
 $(BUILD_DIR)/userland/%.o: userland/%.c
@@ -77,59 +119,77 @@ bin/%: bin/%.c $(CRT0_OBJ) $(USER_OBJS_C)
 bin/minishell/minishell: $(CRT0_OBJ) $(USER_OBJS_C) $(SRCS_MINISHELL)
 	@$(MAKE) -C bin/minishell
 
-$(DISK_IMG): $(NAME) $(APPS_OBJ) bin/minishell/minishell
+$(SYSROOT_STAMP): $(KERNEL_FINAL) $(APPS_OBJ) bin/minishell/minishell
 	@echo "Creating a temporary directory structure"
-	@mkdir -p $(FS_DIR)/home/kfs/fs
-	@mkdir -p $(FS_DIR)/etc
-	@echo -n "root:x:0:0:root:/root/kfs/src:/bin/minishell\neandres:x:1000:1000:user:/home/eandres:/bin/minishell" > $(FS_DIR)/etc/passwd
-	@echo -n "root:1\neandres:hash" > $(FS_DIR)/etc/shadow
-	@chmod 400 $(FS_DIR)/etc/shadow
-	@mkdir -p $(FS_DIR)/root/kfs/src
-	@mkdir -p $(FS_DIR)/home/eandres
-	@mkdir -p $(FS_DIR)/dev
-	@echo -n "Mierdon\n" > $(FS_DIR)/dev/file.txt
-	@mkdir -p $(FS_DIR)/proc
-	@echo "Hola desde el diso duro -> funciona el vfs y ext2" > $(FS_DIR)/home/kfs/file.txt
-	@mkdir -p $(FS_DIR)/bin
+	@sh script/sysroot.sh $(FS_DIR)
 	@find bin -type f ! -name "*.c" ! -name "*.h" ! -name "Makefile" ! -name "*.o" ! -name "*.s" -exec cp {} $(FS_DIR)/bin/ \;
-	@~/genext2fs/genext2fs -N 1024 -b 4096 -d $(FS_DIR) part.img
-	@mkdir -p empty_dir
-	@~/genext2fs/genext2fs -N 1024 -b 4096 -d empty_dir part2.img
+	@touch $(SYSROOT_STAMP)
+
+$(MODULES_STAMP): $(SYSROOT_STAMP) $(OBJS_MODULE)
+	@mkdir -p $(FS_DIR)/bin/
+	@cp $(OBJS_MODULE) $(FS_DIR)/bin/
+	@touch $@
+
+$(GENEXT2FS_BIN):
+	@bash script/build_cross_compiler.sh genext2fs
+
+$(PART1_IMG): $(PART1_DEPS)
+	@mkdir -p $(TMP_DIR)
+	@genext2fs -N 1024 -b 4096 -d $(FS_DIR) $(PART1_IMG)
+
+$(PART2_IMG):
+	@mkdir -p $(TMP_DIR)/empty_dir
+	@genext2fs -N 1024 -b 4096 -d $(TMP_DIR)/empty_dir $(PART2_IMG)
+
+$(DISK_IMG): $(PART1_IMG) $(PART2_IMG)
 	@dd if=/dev/zero of=$(DISK_IMG) bs=1M count=10 status=none
 	@parted -s $(DISK_IMG) mklabel msdos
 	@parted -s $(DISK_IMG) mkpart primary ext2 1MiB 25%
 	@parted -s $(DISK_IMG) mkpart primary ext2 25% 50%
 	@parted -s $(DISK_IMG) mkpart primary ext2 50% 75%
 	@parted -s $(DISK_IMG) mkpart primary ext2 75% 100%
-	@dd if=part.img of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
-	@dd if=part2.img of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
-	@rm -f part.img part2.img
-	@rm -rf empty_dir $(FS_DIR)
-	@echo "$(DISK_IMG) listo!"
+	@dd if=$(PART1_IMG) of=$(DISK_IMG) bs=1M seek=1 conv=notrunc status=none
+	@dd if=$(PART2_IMG) of=$(DISK_IMG) bs=512 seek=5120 conv=notrunc status=none
+	@echo "$(DISK_IMG) done!"
 
+$(BUILD_DIR)/modules/%.ko: modules/%.c
+	@mkdir -p $(dir $@)
+	@echo "Compiling modules: $*"
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: modules
+modules: $(DISK_IMG)
+
+.PHONY: clean
 clean:
-	@rm -rf $(BUILD_DIR) $(FS_DIR) empty_dir
-	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' -delete
+	@rm -rf $(BUILD_DIR) $(TMP_DIR)
+	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' ! -name "*.ko" -delete
 
+.PHONY: fclean
 fclean: clean 
-	rm -f $(NAME) $(DISK_IMG)
-	rm -rf isodir kfs.iso
+	@rm -f $(KERNEL_FINAL) $(DISK_IMG)
+	@rm -f $(KERNEL_DRAFT)
+	@rm -f $(SYM_C) $(SYM_OBJ)
+	@rm -rf isodir kfs.iso
 
-iso: $(NAME)
+.PHONY: iso
+iso: $(KERNEL_FINAL)
 	@mkdir -p isodir/boot/grub
-	@cp $(NAME) isodir/boot/$(NAME)
+	@cp $(KERNEL_FINAL) isodir/boot/$(KERNEL_FINAL)
 	@echo 'menuentry "kfs" {' > isodir/boot/grub/grub.cfg
-	@echo ' multiboot /boot/$(NAME)' >> isodir/boot/grub/grub.cfg
+	@echo ' multiboot /boot/$(KERNEL_FINAL)' >> isodir/boot/grub/grub.cfg
 	@echo '}' >> isodir/boot/grub/grub.cfg
 	@grub-mkrescue -o kfs.iso isodir
 	@echo "kfs.iso created"
 
+.PHONY: run
 run:
-	qemu-system-i386 -kernel $(NAME) -curses -drive file=disk.img,format=raw,if=ide
+	qemu-system-i386 -kernel $(KERNEL_FINAL) -curses -drive file=disk.img,format=raw,if=ide
 
+.PHONY: debug
 debug:
-	qemu-system-i386 -kernel $(NAME) -curses -hda disk.img -s -S -d int,cpu_reset -no-reboot
+	qemu-system-i386 -kernel $(KERNEL_FINAL) -curses -hda disk.img -s -S -d int,cpu_reset -no-reboot
 
+.PHONY: re
 re: fclean all
 
-.PHONY: all clean fclean re run debug iso

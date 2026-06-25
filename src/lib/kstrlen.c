@@ -9,3 +9,5 @@ size_t	kstrlen(const char *str)
 	return (len);
 }
 
+size_t _api_kstrlen(const char *str) __attribute__((alias("kstrlen")));
+

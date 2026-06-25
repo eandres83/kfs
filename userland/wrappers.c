@@ -153,6 +153,20 @@ ssize_t	munmap(void *addr, size_t size)
 	return (ret);
 }
 
+ssize_t	init_module(char *binary)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_init_module), "b" (binary) : "memory");
+	return (ret);
+}
+
+ssize_t	del_module(char *module_name)
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_del_module), "b" (module_name) : "memory");
+	return (ret);
+}
+
 char	*getcwd(void *buff, size_t size)
 {
 	char *ret;

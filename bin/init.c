@@ -130,7 +130,7 @@ int main()
 			printf("Fatal error in chdir syscall\n");
 			exit(1);
 		}
-		ssize_t res = execve("/bin/test_socket", argv, envp);
+		ssize_t res = execve("/bin/test_modules", argv, envp);
 		if (res == -1)
 		{
 			printf("Fatal error in init process execve\n");

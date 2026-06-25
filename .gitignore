@@ -12,6 +12,9 @@ disk.img
 .obj
 isodir
 
+.tmp_build
+src/symbol_table.c
+
 bin/*
 !bin/*.c
 !bin/*.h

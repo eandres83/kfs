@@ -53,3 +53,10 @@ ssize_t	tty_vfs_read(struct vfs_node *node, char *buff, size_t len, size_t offse
 	return (1);
 }
 
+size_t	tty_vfs_close(struct vfs_node *node)
+{
+	if (node != NULL)
+		kfree(node);
+	return (0);
+}
+

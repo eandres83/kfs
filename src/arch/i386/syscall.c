@@ -5,6 +5,7 @@
 #include "arch/i386/lib/uaccess.h"
 #include "fs/sysfile.h"
 #include "ipc/socket.h"
+#include "modules/modules.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -135,6 +136,16 @@ ssize_t sys_munmap(registers_t *regs)
 	return (munmap((void*)regs->ebx, regs->ecx));
 }
 
+ssize_t	sys_init_module(registers_t *regs)
+{
+	return (insmod((char*)regs->ebx));
+}
+
+ssize_t	sys_del_module(registers_t *regs)
+{
+	return (rmmod((char*)regs->ebx));
+}
+
 ssize_t	sys_getcwd(registers_t *regs)
 {
 	return ((ssize_t)getcwd((char*)regs->ebx, regs->ecx));
@@ -157,32 +168,34 @@ ssize_t	sys_recvmsg(registers_t *regs)
 
 static ssize_t	(*syscall[384])(registers_t*) =
 {
-	[SYS_exit] 	= sys_exit,
-	[SYS_fork] 	= sys_fork,
-	[SYS_read] 	= sys_read,
-	[SYS_write] 	= sys_write,
-	[SYS_open] 	= sys_open,
-	[SYS_close] 	= sys_close,
-	[SYS_waitpid]	= sys_waitpid,
-	[SYS_wait] 	= sys_wait,
-	[SYS_execve] 	= sys_execve,
-	[SYS_chdir]	= sys_chdir,
-	[SYS_setuid]	= sys_setuid,
-	[SYS_getuid] 	= sys_getuid,
-	[SYS_access] 	= sys_access,
-	[SYS_kill] 	= sys_kill,
-	[SYS_dup] 	= sys_dup,
-	[SYS_pipe] 	= sys_pipe,
-	[SYS_setgid]	= sys_setgid,
-	[SYS_getgid]	= sys_getgid,
-	[SYS_signal] 	= sys_signal,
-	[SYS_dup2]	= sys_dup2,
-	[SYS_mmap] 	= sys_mmap,
-	[SYS_munmap]	= sys_munmap,
-	[SYS_getcwd] 	= sys_getcwd,
-	[SYS_socketpair]= sys_socketpair,
-	[SYS_sendmsg]	= sys_sendmsg,
-	[SYS_recvmsg]	= sys_recvmsg,
+	[SYS_exit] 		= sys_exit,
+	[SYS_fork] 		= sys_fork,
+	[SYS_read] 		= sys_read,
+	[SYS_write] 		= sys_write,
+	[SYS_open] 		= sys_open,
+	[SYS_close] 		= sys_close,
+	[SYS_waitpid]		= sys_waitpid,
+	[SYS_wait] 		= sys_wait,
+	[SYS_execve] 		= sys_execve,
+	[SYS_chdir]		= sys_chdir,
+	[SYS_setuid]		= sys_setuid,
+	[SYS_getuid] 		= sys_getuid,
+	[SYS_access] 		= sys_access,
+	[SYS_kill] 		= sys_kill,
+	[SYS_dup] 		= sys_dup,
+	[SYS_pipe] 		= sys_pipe,
+	[SYS_setgid]		= sys_setgid,
+	[SYS_getgid]		= sys_getgid,
+	[SYS_signal] 		= sys_signal,
+	[SYS_dup2]		= sys_dup2,
+	[SYS_mmap] 		= sys_mmap,
+	[SYS_munmap]		= sys_munmap,
+	[SYS_init_module]	= sys_init_module,
+	[SYS_del_module]	= sys_del_module,
+	[SYS_getcwd] 		= sys_getcwd,
+	[SYS_socketpair]	= sys_socketpair,
+	[SYS_sendmsg]		= sys_sendmsg,
+	[SYS_recvmsg]		= sys_recvmsg,
 };
 
 void 	syscall_callback(registers_t *regs)
