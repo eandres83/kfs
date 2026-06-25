@@ -2,6 +2,7 @@
 #include "task/task.h"
 #include "task/elf.h"
 #include "arch/i386/lib/uaccess.h"
+#include "modules/events.h"
 
 struct modules modules[MAX_MODULES];
 
@@ -240,11 +241,10 @@ ssize_t	insmod(char *binary)
 	kstrlcpy(module->name, node->name, 255);
 	char *content = (char*)kmalloc(node->size);
 	if (!content)
-		return (kfree(node), -1);
+		return (-1);
 	ssize_t res = node->ops->read(node, content, node->size, 0);
 	if (res == -1)
-		return (kfree(content), kfree(node), -1);
-	kfree(node);
+		return (kfree(content), -1);
 	struct elf32_ehdr *elf = (struct elf32_ehdr*)content;
 	if (check_binary(elf) == false)
 		return (kfree(content), -1);
@@ -267,7 +267,7 @@ ssize_t	insmod(char *binary)
 		return (kfree(content), kfree(tmp_array), module_free(module->base_address, module->nb_page), -1);
 	remove_permision(content, elf, tmp_array);
 
-	kprintf("el puto base_addr -> %x\n", module->base_address);
+	kdebug("el puto base_addr -> %x\n", module->base_address);
 	int retur = module->init();
 	if (retur != 0)
 	{
@@ -303,17 +303,18 @@ ssize_t	rmmod(char *module_name)
 		}
 	}
 	asm volatile ("sti");
-	kfree(kernel_addr);
 	if (module == NULL)
-		return (kprintf("Module name not found :(\n"), -1);
+		return (kprintf("Module name not found :(\n"), kfree(kernel_addr), -1);
 
 	if (module->cleanup == NULL)
-		return (-1);
+		return (kfree(kernel_addr), -1);
 	module->cleanup();
+	desregister_callback(kernel_addr);
 	module_free(module->base_address, module->nb_page);
 
 	kmemset(module, 0, sizeof(struct modules));
 	module->state = MOD_STATE_EMPTY;
+	kfree(kernel_addr);
 	return (0);
 }
 

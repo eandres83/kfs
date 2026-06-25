@@ -1,8 +1,7 @@
 #include "slab.h"
 #include <kmalloc.h>
 
-// syscall munmap
-void	unrequest_memory(void *block, size_t size)
+static void	return_memory(void *block, size_t size)
 {
 	for (uint32_t i = 0; i < size; i++)
 	{
@@ -33,7 +32,7 @@ static	void	free_large(t_block *block)
 	total_size = block->size + BLOCK_META_SIZE;
 	size = ((total_size + PAGE_SIZE -1) / PAGE_SIZE);
 
-	unrequest_memory((void *)block, size);
+	return_memory((void *)block, size);
 }
 
 // Merges the current block with its next neighbor

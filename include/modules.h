@@ -3,6 +3,17 @@
 
 #include <utils.h>
 
+#define EVENT_KEYBOARD	0
+#define EVENT_TIMER	1
+#define EVENT_PROCESS	2
+#define EVENT_MEMORY	3
+#define EVENT_SOCKET	4
+
+#define EVENT_RET_TIMER 5
+
+#define MAX_EVENTS	30
+#define MAX_MODULES	10
+
 size_t	_api_kstrlen(const char *str);
 #define kstrlen _api_kstrlen
 
@@ -44,5 +55,11 @@ size_t	_api_kstrchr(const char *str, char c);
 
 size_t	_api_katoi(char *str);
 #define katoi _api_katoi
+
+ssize_t	_api_register_callback(int nb_event, void *(*function)(void *data), char *module_name);
+#define register_callback _api_register_callback
+
+ssize_t	_api_desregister_callback(char *module_name);
+#define desregister_callback _api_desregister_callback
 
 #endif
