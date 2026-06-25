@@ -3,6 +3,7 @@
 #include "mm/gdt.h"
 #include "fs/fd.h"
 #include "task/elf.h"
+#include "modules/events.h"
 
 static uint32_t next_pid = 1;
 struct context *scheduler_context;
@@ -159,6 +160,7 @@ ssize_t fork(registers_t *regs)
 					process[i].fd_table[j]->ref_count++;
 				}
 			}
+			execute_callback(EVENT_PROCESS, NULL);
 			return (process[i].pid);
 		}
 	}
@@ -198,6 +200,7 @@ ssize_t mmap(ssize_t size)
 	current_process->mmap_allocation[index] = start_vaddr;
 	current_process->mmap_count += total_size;
 
+	execute_callback(EVENT_MEMORY, (void*)size);
 	return ((ssize_t)start_vaddr);
 }
 
