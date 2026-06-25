@@ -78,7 +78,10 @@ size_t	pipe_close(struct vfs_node *node)
 
 	pipe_buf->fds--;
 	if (pipe_buf->fds == 0)
+	{
 		kfree(node);
+		kfree(pipe_buf->buff);
+	}
 	return (0);
 }
 
@@ -127,7 +130,7 @@ ssize_t pipe(int *fd)
 	{
 		fd_free(proc, kernel_fd[0]);
 		fd_free(proc, kernel_fd[1]);
-		return (kfree(buf_ring), kfree(node), -1);
+		return (kfree(buf_ring), -1);
 	}
 	kdebug("el valor de los fd asignados -> %d -> %d\n", fd[0], fd[1]);
 	return (0);

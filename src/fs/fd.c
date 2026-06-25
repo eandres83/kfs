@@ -68,37 +68,41 @@ static struct ops tty_fake_ops = {
 	.read = tty_vfs_read,
 	.write = tty_vfs_write,
 	.open = NULL,
-	.close = NULL,
+	.close = tty_vfs_close,
 	.readdir = NULL,
 	.finddir = NULL,
 };
 
-void	create_init_fd(proc_t *proc)
+static struct vfs_node *alloc_node()
 {
 	struct vfs_node *node = kmalloc(sizeof(struct vfs_node));
 	if (!node)
-		return ;
+		return (NULL);
 	kmemset(node, 0, sizeof(struct vfs_node));
 	node->ops = &tty_fake_ops;
+	return (node);
+}
 
+void	create_init_fd(proc_t *proc)
+{
 	struct file *file_stdin = file_allocate();
 	if (!file_stdin)
 		return ;
 	file_stdin->flags = O_RDONLY;
-	file_stdin->node = node;
+	file_stdin->node = alloc_node();
 	proc->fd_table[0] = file_stdin;
 
 	struct file *file_stdout = file_allocate();
 	if (!file_stdout)
 		return ;
 	file_stdout->flags = O_WRONLY;
-	file_stdout->node = node;
+	file_stdout->node = alloc_node();
 	proc->fd_table[1] = file_stdout;
 
 	struct file *file_stderr = file_allocate();
 	if (!file_stderr)
 		return ;
-	file_stderr->node = node;
+	file_stderr->node = alloc_node();
 	file_stderr->flags = O_WRONLY;
 	proc->fd_table[2] = file_stderr;
 }
