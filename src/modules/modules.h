@@ -39,5 +39,6 @@ extern uint32_t	size_symbols;
 
 ssize_t	insmod(char *binary);
 ssize_t	rmmod(char *module_name);
+void	listmod();
 
 #endif

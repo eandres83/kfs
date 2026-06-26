@@ -1,4 +1,5 @@
 #include "gdt.h"
+#include "modules/modules.h"
 
 struct gdt_entry_struct	*gdt = (struct gdt_entry_struct *)GDT_ADDRESS;
 struct gdt_ptr_struct 	gdt_ptr;
@@ -27,7 +28,6 @@ void	init_gdt()
 
 	// gdt entry = 8 bytes
 	gdt_set_gate(0, 0, 0, 0, 0);
-//	gdt_set_gate(0, 0xDEADBEEF, 0x4242, 0, 0);
 
 	// Entrada 1. Kernel code
 	gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);

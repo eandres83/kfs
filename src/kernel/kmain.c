@@ -6,7 +6,7 @@
 #include "arch/i386/idt.h"
 #include "arch/i386/timer.h"
 #include "mm/slab.h"
-#include "mm/gdt.h"
+#include "arch/i386/gdt.h"
 #include "task/task.h"
 
 /* Check if the compiler thinks you are targeting the wrong operating system. */

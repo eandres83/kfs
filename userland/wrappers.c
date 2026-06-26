@@ -167,6 +167,13 @@ ssize_t	del_module(char *module_name)
 	return (ret);
 }
 
+ssize_t	lsmod()
+{
+	ssize_t	ret;
+	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_lsmod) : "memory");
+	return (ret);
+}
+
 char	*getcwd(void *buff, size_t size)
 {
 	char *ret;

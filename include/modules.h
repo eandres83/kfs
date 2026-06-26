@@ -62,4 +62,7 @@ ssize_t	_api_register_callback(int nb_event, void *(*function)(void *data), char
 ssize_t	_api_desregister_callback(char *module_name);
 #define desregister_callback _api_desregister_callback
 
+ssize_t	_api_lismod();
+#define listmod _api_lismod
+
 #endif

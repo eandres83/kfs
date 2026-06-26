@@ -146,6 +146,12 @@ ssize_t	sys_del_module(registers_t *regs)
 	return (rmmod((char*)regs->ebx));
 }
 
+ssize_t	sys_lsmod(registers_t *regs)
+{
+	(void)regs;
+	return (listmod(), 0);
+}
+
 ssize_t	sys_getcwd(registers_t *regs)
 {
 	return ((ssize_t)getcwd((char*)regs->ebx, regs->ecx));
@@ -192,6 +198,7 @@ static ssize_t	(*syscall[384])(registers_t*) =
 	[SYS_munmap]		= sys_munmap,
 	[SYS_init_module]	= sys_init_module,
 	[SYS_del_module]	= sys_del_module,
+	[SYS_lsmod]		= sys_lsmod,
 	[SYS_getcwd] 		= sys_getcwd,
 	[SYS_socketpair]	= sys_socketpair,
 	[SYS_sendmsg]		= sys_sendmsg,
