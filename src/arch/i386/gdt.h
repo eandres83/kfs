@@ -1,7 +1,7 @@
 #ifndef GDT_H
 #define GDT_H
 
-#define GDT_ENTRIES 8
+#define GDT_ENTRIES 10
 #define GDT_ADDRESS 0xc0000800
 
 #include <utils.h>

@@ -8,8 +8,6 @@
 #include "malloc/malloc.h"
 #include "../include/uapi.h"
 
-#define MAX_TTYS 32
-
 // wrappers for syscall
 void	exit(uint32_t status);
 ssize_t	fork();
