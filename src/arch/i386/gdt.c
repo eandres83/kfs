@@ -57,12 +57,6 @@ void	init_gdt()
 	// 0x89 TSS 32 bits type (1001)
 	gdt_set_gate(7, base, limit, 0x89, 0x00);
 
-	// module code
-	uint32_t limit_module = (MODULE_VADDR_END - MODULE_VADDR_START) / 4096;
-	gdt_set_gate(8, MODULE_VADDR_START, limit_module, 0xDA, 0xCF);
-	// module data
-	gdt_set_gate(9, MODULE_VADDR_START, limit_module, 0xD2, 0xCF);
-
 	gdt_flush((uint32_t)&gdt_ptr);
 	tss_flush(0x38);
 }
