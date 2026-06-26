@@ -34,6 +34,7 @@ char	*getcwd(void *buff, size_t size);
 ssize_t	chdir(char *path);
 ssize_t	init_module(char *binary);
 ssize_t	del_module(char *module_name);
+ssize_t	lsmod();
 ssize_t socketpair(int domain, int type, int protocol, int *sv);
 ssize_t sendmsg(int fd_socket, const struct msghdr *msg, int flags);
 ssize_t	recvmsg(int fd_socket, struct msghdr *msg, int flags);

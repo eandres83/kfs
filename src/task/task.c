@@ -1,6 +1,6 @@
 #include "task.h"
 #include "mm/vmm.h"
-#include "mm/gdt.h"
+#include "arch/i386/gdt.h"
 #include "fs/fd.h"
 #include "task/elf.h"
 #include "modules/events.h"

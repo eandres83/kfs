@@ -318,3 +318,19 @@ ssize_t	rmmod(char *module_name)
 	return (0);
 }
 
+void	listmod()
+{
+	int count = 0;
+	for (int i = 0; i < MAX_MODULES; i++)
+	{
+		if (modules[i].state == MOD_STATE_LIVE)
+		{
+			kprintf("%s    ", modules[i].name);
+			kprintf("%d\n", (modules[i].nb_page * 4096));
+			count = 1;
+		}
+	}
+	if (count == 0)
+		kprintf("There are no modules active\n");
+}
+

@@ -9,10 +9,11 @@ int main()
 	if (res == -1)
 		return (printf("Miredon el modulo broo; res -> %d\n", res), -1);
 	for (volatile int i = 0; i < 100000000; i++);
-	
-	ssize_t	res1 = del_module("timer_module.ko");
-	if (res1 == -1)
-		return (printf("Otro mierdon el del module acho; res -> %d\n", res1), -1);
+
+	lsmod();
+//	ssize_t	res1 = del_module("timer_module.ko");
+//	if (res1 == -1)
+//		return (printf("Otro mierdon el del module acho; res -> %d\n", res1), -1);
 //	ssize_t res2 = init_module("/bin/dummy_module.ko");
 //	if (res2 == -1)
 //		return (printf("Miredon el modulo broo; res -> %d\n", res2), -1);

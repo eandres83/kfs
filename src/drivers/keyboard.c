@@ -191,6 +191,9 @@ void	keyboard_callback(registers_t *regs)
 		tty_push_char(current_shift_layout[data]);
 
 	execute_callback(EVENT_KEYBOARD, (void*)&data);
+//	int val = 0;
+//	execute_callback(EVENT_RET_TIMER, &val);
+//	kprintf("El valor del timer -> %d\n", val);
 }
 
 void	set_keyboard_layout(char *str)
