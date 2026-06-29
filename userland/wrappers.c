@@ -1,199 +1,145 @@
-#include "minilib.h"
+#include <sys/types.h>
+#include <stddef.h>
 
-void exit(uint32_t status)
-{
-	asm volatile("int $0x80" : : "a" (SYS_exit), "b" (status) : "memory");
-	while (1);
-}
+/* ========================================================================= *
+ * DECLARACIONES PREVIAS (Para evitar incluir cabeceras que no existen aún)
+ * ========================================================================= */
+struct termios;
+struct pollfd;
+struct sigaction;
+struct rlimit;
+struct tms;
+struct timeval;
+struct timezone;
+struct passwd;
+struct group;
 
-ssize_t fork()
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_fork) : "memory");
-	return (ret);
-}
+typedef struct {
+    int gl_pathc;
+    char **gl_pathv;
+    int gl_offs;
+} glob_t;
 
-ssize_t read(size_t fd, char *buf, size_t len)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_read), "b" (fd), "c" (buf), "d" (len) : "memory");
-	return (ret);
-}
+/* ========================================================================= *
+ * STUBS GRUPO B: Funciones avanzadas que Busybox pide pero que 
+ * un SO bare-metal básico no necesita para arrancar una shell.
+ * ========================================================================= */
 
-ssize_t write(size_t fd, const char *str, size_t len)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_write), "b" (fd), "c" (str), "d" (len) : "memory");
-	return (ret);
-}
+/* 1. Terminal y Control de Flujo */
+int tcgetattr(int fd, struct termios *termios_p) { return -1; }
+int tcsetattr(int fd, int optional_actions, const struct termios *termios_p) { return -1; }
+int isatty(int fd) { return 1; } /* Engañamos a la shell diciendo que todo es una terminal para que sea interactiva */
 
-ssize_t open(char *filename, uint32_t flags, uint32_t mode)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_open), "b" (filename), "c" (flags), "d" (mode) : "memory");
-	return (ret);
-}
+/* 2. Sincronización y Eventos */
+int poll(struct pollfd *fds, unsigned int nfds, int timeout) { return -1; }
 
-ssize_t close(uint32_t fd)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_close), "b" (fd) : "memory");
-	return (ret);
-}
+/* 3. Señales Avanzadas */
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact) { return -1; }
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) { return -1; }
+int sigsuspend(const sigset_t *mask) { return -1; }
 
-ssize_t waitpid(ssize_t pid, int *status, uint32_t options)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_waitpid), "b" (pid), "c" (status), "d" (options) : "memory");
-	return (ret);
-}
+/* 4. Límites y Configuración del Sistema */
+int getrlimit(int resource, struct rlimit *rlim) { return -1; }
+int setrlimit(int resource, const struct rlimit *rlim) { return -1; }
+long sysconf(int name) { return -1; }
 
-ssize_t wait(int *status)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_wait), "b" (status) : "memory");
-	return (ret);
-}
+/* 5. VFS Avanzado y Modificadores */
+ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) { return -1; }
+mode_t umask(mode_t mask) { return 022; }
+int fcntl(int fd, int cmd, ...) { return -1; }
 
-ssize_t execve(char *file_path, char **argv, char **envp)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_execve), "b" (file_path), "c" (argv), "d" (envp) : "memory");
-	return (ret);
-}
+/* 6. Usuarios y Grupos (Falsificados como root) */
+struct passwd *getpwuid(uid_t uid) { return NULL; }
+struct group *getgrgid(gid_t gid) { return NULL; }
+struct passwd *getpwnam(const char *name) { return NULL; }
+uid_t geteuid(void) { return 0; } /* Root */
+gid_t getegid(void) { return 0; } /* Root */
+uid_t getuid(void) { return 0; }
+gid_t getgid(void) { return 0; }
+pid_t getppid(void) { return 1; } /* Init */
 
-ssize_t chdir(char *path)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_chdir), "b" (path) : "memory");
-	return (ret);
-}
+/* 7. Búsqueda y Expansión de Patrones */
+int fnmatch(const char *pattern, const char *string, int flags) { return 1; } /* 1 = FNM_NOMATCH */
+int glob(const char *pattern, int flags, int (*errfunc)(const char *, int), glob_t *pglob) { return 3; } /* 3 = GLOB_NOMATCH */
+void globfree(glob_t *pglob) { }
 
-ssize_t setuid(uint32_t new_uid)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_setuid), "b" (new_uid) : "memory");
-	return (ret);
-}
+/* 8. Tiempos */
+clock_t times(struct tms *buf) { return -1; }
+int gettimeofday(struct timeval *tv, struct timezone *tz) { return -1; }
 
-ssize_t getuid()
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getuid) : "memory");
-	return (ret);
-}
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <stddef.h>
 
-ssize_t access(char *file_name, int mode)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_access), "b" (file_name), "c" (mode) : "memory");
-	return (ret);
-}
+/* ========================================================================= *
+ * GRUPO A (Parte 1): PUENTES A TUS SYSCALLS REALES
+ * Conectamos el estándar POSIX (sin guion) a tus implementaciones (con guion)
+ * ========================================================================= */
 
-ssize_t kill(uint32_t pid, uint32_t sig)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_kill), "b" (pid), "c" (sig) : "memory");
-	return (ret);
-}
+/* Declaramos las firmas de lo que ya tienes en tu código para que el compilador no se queje */
+extern ssize_t _read(int fd, void *buf, size_t count);
+extern ssize_t _write(int fd, const void *buf, size_t count);
+extern int _open(const char *pathname, int flags, ...);
+extern int _close(int fd);
+extern int _execve(const char *pathname, char *const argv[], char *const envp[]);
+extern pid_t _fork(void);
+extern pid_t _waitpid(pid_t pid, int *wstatus, int options);
+extern pid_t _wait(int *wstatus);
+extern char *_getcwd(char *buf, size_t size);
+extern int _chdir(const char *path);
+extern int _dup(int oldfd);
+extern int _dup2(int oldfd, int newfd);
+extern int _pipe(int pipefd[2]);
+extern int _access(const char *pathname, int mode);
+extern void *_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+extern int _munmap(void *addr, size_t length);
+extern int _kill(pid_t pid, int sig);
+extern void _exit(int status);
 
-ssize_t dup(uint32_t fd)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_dup), "b" (fd) : "memory");
-	return (ret);
-}
+/* Funciones puente (lo que pide Busybox -> lo que hace tu kernel) */
+ssize_t read(int fd, void *buf, size_t count) { return _read(fd, buf, count); }
+ssize_t write(int fd, const void *buf, size_t count) { return _write(fd, buf, count); }
+int open(const char *pathname, int flags, ...) { return _open(pathname, flags, 0); }
+int close(int fd) { return _close(fd); }
+int execve(const char *pathname, char *const argv[], char *const envp[]) { return _execve(pathname, argv, envp); }
+pid_t fork(void) { return _fork(); }
+pid_t waitpid(pid_t pid, int *wstatus, int options) { return _waitpid(pid, wstatus, options); }
+pid_t wait(int *wstatus) { return _wait(wstatus); }
+char *getcwd(char *buf, size_t size) { return _getcwd(buf, size); }
+int chdir(const char *path) { return _chdir(path); }
+int dup(int oldfd) { return _dup(oldfd); }
+int dup2(int oldfd, int newfd) { return _dup2(oldfd, newfd); }
+int pipe(int pipefd[2]) { return _pipe(pipefd); }
+int access(const char *pathname, int mode) { return _access(pathname, mode); }
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset) { return _mmap(addr, length, prot, flags, fd, offset); }
+int munmap(void *addr, size_t length) { return _munmap(addr, length); }
+int kill(pid_t pid, int sig) { return _kill(pid, sig); }
+void exit(int status) { _exit(status); while(1); }
 
-ssize_t	pipe(int *fd)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_pipe), "b" (fd) : "memory");
-	return (ret);
-}
 
-ssize_t setgid(uint32_t new_gid)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_setgid), "b" (new_gid) : "memory");
-	return (ret);
-}
+/* ========================================================================= *
+ * GRUPO A (Parte 2): STUBS TEMPORALES PARA SYSCALLS FALTANTES
+ * Funciones vitales que aún no tienes implementadas pero que el enlazador exige.
+ * Devuelven error por defecto hasta que programes la lógica real en el VFS/Kernel.
+ * ========================================================================= */
 
-ssize_t	getgid()
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getgid) : "memory");
-	return (ret);
-}
+/* Control de Procesos y Memoria */
+int getpid(void) { return 1; } /* Temporal: fingimos ser el init process */
+void *sbrk(intptr_t increment) { return (void *)-1; } /* Crítico para que malloc funcione en el futuro */
 
-ssize_t signal(uint32_t num, void (*function)())
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_signal), "b" (num), "c" (function) : "memory");
-	return (ret);
-}
+/* Metadatos de Archivos (Stat) */
+int stat(const char *pathname, struct stat *statbuf) { return -1; }
+int fstat(int fd, struct stat *statbuf) { return -1; }
+int lstat(const char *pathname, struct stat *statbuf) { return -1; }
 
-ssize_t dup2(uint32_t oldfd, uint32_t newfd)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_dup2), "b" (oldfd), "c" (newfd) : "memory");
-	return (ret);
-}
+/* Modificadores de VFS */
+int unlink(const char *pathname) { return -1; }
+int rmdir(const char *pathname) { return -1; }
+off_t lseek(int fd, off_t offset, int whence) { return (off_t)-1; }
 
-void	*mmap(size_t size)
-{
-	void *ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_mmap), "b" (size) : "memory");
-	return (ret);
-}
-
-ssize_t	munmap(void *addr, size_t size)
-{
-	ssize_t ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_munmap), "b" (addr), "c" (size) : "memory");
-	return (ret);
-}
-
-ssize_t	init_module(char *binary)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_init_module), "b" (binary) : "memory");
-	return (ret);
-}
-
-ssize_t	del_module(char *module_name)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_del_module), "b" (module_name) : "memory");
-	return (ret);
-}
-
-char	*getcwd(void *buff, size_t size)
-{
-	char *ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_getcwd), "b" (buff), "c" (size) : "memory");
-	if (ret == 0)
-		return (NULL);
-	return (ret);
-}
-
-ssize_t	socketpair(int domain, int type, int protocol, int *sv)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_socketpair), "b" (domain), "c" (type), "d" (protocol), "S" (sv) : "memory");
-	return (ret);
-}
-
-ssize_t	sendmsg(int socket, const struct msghdr *msg, int flags)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_sendmsg), "b" (socket), "c" (msg), "d" (flags) : "memory");
-	return (ret);
-}
-
-ssize_t	recvmsg(int socket, struct msghdr *msg, int flags)
-{
-	ssize_t	ret;
-	asm volatile("int $0x80" : "=a" (ret) : "a" (SYS_recvmsg), "b" (socket), "c" (msg), "d" (flags) : "memory");
-	return (ret);
-}
+/* Iteración de Directorios (Necesario para el comando 'ls') */
+DIR *opendir(const char *name) { return NULL; }
+struct dirent *readdir(DIR *dirp) { return NULL; }
+int closedir(DIR *dirp) { return -1; }
 
