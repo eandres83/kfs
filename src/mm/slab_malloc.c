@@ -73,6 +73,7 @@ void	*kmalloc(size_t size)
 	block->free = 0;
 	ptr = (void *)((char *)block + BLOCK_META_SIZE);
 
+//	kdebug("el valor de un malloc -> 0x%x\n", ptr);
 	return (ptr);
 }
 

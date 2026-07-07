@@ -48,8 +48,24 @@ else
 	cd build-gcc
 	../gcc-15.2.0/configure --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers --disable-hosted-libstdcxx
 	make all-gcc -j 6
+	make all-target-libgcc -j 6
 	make install-gcc -j 6
+	make install-target-libgcc -j 6
 	
 	cd ../
 	rm -rf build-gcc gcc-15.2.0
+	
+	# install musl
+	wget https://musl.libc.org/releases/musl-1.2.6.tar.gz
+	tar -xzf musl-1.2.6.tar.gz
+
+	mkdir -p musl-build
+	cd musl-build
+
+	../musl-1.2.6/configure --target=$TARGET --prefix="$PREFIX" --disable-libgloss
+	make -j 6
+	make install -j 6
+
+	cd ../
+	rm -rf musl-build musl-1.2.6.tar.gz
 fi

@@ -31,7 +31,6 @@ static void	vmm_free_page(pt_entry *e)
 	if (p)
 		pmm_free_page(p);
 
-//	e = 0;
 	pt_entry_del_attrib(e, PTE_PRESENT);
 }
 
@@ -52,20 +51,7 @@ void	vmm_remove_mapping(void *virt)
 	reload_tlb(virt);
 }
 
-void	remove_attribute(void *virt, uint32_t nb)
-{
-	for (size_t i = 0; i < nb; i++)
-	{
-		void *real_addr = virt + (i * 4096);
-		page_table *table = (page_table*)(0xFFC00000 + (PD_INDEX((uint32_t)real_addr)) * PAGE_SIZE);
-		pt_entry *page = &table->m_entries[PT_INDEX((uint32_t)real_addr)];
-
-		pt_entry_del_attrib(page, PTE_WRITABLE);
-		reload_tlb(real_addr);
-	}
-}
-
-void 	set_attributes(void *virt, uint32_t nb)
+static void check_page_directory(void *virt)
 {
 	// get directory
 	page_directory *pd = _cur_directory;
@@ -88,6 +74,26 @@ void 	set_attributes(void *virt, uint32_t nb)
 		page_table *virt_table = (page_table*)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
 		kmemset(virt_table, 0, sizeof(page_table));
 	}
+	return ;
+}
+
+void	remove_attribute(void *virt, uint32_t nb)
+{
+	check_page_directory(virt);
+	for (size_t i = 0; i < nb; i++)
+	{
+		void *real_addr = virt + (i * 4096);
+		page_table *table = (page_table*)(0xFFC00000 + (PD_INDEX((uint32_t)real_addr)) * PAGE_SIZE);
+		pt_entry *page = &table->m_entries[PT_INDEX((uint32_t)real_addr)];
+
+		pt_entry_del_attrib(page, PTE_WRITABLE);
+		reload_tlb(real_addr);
+	}
+}
+
+void 	set_attributes(void *virt, uint32_t nb)
+{
+	check_page_directory(virt);
 	for (size_t i = 0; i < nb; i++)
 	{
 		void *phys = pmm_map_page();
@@ -107,30 +113,8 @@ void 	set_attributes(void *virt, uint32_t nb)
 
 void	vmm_map_page(void *phys, void *virt, bool is_user)
 {
-	// get directory
-	page_directory *pd = _cur_directory;
+	check_page_directory(virt);
 
-	// get page table
-	pd_entry *e = &pd->m_entries[PD_INDEX((uint32_t) virt)];
-	if ((*e & PTE_PRESENT) != PTE_PRESENT)
-	{
-		// page table not present, allocate it
-		page_table *table = (page_table*)pmm_map_page();
-		if (!table)
-			PANIC("Failed to allocate new Page Table");
-
-		// create a new entry
-		pd_entry* entry = &pd->m_entries[PD_INDEX((uint32_t)virt)];
-
-		pd_entry_add_attrib(entry, PDE_PRESENT);
-		pd_entry_add_attrib(entry, PDE_WRITABLE);
-		if (is_user)
-			pd_entry_add_attrib(entry, PDE_USER);
-		pd_entry_set_frame(entry, (uint32_t)table);
-
-		page_table *virt_table = (page_table*)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
-		kmemset(virt_table, 0, sizeof(page_table));
-	}
 	// get physical table
 	page_table *table = (page_table *)(0xFFC00000 + (PD_INDEX((uint32_t)virt) * PAGE_SIZE));
 	// get page
