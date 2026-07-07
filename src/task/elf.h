@@ -25,10 +25,10 @@ typedef uint32_t	Elf32_Word; // Unsigned large integer
 #define EI_NIDENT	16 // unused bytes
 
 // magic number
-#define ELFMAG0 0x7f
-#define ELFMAG1 'E'
-#define ELFMAG2 'L'
-#define ELFMAG3 'F'
+#define ELFMAG0		0x7f
+#define ELFMAG1		'E'
+#define ELFMAG2		'L'
+#define ELFMAG3		'F'
 
 struct elf32_ehdr
 {
@@ -128,6 +128,17 @@ struct elf32_phdr
 #define PT_PHDR		6		// if present specifies the location and size of the program header table itself
 #define PT_LOPROC	0x70000000	// values in this inclusive range are reserved for processor-specific semantics
 #define PT_HIPROC	0x7fffffff	// same that PT_LOPROC
+
+// auxiliary vector types
+#define AT_NULL		0
+#define AT_PHDR		3
+#define AT_PHENT	4
+#define AT_PHNUM	5
+#define AT_PAGESZ	6
+#define AT_ENTRY	9
+#define AT_SECURE	23
+#define AT_RANDOM	25
+#define AT_SYSINFO	32
 
 extern void reload_tlb(void *virt);
 ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t *regs);

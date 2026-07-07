@@ -1,5 +1,5 @@
 #include "arch/i386/idt.h"
-#include <uapi.h>
+#include "arch/i386/gdt.h"
 #include "task/task.h"
 #include "task/elf.h"
 #include "arch/i386/lib/uaccess.h"
@@ -74,6 +74,12 @@ ssize_t	sys_chdir(registers_t *regs)
 	return (chdir((char*)regs->ebx));
 }
 
+ssize_t	sys_getpid(registers_t *regs)
+{
+	(void)regs;
+	return (getpid());
+}
+
 ssize_t	sys_access(registers_t *regs)
 {
 	return (access((char *)regs->ebx, regs->ecx));
@@ -105,6 +111,11 @@ ssize_t sys_pipe(registers_t *regs)
 	return (pipe((int*)regs->ebx));
 }
 
+ssize_t	sys_brk(registers_t *regs)
+{
+	return (brk(regs->ebx));
+}
+
 ssize_t	sys_setgid(registers_t *regs)
 {
 	return (setgid(regs->ebx));
@@ -126,6 +137,18 @@ ssize_t	sys_dup2(registers_t *regs)
 	return (dup2(regs->ebx, regs->ecx));
 }
 
+ssize_t	sys_symlink(registers_t *regs)
+{
+	(void)regs;
+	return (-1);
+}
+
+ssize_t	sys_readlink(registers_t *regs)
+{
+	(void)regs;
+	return (-1);
+}
+
 ssize_t sys_mmap(registers_t *regs)
 {
 	return (mmap(regs->ebx));
@@ -136,6 +159,21 @@ ssize_t sys_munmap(registers_t *regs)
 	return (munmap((void*)regs->ebx, regs->ecx));
 }
 
+ssize_t	sys_stat(registers_t *regs)
+{
+	return (stat_func((const char *)regs->ebx, (struct stat*)regs->ecx));
+}
+
+ssize_t	sys_lstat(registers_t *regs)
+{
+	return (lstat_func((const char *)regs->ebx, (struct stat*)regs->ecx));
+}
+
+ssize_t	sys_fstat(registers_t *regs)
+{
+	return (fstat_func(regs->ebx, (struct stat*)regs->ecx));
+}
+
 ssize_t	sys_init_module(registers_t *regs)
 {
 	return (insmod((char*)regs->ebx));
@@ -144,6 +182,11 @@ ssize_t	sys_init_module(registers_t *regs)
 ssize_t	sys_del_module(registers_t *regs)
 {
 	return (rmmod((char*)regs->ebx));
+}
+
+ssize_t	sys_getdents(registers_t *regs)
+{
+	return (getdents(regs->ebx, (struct linux_dirent*)regs->ecx, regs->edx));
 }
 
 ssize_t	sys_getcwd(registers_t *regs)
@@ -178,20 +221,28 @@ static ssize_t	(*syscall[384])(registers_t*) =
 	[SYS_wait] 		= sys_wait,
 	[SYS_execve] 		= sys_execve,
 	[SYS_chdir]		= sys_chdir,
+	[SYS_getpid]		= sys_getpid,
 	[SYS_setuid]		= sys_setuid,
 	[SYS_getuid] 		= sys_getuid,
 	[SYS_access] 		= sys_access,
 	[SYS_kill] 		= sys_kill,
 	[SYS_dup] 		= sys_dup,
 	[SYS_pipe] 		= sys_pipe,
+	[SYS_brk]		= sys_brk,
 	[SYS_setgid]		= sys_setgid,
 	[SYS_getgid]		= sys_getgid,
 	[SYS_signal] 		= sys_signal,
 	[SYS_dup2]		= sys_dup2,
+	[SYS_symlink]		= sys_symlink,
+	[SYS_readlink]		= sys_readlink,
 	[SYS_mmap] 		= sys_mmap,
 	[SYS_munmap]		= sys_munmap,
+	[SYS_stat]		= sys_stat,
+	[SYS_lstat]		= sys_lstat,
+	[SYS_fstat]		= sys_fstat,
 	[SYS_init_module]	= sys_init_module,
 	[SYS_del_module]	= sys_del_module,
+	[SYS_getdents]		= sys_getdents,
 	[SYS_getcwd] 		= sys_getcwd,
 	[SYS_socketpair]	= sys_socketpair,
 	[SYS_sendmsg]		= sys_sendmsg,
@@ -200,7 +251,7 @@ static ssize_t	(*syscall[384])(registers_t*) =
 
 void 	syscall_callback(registers_t *regs)
 {
-//	kdebug("Syscall %d requested!\n", regs->eax);
+	kprintf("Syscall %d requested!\n", regs->eax);
 
 	// check if regs->eax (syscall number) exists
 	if (regs->eax < 384 && syscall[regs->eax] != NULL)

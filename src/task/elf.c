@@ -33,12 +33,18 @@ static char **malloc_var(char **str)
 	return (res);
 }
 
-static char *make_stack(char **envp, char **argv)
+static char *make_stack(char **envp, char **argv, struct elf32_ehdr *elf, uint32_t phdr_vaddr)
 {
 	void *phys = pmm_map_page();
 	void *virt = (void*)0xBFFFF000;
 	vmm_map_page(phys, virt, true);
 	char *user_stack = (char*)virt + 4096;
+
+	// entropy AT_RANDOM
+	user_stack -= 16;
+	char *random_bytes = user_stack;
+	for (int i = 0; i < 16; i++)
+		random_bytes[i] = i * 13;
 
 	uint32_t addr_save_envp[64];
 	uint32_t env_len;
@@ -70,26 +76,40 @@ static char *make_stack(char **envp, char **argv)
 	if (align != 0)
 		user_stack -= align;
 
-	user_stack -= 4;
-	*(uint32_t*)user_stack = 0; // NULL de envp
+	uint32_t *stack_ptr = (uint32_t*)user_stack;
+	#define PUSH_AUXV(id, val) \
+		stack_ptr--; *stack_ptr = (uint32_t)(val); \
+		stack_ptr--; *stack_ptr = (uint32_t)(id);
+	PUSH_AUXV(AT_NULL, 0);
+	PUSH_AUXV(AT_RANDOM, (uint32_t)random_bytes);
+	PUSH_AUXV(AT_SECURE, 0);
+	PUSH_AUXV(AT_PAGESZ, 4096);
+	PUSH_AUXV(AT_PHNUM, elf->e_phnum);
+	PUSH_AUXV(AT_PHENT, elf->e_phentsize);
+	PUSH_AUXV(AT_PHDR, phdr_vaddr);
+	PUSH_AUXV(AT_ENTRY, elf->e_entry);
+	#undef PUSH_AUXV
+
+	stack_ptr -= 4;
+	*stack_ptr = 0; // NULL de envp
 	// aqui hacer bucle para meter env
 	for (int i = env_len - 1; i >= 0; i--)
 	{
-		user_stack -= 4;
-		*(uint32_t*)user_stack = addr_save_envp[i];
+		stack_ptr -= 4;
+		*stack_ptr = addr_save_envp[i];
 	}
-	user_stack -= 4;
-	*(uint32_t*)user_stack = 0; // NULl de argv
+	stack_ptr -= 4;
+	*stack_ptr = 0; // NULl de argv
 	// hacer un bucle recorriendo argv y metiendolo en user_stack
 	for (int i = argc - 1; i >= 0; i--)
 	{
-		user_stack -= 4;
-		*(uint32_t*)user_stack = addr_save_argv[i];
+		stack_ptr -= 4;
+		*stack_ptr = addr_save_argv[i];
 	}
 	// por ultimo meter argc y done
-	user_stack -= 4;
-	*(uint32_t*)user_stack = (uint32_t)argc;
-	return (user_stack);
+	stack_ptr -= 4;
+	*stack_ptr = (uint32_t)argc;
+	return ((char*)stack_ptr);
 }
 
 ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t *regs)
@@ -132,10 +152,14 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 	vmm_load_process_directory(current_process->pd);
 
 	struct elf32_phdr *program = (struct elf32_phdr*)((char*)content + elf->e_phoff);
+	uint32_t phdr_vaddr = 0;
+	uint32_t max_vaddr = 0;
 	for (int i = 0; i < elf->e_phnum; i++)
 	{
 		if (program->p_type == PT_LOAD)
 		{
+			if (program->p_offset == 0)
+				phdr_vaddr = program->p_vaddr + elf->e_phoff;
 			if (program->p_memsz == 0 || program->p_vaddr < 0x1000)
 			{
 				program = (struct elf32_phdr*)((char*)program + elf->e_phentsize);
@@ -145,6 +169,8 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 			uint32_t end_vaddr = program->p_vaddr + program->p_memsz;
 			uint32_t end_page = (end_vaddr + 4095) & 0xFFFFF000;
 			uint32_t nb_page = (end_page - start_page) / 4096;
+			if (end_vaddr > max_vaddr)
+				max_vaddr = end_vaddr;
 			for (uint32_t j = 0; j < nb_page; j++)
 			{
 				void *virt_addr = (void*)(start_page + (j * 4096));
@@ -164,7 +190,11 @@ ssize_t	execve(char *file_path, char **user_argv, char **user_envp, registers_t 
 		}
 		program = (struct elf32_phdr*)((char*)program + elf->e_phentsize);
 	}
-	char *user_stack = make_stack(envp, argv);
+	// align heap start to the next page limit
+	current_process->heap_start = (max_vaddr + 4095) & 0xFFFFF000;
+	current_process->heap_end = current_process->heap_start;
+
+	char *user_stack = make_stack(envp, argv, elf, phdr_vaddr);
 	regs->useresp = (uint32_t)user_stack;
 	regs->eip = elf->e_entry;
 

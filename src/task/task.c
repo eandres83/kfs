@@ -1,6 +1,6 @@
 #include "task.h"
 #include "mm/vmm.h"
-#include "mm/gdt.h"
+#include "arch/i386/gdt.h"
 #include "fs/fd.h"
 #include "task/elf.h"
 #include "modules/events.h"
@@ -62,10 +62,11 @@ void create_init_process()
 		return ;
 	current_process = new_proc;
 
-	char *argv[] = {"/bin/init", NULL};
-	char *envp[] = {"PATH=/bin:/usr/bin", "TERM=linux", "USER=root", NULL};
+	char *argv[] = {"/bin/ash", NULL};
+	char *envp[] = {"PATH=/bin", "TERM=linux", "USER=root", NULL};
 	registers_t regs;
-	int32_t res = execve("/bin/init", argv, envp, &regs);
+
+	int32_t res = execve("/bin/ash", argv, envp, &regs);
 	if (res == -1)
 	{
 		kdebug("Fatal error when init_main_process execve, soo bad :(\n");
@@ -119,6 +120,8 @@ ssize_t fork(registers_t *regs)
 			process[i].pid = next_pid++;
 			process[i].ruid = current_process->ruid;
 			process[i].euid = current_process->euid;
+			process[i].heap_start = current_process->heap_start;
+			process[i].heap_end = current_process->heap_end;
 			process[i].kstack = kmalloc(4096);
 			if (!process[i].kstack)
 				return (-1);
@@ -167,9 +170,115 @@ ssize_t fork(registers_t *regs)
 	return (-1);
 }
 
-ssize_t mmap(ssize_t size)
+ssize_t	brk(uint32_t new_brk)
 {
-	if (size < 0)
+	proc_t *p = current_process;
+
+	if (new_brk == 0 || new_brk == p->heap_end)
+		return (p->heap_end);
+	if (new_brk < p->heap_start)
+		return (p->heap_end);
+	uint32_t current_limit = (p->heap_end + 4095) & 0xFFFFF000;
+	uint32_t new_limit = (new_brk + 4095) & 0xFFFFF000;
+
+	if (new_limit > current_limit)
+	{
+		for (uint32_t vaddr = current_limit; vaddr < new_limit; vaddr += 4096)
+		{
+			void *phys = pmm_map_page();
+			if (!phys)
+				return (p->heap_end);
+			vmm_map_page(phys, (void*)vaddr, true);
+			kmemset((void*)vaddr, 0, 4096);
+		}
+	}
+	else if (new_limit < current_limit)
+	{
+		for (uint32_t vaddr = current_limit; vaddr >= new_limit; vaddr += 4096)
+		{
+			vmm_unmap_page((void*)vaddr);
+			if (vaddr == 0)
+				break;
+		}
+	}
+	p->heap_end = new_brk;
+	return (p->heap_end);
+}
+
+//ssize_t	mmap2(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
+//{
+//	if (len < 0)
+//		return (-1);
+//	int index = -1;
+//	for (int i = 0; i < 32; i++)
+//	{
+//		if (curren_process->mmap_allocation[i] == 0)
+//		{
+//			index = i;
+//			break;
+//		}
+//	}
+//	if (index == -1)
+//		return (-1);
+//	uint32_t start_vaddr = 0x40000000 + (current_process->mmap_count * 4096);
+//	uint32_t virt_addr = start_vaddr;
+//
+//	for (uint32_t i = 0; i < len; i++)
+//	{
+//		void *phys_addr = pmm_map_page();
+//		if (!phys_addr)
+//			return (-1);
+//		vmm_map_page(phys_addr, (void*)virt_addr, true);
+//		virt_addr += 4096;
+//	}
+//	current_process->mmap_allocation[index] = start_vaddr;
+//	current_process->mmap_count += len;
+//
+//	return ((ssize_t)start_vaddr);
+//}
+
+//ssize_t mmap(void *addr, size_t	len, int prot, int flags, int fd, off_t offset)
+//{
+//	(void)prot;
+//	(void)flags;
+//	(void)fd;
+//	(void)offset;
+//	if (len < 0)
+//		return (-1);
+//	int index = -1;
+//	for (int i = 0; i < 32; i++)
+//	{
+//		if (current_process->mmap_allocation[i] == 0)
+//		{
+//			index = i;
+//			break;
+//		}
+//	}
+//	if (index == -1)
+//		return (-1);
+//	uint32_t start_vaddr = 0x40000000 + (current_process->mmap_count * 4096);
+//	uint32_t virt_addr = start_vaddr;
+//
+//	size_t	total_size = (len + 4095) / 4096;
+//	for (uint32_t i = 0; i < total_size; i++)
+//	{
+//		void *phys_addr = pmm_map_page();
+//		if (!phys_addr)
+//			return (-1);
+//		vmm_map_page(phys_addr, (void*)virt_addr, true);
+//		virt_addr += 4096;
+//	}
+//	current_process->mmap_allocation[index] = start_vaddr;
+//	current_process->mmap_count += total_size;
+//
+//	execute_callback(EVENT_MEMORY, (void*)len);
+//	kdebug("MMAP return: 0x%x\n", start_vaddr);
+//	return ((ssize_t)start_vaddr);
+//}
+
+ssize_t mmap(ssize_t len)
+{
+	if (len < 0)
 		return (-1);
 	int index = -1;
 	for (int i = 0; i < 32; i++)
@@ -182,12 +291,10 @@ ssize_t mmap(ssize_t size)
 	}
 	if (index == -1)
 		return (-1);
-
 	uint32_t start_vaddr = 0x40000000 + (current_process->mmap_count * 4096);
 	uint32_t virt_addr = start_vaddr;
 
-	size_t	total_size = (size + 4095) / 4096;
-
+	size_t	total_size = (len + 4095) / 4096;
 	for (uint32_t i = 0; i < total_size; i++)
 	{
 		void *phys_addr = pmm_map_page();
@@ -196,11 +303,11 @@ ssize_t mmap(ssize_t size)
 		vmm_map_page(phys_addr, (void*)virt_addr, true);
 		virt_addr += 4096;
 	}
-
 	current_process->mmap_allocation[index] = start_vaddr;
 	current_process->mmap_count += total_size;
 
-	execute_callback(EVENT_MEMORY, (void*)size);
+	execute_callback(EVENT_MEMORY, (void*)len);
+	kdebug("MMAP return: 0x%x\n", start_vaddr);
 	return ((ssize_t)start_vaddr);
 }
 
@@ -222,6 +329,11 @@ ssize_t munmap(void *addr, size_t size)
 	}
 	return (0);
 }
+
+//ssize_t	mprotect(void *addr, size_t len, int prot)
+//{
+//	
+//}
 
 void exit_process(uint32_t status)
 {
@@ -459,6 +571,11 @@ ssize_t setgid(uint32_t gid)
 ssize_t	getgid()
 {
 	return (current_process->gid);
+}
+
+ssize_t	getpid()
+{
+	return (current_process->pid);
 }
 
 void find_signal(registers_t *regs)
