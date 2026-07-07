@@ -1,7 +1,9 @@
 #ifndef UAPI_H
 #define UAPI_H
 
-typedef int32_t ssize_t;
+#include <syscall.h>
+
+typedef int32_t  ssize_t;
 typedef uint32_t socklen_t;
 
 #define STDIN_FILENO 0
@@ -24,36 +26,6 @@ typedef uint32_t socklen_t;
 // waitpid options
 #define WNOHANG 1
 
-// syscall
-#define SYS_exit 	1
-#define SYS_fork 	2
-#define SYS_read 	3
-#define SYS_write	4
-#define SYS_open	5
-#define SYS_close	6
-#define SYS_waitpid	7
-#define SYS_wait	8
-#define SYS_execve	11
-#define SYS_chdir	12
-#define SYS_setuid	23
-#define SYS_getuid	24
-#define SYS_access	33
-#define SYS_kill	37
-#define SYS_dup		41
-#define SYS_pipe	42
-#define SYS_setgid	46
-#define SYS_getgid	47
-#define SYS_signal	48
-#define SYS_dup2	63
-#define SYS_mmap	90
-#define SYS_munmap	91
-#define SYS_init_module 128
-#define SYS_del_module	129
-#define SYS_getcwd	183
-#define SYS_socketpair	360
-#define SYS_sendmsg	370
-#define SYS_recvmsg	372
-
 // socket struct and defines
 struct iovec
 {
@@ -72,11 +44,67 @@ struct msghdr
 	int32_t		msg_flags;	// flags on received message
 };
 
+// socket flags
 #define AF_UNIX  1
 #define AF_LOCAL 1
 
 #define SOCK_STREAM 2
 
 #define SCM_RIGHTS 0x01
+
+// lseek flags
+#define SEEK_SET	1
+#define SEEK_CUR	2
+#define SEEK_END	3
+
+// stat fstat lstat syscall
+typedef uint32_t dev_t;
+typedef uint32_t ino_t;
+typedef uint32_t mode_t;
+typedef uint32_t nlink_t;
+typedef uint32_t uid_t;
+typedef uint32_t gid_t;
+typedef int32_t	 off_t;
+typedef int32_t	 blksize_t;
+typedef int32_t	 blkcnt_t;
+typedef int32_t	 time_t;
+
+struct timespec
+{
+	time_t	tv_sec;
+	int32_t	tv_nsec;
+};
+
+struct stat
+{
+	dev_t		st_dev;
+	ino_t		st_ino;
+	mode_t		st_mode;
+	nlink_t		st_nlink;
+	uid_t		st_uid;
+	gid_t		st_gid;
+	dev_t		st_rdev;
+	off_t		st_size;
+	blksize_t	st_blksize;
+	blkcnt_t	st_blocks;
+	struct timespec	st_atim;
+	struct timespec	st_mtim;
+	struct timespec	st_ctim;
+};
+
+// getdents
+struct linux_dirent
+{
+	uint32_t	d_ino;		// inode number
+	uint32_t	d_off;		// offset
+	uint16_t	d_reclen;	// length fo this linux_dirent
+	char		d_name[];	// filename (null-terminated)
+};
+
+// mprotect flags
+#define PROT_NONE	0
+#define PROT_READ	1
+#define PROT_WRITE	2
+#define PROT_EXEC	4
 
 #endif

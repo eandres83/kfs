@@ -136,3 +136,119 @@ ssize_t pipe(int *fd)
 	return (0);
 }
 
+ssize_t	stat_func(const char *path, struct stat *user_stat)
+{
+	if (!path || !user_stat)
+		return (-1);
+	struct vfs_node *node = get_vfs_node_path((char*)path);
+	if (!node)
+		return (-1);
+	if (node->ops == NULL || node->ops->stat == NULL)
+		return (-1);
+	struct stat kernel_stat;
+	if (node->ops->stat(node, &kernel_stat) == -1)
+		return (-1);
+	if (copy_to_user_wrap(user_stat, &kernel_stat, sizeof(struct stat)) == -1)
+		return (-1);
+	return (0);
+}
+
+ssize_t	fstat_func(int fd, struct stat *user_stat)
+{
+	if (fd < 0 || fd >= MAX_FD || !user_stat)
+		return (-1);
+	struct file *file = fd_get(get_current_process(), fd);
+	if (!file)
+		return (-1);
+	struct vfs_node *node = file->node;
+	if (node->ops == NULL || node->ops->stat == NULL)
+		return (-1);
+	struct stat kernel_stat;
+	if (node->ops->stat(node, &kernel_stat) == -1)
+		return (-1);
+	if (copy_to_user_wrap(user_stat, &kernel_stat, sizeof(struct stat)) == -1)
+		return (-1);
+	return (0);
+}
+
+ssize_t	lstat_func(const char *path, struct stat *user_stat)
+{
+	if (!path || !user_stat)
+		return (-1);
+	struct vfs_node *node = get_vfs_node_path((char*)path);
+	if (!node || !node->ops || !node->ops->stat)
+		return (-1);
+	struct stat kernel_start;
+	if (node->ops->stat(node, &kernel_start) == -1)
+		return (-1);
+	if (copy_to_user_wrap(user_stat, &kernel_start, sizeof(struct stat)) == -1)
+		return (-1);
+	return (0);
+}
+
+ssize_t	lseek(int fd, off_t offset, int whence)
+{
+	if (fd < 0 || fd >= MAX_FD)
+		return (-1);
+	struct file *file = fd_get(get_current_process(), fd);
+	if (!file)
+		return (-1);
+	if (whence == SEEK_SET)
+		file->offset = offset;
+	if (whence == SEEK_CUR)
+		file->offset += offset;
+	if (whence == SEEK_END)
+		file->offset = offset + file->node->size;
+	return (file->offset);
+}
+
+ssize_t	getdents(int fd, struct linux_dirent *dirp, int count)
+{
+	if (fd < 0 || fd >= MAX_FD)
+		return (-1);
+	struct file *file = fd_get(get_current_process(), fd);
+	if (!file)
+		return (-1);
+	struct vfs_node *node = file->node;
+	if (node->type != VFS_DIRECTORY)
+		return (-1);
+	if (node->ops != NULL && node->ops->readdir != NULL)
+		node->ops->readdir(node);
+	struct vfs_node *current_child = node->children;
+	for (uint32_t i = 0; i < file->offset && current_child != NULL; i++)
+		current_child = current_child->next_to_kin;
+
+	size_t	bytes_written = 0;
+	char *user_ptr = (char*)dirp;
+	while (current_child != NULL)
+	{
+		size_t raw_size = 10 + kstrlen(current_child->name) + 2;
+		size_t aligned_size = ((raw_size + 3) / 4) * 4;
+
+		if (bytes_written + aligned_size > (size_t)count)
+			break;
+		char tmp_buf[256];
+		kmemset(tmp_buf, 0, 256);
+		struct linux_dirent *tmp_dirent = (struct linux_dirent *)tmp_buf;
+		tmp_dirent->d_ino = current_child->inode;
+		tmp_dirent->d_off = file->offset + 1;
+		tmp_dirent->d_reclen = aligned_size;
+		kstrcpy(tmp_dirent->d_name, current_child->name);
+
+		char d_type = 8;
+		if (current_child->type == VFS_DIRECTORY)
+			d_type = 4;
+		else if (current_child->type == VFS_SYMLINK)
+			d_type = 10;
+
+		tmp_buf[aligned_size - 1] = d_type;
+		if (copy_to_user_wrap(user_ptr, tmp_buf, aligned_size) == -1)
+			return (-1);
+		user_ptr += aligned_size;
+		bytes_written += aligned_size;
+		file->offset++;
+		current_child = current_child->next_to_kin;
+	}
+	return (bytes_written);
+}
+

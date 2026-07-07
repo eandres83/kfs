@@ -36,10 +36,7 @@ struct vfs_node *get_vfs_node_path(char *path)
 		if (!found)
 		{
 			if (current_node->ops != NULL && current_node->ops->finddir != NULL)
-			{
-//				kprintf("los putos datos de current_node -> %x, %x\n", &current_node->ops, &current_node->ops->finddir);
 				current_node = current_node->ops->finddir(current_node, word[i]);
-			}
 			else
 				current_node = NULL;
 		}

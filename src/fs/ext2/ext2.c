@@ -6,6 +6,7 @@ ssize_t	ext2_read(struct vfs_node *dir_node, char *buff, size_t len, size_t offs
 ssize_t	ext2_write(struct vfs_node *node, char *str, size_t len, size_t offset);
 ssize_t ext2_open(struct vfs_node *node);
 size_t	ext2_close(struct vfs_node *node);
+ssize_t	ext2_stat(struct vfs_node *node, struct stat *statbuf);
 
 static struct ops ext2_ops = {
 	.read = ext2_read,
@@ -14,6 +15,7 @@ static struct ops ext2_ops = {
 	.close = ext2_close,
 	.readdir = ext2_readdir,
 	.finddir = ext2_finddir,
+	.stat = ext2_stat,
 };
 
 struct ext2_fs_info
@@ -98,6 +100,32 @@ struct ext2_inode *get_inode(struct vfs_node *node)
 	if (!inode)
 		return (NULL);
 	return (inode);
+}
+
+ssize_t	ext2_stat(struct vfs_node *node, struct stat *statbuf)
+{
+	struct ext2_inode *inode = get_inode(node);
+	if (!inode)
+		return (-1);
+	kmemset(statbuf, 0, sizeof(struct stat));
+
+	statbuf->st_ino = node->inode;
+	statbuf->st_mode = inode->type_permisi;
+	statbuf->st_nlink = inode->nb_hard_links;
+	statbuf->st_uid = inode->user_id;
+	statbuf->st_gid = inode->group_id;
+	statbuf->st_size = inode->lower_size;
+
+	struct ext2_fs_info *fs_info = (struct ext2_fs_info*)node->fs_info;
+	statbuf->st_blksize = fs_info->size_block;
+
+	statbuf->st_blocks = inode->nb_disk_sector;
+	statbuf->st_atim.tv_sec = inode->last_access_time;
+	statbuf->st_mtim.tv_sec = inode->last_mod_time;
+	statbuf->st_ctim.tv_sec = inode->creation_time;
+
+	kfree(inode);
+	return (0);
 }
 
 ssize_t ext2_open(struct vfs_node *node)
@@ -344,6 +372,8 @@ static	struct vfs_node *create_node(struct vfs_node *dir_node, struct ext2_dir_e
 		new_node->type = VFS_DIRECTORY;
 	else if ((child_inode->type_permisi & 0xF000) == 0x8000)
 		new_node->type = VFS_FILE;
+	else if ((child_inode->type_permisi & 0xF000) == 0xA000)
+		new_node->type = VFS_SYMLINK;
 	else
 	{
 		if (dir_entry->type == 2)

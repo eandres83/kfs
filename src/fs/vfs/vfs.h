@@ -3,10 +3,11 @@
 
 #include <utils.h>
 #include <kmalloc.h>
+#include <uapi.h>
 
 extern struct vfs_node *vfs;
 
-enum types { VFS_UNKNOWN, VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPOINT};
+enum types { VFS_UNKNOWN, VFS_FILE, VFS_DIRECTORY, VFS_BLOCK_DEVICE, VFS_MOUNTPOINT, VFS_SYMLINK };
 
 struct vfs_node
 {
@@ -34,6 +35,7 @@ struct ops
 	size_t (*close) (struct vfs_node *);
 	void (*readdir) (struct vfs_node *);
 	struct vfs_node *(*finddir) (struct vfs_node *, char *);
+	ssize_t	(*stat)	(struct vfs_node *, struct stat *);
 };
 
 void		init_vfs();

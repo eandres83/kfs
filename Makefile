@@ -1,10 +1,11 @@
-export CC = i686-elf-gcc
+CC = i686-elf-gcc
 AS = i686-elf-as
 LD = i686-elf-ld
 
 INCLUDES = -I include -I src
 CFLAGS = -m32 -ffreestanding -O2 -Wall -Wextra -Werror -g -fno-builtin -fno-pie -fno-pic \
-	-fno-exceptions -fno-stack-protector -nostdlib -nodefaultlibs $(INCLUDES)
+	-fno-exceptions -fno-stack-protector -nostdlib -nostdinc -nodefaultlibs $(INCLUDES) \
+	-isystem $(shell $(CC) -print-file-name=include)
 
 # flag to print debug msg or not
 ifeq ($(DEBUG), 1)
@@ -27,10 +28,8 @@ ifneq ($(MAKECMDGOALS),toolchain)
         endif
 endif
 
-export USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -g -fno-builtin -nostdlib -nodefaultlibs -I userland
+USER_CFLAGS = -m32 -ffreestanding -Wall -Wextra -Werror -g -fno-builtin -nostdlib -nodefaultlibs -I 
 LDFLAGS = -T linker.ld
-
-export PROJECT_ROOT := $(CURDIR)
 
 DISK_IMG = disk.img
 TMP_DIR = .tmp_build
@@ -50,9 +49,7 @@ SYM_C = src/symbol_table.c
 SYM_OBJ = $(BUILD_DIR)/src/symbol_table.o
 DUMMY_OBJ = $(BUILD_DIR)/src/modules/dummy_symbols.o
 
-export BUILD_DIR = .obj
-
-SRCS_MINISHELL = $(foreach dir, $(shell find bin/minishell -type d), $(wildcard $(dir)/*.c))
+BUILD_DIR = .obj
 
 SRCS_C = $(foreach dir, $(shell find src -type d), $(wildcard $(dir)/*.c))
 SRCS_S = $(foreach dir, $(shell find src -type d), $(wildcard $(dir)/*.s))
@@ -62,13 +59,6 @@ CORE_OBJS := $(filter-out %dummy_symbols.o %symbol_table.o,$(ALL_RAW_OBJS))
 
 SRCS_MODULE = $(shell find modules -type f -name "*.c")
 OBJS_MODULE = $(patsubst modules/%.c, $(BUILD_DIR)/modules/%.ko, $(SRCS_MODULE))
-
-USER_SRCS_C = $(foreach dir, $(shell find userland -type d), $(wildcard $(dir)/*.c))
-export USER_OBJS_C = $(patsubst userland/%.c, $(BUILD_DIR)/userland/%.o, $(USER_SRCS_C))
-export CRT0_OBJ = $(BUILD_DIR)/userland/crt0.o
-
-APPS_SRCS = $(wildcard bin/*.c)
-APPS_OBJ = $(patsubst bin/%.c, bin/%, $(APPS_SRCS))
 
 all: $(KERNEL_FINAL) $(DISK_IMG)
 
@@ -100,26 +90,7 @@ $(BUILD_DIR)/src/%.o: src/%.s
 toolchain:
 	@bash script/build_cross_compiler.sh
 
-# USERLAND
-$(BUILD_DIR)/userland/%.o: userland/%.c
-	@mkdir -p $(dir $@)
-	@$(CC) $(USER_CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/userland/crt0.o: userland/crt0.s
-	@mkdir -p $(dir $@)
-	@$(AS) $< -o $@
-
-bin/%: bin/%.c $(CRT0_OBJ) $(USER_OBJS_C)
-	@mkdir -p $(dir $(BUILD_DIR)/apps/$*.o)
-	@echo "Compiling user apps: $*"
-	@$(CC) $(USER_CFLAGS) -c $< -o $(BUILD_DIR)/apps/$*.o
-	@echo "Linking app: $*"
-	@$(LD) -T userland/userland.ld -o $@ $(CRT0_OBJ) $(BUILD_DIR)/apps/$*.o $(USER_OBJS_C)
-
-bin/minishell/minishell: $(CRT0_OBJ) $(USER_OBJS_C) $(SRCS_MINISHELL)
-	@$(MAKE) -C bin/minishell
-
-$(SYSROOT_STAMP): $(KERNEL_FINAL) $(APPS_OBJ) bin/minishell/minishell
+$(SYSROOT_STAMP): $(KERNEL_FINAL)
 	@echo "Creating a temporary directory structure"
 	@sh script/sysroot.sh $(FS_DIR)
 	@find bin -type f ! -name "*.c" ! -name "*.h" ! -name "Makefile" ! -name "*.o" ! -name "*.s" -exec cp {} $(FS_DIR)/bin/ \;
@@ -163,7 +134,7 @@ modules: $(DISK_IMG)
 .PHONY: clean
 clean:
 	@rm -rf $(BUILD_DIR) $(TMP_DIR)
-	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' ! -name "*.ko" -delete
+#	@find bin -type f ! -name '*.c' ! -name '*.h' ! -name 'Makefile' ! -name "*.ko" -delete
 
 .PHONY: fclean
 fclean: clean 

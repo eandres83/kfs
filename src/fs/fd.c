@@ -71,6 +71,7 @@ static struct ops tty_fake_ops = {
 	.close = tty_vfs_close,
 	.readdir = NULL,
 	.finddir = NULL,
+	.stat = NULL,
 };
 
 static struct vfs_node *alloc_node()

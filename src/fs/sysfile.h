@@ -2,6 +2,7 @@
 #define SYSFILE_H
 
 #include <utils.h>
+#include <uapi.h>
 
 struct buf_ring
 {
@@ -19,5 +20,11 @@ ssize_t	pipe(int *fd);
 
 // buffer ring function
 void	init_buf_ring(int size);
+
+ssize_t	stat_func(const char *path, struct stat *statbuf);
+ssize_t	fstat_func(int fd, struct stat *user_stat);
+ssize_t	lstat_func(const char *path, struct stat *user_stat);
+
+ssize_t	getdents(int fd, struct linux_dirent *dirp, int count);
 
 #endif
