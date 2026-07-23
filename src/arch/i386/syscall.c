@@ -1,3 +1,5 @@
+#include <sys/syscall.h>
+#include <sys/types.h>
 #include "arch/i386/idt.h"
 #include "arch/i386/gdt.h"
 #include "task/task.h"
@@ -6,6 +8,7 @@
 #include "fs/sysfile.h"
 #include "ipc/socket.h"
 #include "modules/modules.h"
+#include "kernel/sys.h"
 
 ssize_t sys_exit(registers_t *regs)
 {
@@ -44,7 +47,7 @@ ssize_t sys_close(registers_t *regs)
 ssize_t sys_waitpid(registers_t *regs)
 {
 	uint32_t status;
-	ssize_t pid = waitpid(regs->ebx, &status, regs->edx);
+	pid_t pid = waitpid(regs->ebx, &status, regs->edx);
 	if (!check_user_addr(regs->ecx))
 		return (-1);
 	*(uint32_t*)regs->ecx = status;
@@ -54,7 +57,7 @@ ssize_t sys_waitpid(registers_t *regs)
 ssize_t sys_wait(registers_t *regs)
 {
 	uint32_t status;
-	ssize_t pid = wait(&status);
+	pid_t pid = wait(&status);
 	if (!check_user_addr(regs->ebx))
 		return (-1);
 	*(uint32_t*)regs->ebx = status;
@@ -132,6 +135,18 @@ ssize_t sys_signal(registers_t *regs)
 	return (signal(regs->ebx, (void (*)())regs->ecx));
 }
 
+ssize_t sys_geteuid(registers_t *regs)
+{
+	(void)regs;
+	return (geteuid());
+}
+
+ssize_t	sys_getegid(registers_t *regs)
+{
+	(void)regs;
+	return (getegid());
+}
+
 ssize_t	sys_dup2(registers_t *regs)
 {
 	return (dup2(regs->ebx, regs->ecx));
@@ -194,6 +209,40 @@ ssize_t	sys_getcwd(registers_t *regs)
 	return ((ssize_t)getcwd((char*)regs->ebx, regs->ecx));
 }
 
+ssize_t	sys_getuid32(registers_t *regs)
+{
+	(void)regs;
+	return (getuid32());
+}
+
+ssize_t	sys_getgid32(registers_t *regs)
+{
+	(void)regs;
+	return (getgid32());
+}
+
+ssize_t	sys_geteuid32(registers_t *regs)
+{
+	(void)regs;
+	return (geteuid32());
+}
+
+ssize_t	sys_getegid32(registers_t *regs)
+{
+	(void)regs;
+	return (getegid32());
+}
+
+ssize_t	sys_setuid32(registers_t *regs)
+{
+	return (setuid32(regs->ebx));
+}
+
+ssize_t	sys_setgid32(registers_t *regs)
+{
+	return (setgid32(regs->ebx));
+}
+
 ssize_t	sys_socketpair(registers_t *regs)
 {
 	return (socketpair(regs->ebx, regs->ecx, regs->edx, (int*)regs->esi));
@@ -232,6 +281,8 @@ static ssize_t	(*syscall[384])(registers_t*) =
 	[SYS_setgid]		= sys_setgid,
 	[SYS_getgid]		= sys_getgid,
 	[SYS_signal] 		= sys_signal,
+	[SYS_geteuid]		= sys_geteuid,
+	[SYS_getegid]		= sys_getegid,
 	[SYS_dup2]		= sys_dup2,
 	[SYS_symlink]		= sys_symlink,
 	[SYS_readlink]		= sys_readlink,
@@ -244,6 +295,12 @@ static ssize_t	(*syscall[384])(registers_t*) =
 	[SYS_del_module]	= sys_del_module,
 	[SYS_getdents]		= sys_getdents,
 	[SYS_getcwd] 		= sys_getcwd,
+	[SYS_getuid32]		= sys_getuid32,
+	[SYS_getgid32]		= sys_getgid32,
+	[SYS_geteuid32]		= sys_geteuid32,
+	[SYS_getegid32]		= sys_getegid32,
+	[SYS_setuid32]		= sys_setuid32,
+	[SYS_setgid32]		= sys_setgid32,
 	[SYS_socketpair]	= sys_socketpair,
 	[SYS_sendmsg]		= sys_sendmsg,
 	[SYS_recvmsg]		= sys_recvmsg,

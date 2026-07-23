@@ -1,5 +1,5 @@
 #include "slab.h"
-#include <kmalloc.h>
+#include <sys/kmalloc.h>
 
 static void	return_memory(void *block, size_t size)
 {

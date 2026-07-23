@@ -1,4 +1,4 @@
-#include <kmalloc.h>
+#include <sys/kmalloc.h>
 
 char *kstrcpy(char *dest, const char *src)
 {

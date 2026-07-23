@@ -2,7 +2,7 @@
 #define VFS_H
 
 #include <utils.h>
-#include <kmalloc.h>
+#include <sys/kmalloc.h>
 #include <uapi.h>
 
 extern struct vfs_node *vfs;

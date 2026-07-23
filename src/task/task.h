@@ -2,7 +2,7 @@
 #define TASK_H
 
 #include <utils.h>
-#include <kmalloc.h>
+#include <sys/kmalloc.h>
 #include "arch/i386/idt.h"
 #include "fs/vfs/vfs.h"
 
@@ -22,10 +22,11 @@ struct context
 typedef struct proc
 {
 	uint32_t	id;
-	uint32_t	pid;
-	uint32_t	ruid;	// Real uid
-	uint32_t	euid;	// Effective uid
-	uint32_t	gid;	// Group id
+	pid_t		pid;
+	uid_t		ruid;	// Real uid
+	uid_t		euid;	// Effective uid
+	gid_t		rgid;	// Real Group id
+	gid_t		egid;   // Effective gid
 	uint32_t	exit_status;
 	uint32_t	signals;
 	uint32_t	signal_handlers[32];
@@ -56,20 +57,16 @@ void kill_process(char *motivo);
 // syscall
 void 	exit_process(uint32_t status);
 ssize_t	wait(uint32_t *status);
-ssize_t	waitpid(ssize_t pid, uint32_t *status, uint32_t options);
-ssize_t setuid(uint32_t uid);
-ssize_t getuid();
-ssize_t setgid(uint32_t gid);
-ssize_t	getgid();
-ssize_t	getpid();
-ssize_t fork(registers_t *regs);
-ssize_t kill(uint32_t pid, uint32_t signal);
+ssize_t	waitpid(pid_t pid, uint32_t *status, uint32_t options);
+pid_t	fork(registers_t *regs);
+ssize_t kill(pid_t pid, uint32_t signal);
 ssize_t signal(uint32_t signum, void (*function));
 ssize_t mmap(ssize_t size);
 ssize_t munmap(void *addr, size_t size);
 char	*getcwd(char *buf, size_t size);
 ssize_t	chdir(char *path);
 ssize_t	brk(uint32_t new_brk);
+pid_t	getpid();
 
 // helper for fs
 proc_t	*get_current_process();

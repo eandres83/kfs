@@ -32,7 +32,7 @@ static int check_node_permision(struct vfs_node *node, int mode)
 		ret = 0;
 	else if (current_process->euid == node->uid)
 		ret = check_permission(node->rights, 6, mode);
-	else if (current_process->gid == node->gid)
+	else if (current_process->egid == node->gid)
 		ret = check_permission(node->rights, 3, mode);
 	else
 		ret = check_permission(node->rights, 0, mode);

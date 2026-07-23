@@ -23,6 +23,8 @@
 #define SYS_setgid		46
 #define SYS_getgid		47
 #define SYS_signal		48
+#define SYS_geteuid		49
+#define SYS_getegid		50
 #define SYS_dup2		63
 #define SYS_symlink		83
 #define SYS_readlink		85
@@ -36,6 +38,12 @@
 #define SYS_del_module		129
 #define SYS_getdents		141
 #define SYS_getcwd		183
+#define SYS_getuid32		199
+#define SYS_getgid32		200
+#define SYS_geteuid32		201
+#define SYS_getegid32		202
+#define SYS_setuid32		213
+#define SYS_setgid32		214
 #define SYS_socketpair		360
 #define SYS_sendmsg		370
 #define SYS_recvmsg		372

@@ -5,7 +5,7 @@
 #include "task/elf.h"
 #include "modules/events.h"
 
-static uint32_t next_pid = 1;
+static pid_t next_pid = 1;
 struct context *scheduler_context;
 struct tss_entry *tss;
 proc_t process[64];
@@ -110,7 +110,7 @@ void kill_process(char *motivo)
 
 // syscall for process
 
-ssize_t fork(registers_t *regs)
+pid_t fork(registers_t *regs)
 {
 	for (int i = 0; i < 64; i++)
 	{
@@ -118,10 +118,14 @@ ssize_t fork(registers_t *regs)
 		{
 			process[i].parent = current_process;
 			process[i].pid = next_pid++;
-			process[i].ruid = current_process->ruid;
-			process[i].euid = current_process->euid;
 			process[i].heap_start = current_process->heap_start;
 			process[i].heap_end = current_process->heap_end;
+
+			// premision
+			process[i].ruid = current_process->ruid;
+			process[i].euid = current_process->euid;
+			process[i].rgid = current_process->rgid;
+			process[i].egid = current_process->egid;
 			process[i].kstack = kmalloc(4096);
 			if (!process[i].kstack)
 				return (-1);
@@ -345,11 +349,11 @@ void exit_process(uint32_t status)
 	swtch(&current_process->context, scheduler_context);
 }
 
-static uint32_t clear_process(proc_t *process, uint32_t *status)
+static pid_t clear_process(proc_t *process, uint32_t *status)
 {
 	if (status != NULL)
 		*status = process->exit_status;
-	uint32_t tmp_pid = process->pid;
+	pid_t tmp_pid = process->pid;
 
 	for (int i = 0; i < MAX_FD; i++)
 	{
@@ -365,7 +369,7 @@ static uint32_t clear_process(proc_t *process, uint32_t *status)
 	return (tmp_pid);
 }
 
-ssize_t waitpid(ssize_t pid, uint32_t *status, uint32_t options)
+ssize_t waitpid(pid_t pid, uint32_t *status, uint32_t options)
 {
 	while (1)
 	{
@@ -382,7 +386,7 @@ ssize_t waitpid(ssize_t pid, uint32_t *status, uint32_t options)
 						return (clear_process(&process[i], status));
 					else if (pid > 0)
 					{
-						if (process[i].pid == (uint32_t)pid)
+						if (process[i].pid == pid)
 							return (clear_process(&process[i], status));
 					}
 				}
@@ -427,7 +431,7 @@ ssize_t signal(uint32_t signum, void (*function))
 	return (0);
 }
 
-ssize_t kill(uint32_t pid, uint32_t signal)
+ssize_t kill(pid_t pid, uint32_t signal)
 {
 	if (pid == 0)
 		return (-1);
@@ -461,7 +465,7 @@ static char *pwd_right(char *path)
 	if (!array)
 		return (NULL);
 
-	char *pila[256];
+	char *buff[256];
 	int top = 0;
 	for (int i = 0; array[i] != NULL; i++)
 	{
@@ -474,7 +478,7 @@ static char *pwd_right(char *path)
 		}
 		else
 		{
-			pila[top] = array[i];
+			buff[top] = array[i];
 			top++;
 		}
 	}
@@ -486,7 +490,7 @@ static char *pwd_right(char *path)
 	kstrcpy(pwd, "/");
 	for (int i = 0; i < top; i++)
 	{
-		kstrcat(pwd, pila[i]);
+		kstrcat(pwd, buff[i]);
 		if (i < top -1)
 			kstrcat(pwd, "/");
 	}
@@ -541,43 +545,6 @@ char	*getcwd(char *buf, size_t size)
 	return (buf);
 }
 
-ssize_t setuid(uint32_t new_uid)
-{
-	if (current_process->euid == 0)
-	{
-		current_process->euid = new_uid;
-		current_process->ruid = new_uid;
-		return (0);
-	}
-	else if (current_process->ruid == new_uid)
-	{
-		current_process->euid = new_uid;
-		return (0);
-	}
-	return (-1);
-}
-
-ssize_t getuid()
-{
-	return (current_process->euid);
-}
-
-ssize_t setgid(uint32_t gid)
-{
-	current_process->gid = gid;
-	return (0);
-}
-
-ssize_t	getgid()
-{
-	return (current_process->gid);
-}
-
-ssize_t	getpid()
-{
-	return (current_process->pid);
-}
-
 void find_signal(registers_t *regs)
 {
 	if (current_process->signals != 0)
@@ -604,6 +571,11 @@ void find_signal(registers_t *regs)
 			}
 		}
 	}
+}
+
+pid_t	getpid()
+{
+	return (current_process->pid);
 }
 
 // setters and getters

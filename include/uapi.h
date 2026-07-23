@@ -1,10 +1,7 @@
 #ifndef UAPI_H
 #define UAPI_H
 
-#include <syscall.h>
-
-typedef int32_t  ssize_t;
-typedef uint32_t socklen_t;
+#include <sys/types.h>
 
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
@@ -56,18 +53,6 @@ struct msghdr
 #define SEEK_SET	1
 #define SEEK_CUR	2
 #define SEEK_END	3
-
-// stat fstat lstat syscall
-typedef uint32_t dev_t;
-typedef uint32_t ino_t;
-typedef uint32_t mode_t;
-typedef uint32_t nlink_t;
-typedef uint32_t uid_t;
-typedef uint32_t gid_t;
-typedef int32_t	 off_t;
-typedef int32_t	 blksize_t;
-typedef int32_t	 blkcnt_t;
-typedef int32_t	 time_t;
 
 struct timespec
 {

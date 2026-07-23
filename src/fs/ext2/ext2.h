@@ -2,7 +2,7 @@
 #define EXT2_H
 
 #include <utils.h>
-#include <kmalloc.h>
+#include <sys/kmalloc.h>
 #include "drivers/ide/ide.h"
 #include "fs/vfs/vfs.h"
 #include "fs/mbr.h"
