@@ -26,16 +26,16 @@ else
 	wget https://ftp.gnu.org/gnu/binutils/binutils-2.46.0.tar.xz
 	tar -xf binutils-2.46.0.tar.xz
 	rm binutils-2.46.0.tar.xz
-	
+
 	mkdir -p build-binutils
 	cd build-binutils
 	../binutils-2.46.0/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
 	make -j 6
 	make install -j 6
-	
+
 	cd ../
 	rm -rf build-binutils binutils-2.46.0
-	
+
 	# install gcc
 	wget https://ftp.gnu.org/gnu/gcc/gcc-15.2.0/gcc-15.2.0.tar.xz
 	tar -xf gcc-15.2.0.tar.xz
@@ -43,7 +43,7 @@ else
 	cd gcc-15.2.0
 	./contrib/download_prerequisites
 	cd ../
-	
+
 	mkdir -p build-gcc
 	cd build-gcc
 	../gcc-15.2.0/configure --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c --without-headers --disable-hosted-libstdcxx
@@ -51,10 +51,10 @@ else
 	make all-target-libgcc -j 6
 	make install-gcc -j 6
 	make install-target-libgcc -j 6
-	
+
 	cd ../
 	rm -rf build-gcc gcc-15.2.0
-	
+
 	# install musl
 	wget https://musl.libc.org/releases/musl-1.2.6.tar.gz
 	tar -xzf musl-1.2.6.tar.gz

@@ -63,8 +63,6 @@ ssize_t kill(pid_t pid, uint32_t signal);
 ssize_t signal(uint32_t signum, void (*function));
 ssize_t mmap(ssize_t size);
 ssize_t munmap(void *addr, size_t size);
-char	*getcwd(char *buf, size_t size);
-ssize_t	chdir(char *path);
 ssize_t	brk(uint32_t new_brk);
 pid_t	getpid();
 

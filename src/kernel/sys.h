@@ -17,4 +17,7 @@ gid_t	setgid32(uint32_t gid);
 uid_t	geteuid32();
 gid_t	getegid32();
 
+char	*getcwd(char *buf, size_t size);
+ssize_t	chdir(char *path);
+
 #endif
