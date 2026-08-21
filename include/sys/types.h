@@ -20,4 +20,7 @@ typedef int32_t	 blksize_t;
 typedef int32_t	 blkcnt_t;
 typedef int32_t	 time_t;
 
+typedef uint32_t u32;
+typedef uint64_t u64;
+
 #endif

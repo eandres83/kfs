@@ -20,4 +20,6 @@ gid_t	getegid32();
 char	*getcwd(char *buf, size_t size);
 ssize_t	chdir(char *path);
 
+int ioctl(int fd, int cmd, int arg);
+
 #endif

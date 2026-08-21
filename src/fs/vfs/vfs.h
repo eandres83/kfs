@@ -36,6 +36,7 @@ struct ops
 	void (*readdir) (struct vfs_node *);
 	struct vfs_node *(*finddir) (struct vfs_node *, char *);
 	ssize_t	(*stat)	(struct vfs_node *, struct stat *);
+	ssize_t	(*ioctl) (struct file *, int , int);
 };
 
 void		init_vfs();

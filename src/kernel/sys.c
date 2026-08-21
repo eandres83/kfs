@@ -214,3 +214,14 @@ char	*getcwd(char *buf, size_t size)
 	return (buf);
 }
 
+int ioctl(int fd, int cmd, int arg)
+{
+	struct file *file = fd_get(get_current_process(), fd);
+	if (file == NULL)
+		return (-1);
+	struct vfs_node *node = file->node;
+	if (node->ops->ioctl == NULL)
+		return (-1);
+	node->ops->ioctl(file, cmd, arg);
+}
+

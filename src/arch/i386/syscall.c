@@ -147,6 +147,11 @@ ssize_t	sys_getegid(registers_t *regs)
 	return (getegid());
 }
 
+ssize_t	sys_ioctl(registers_t *regs)
+{
+	return (ioctl(regs->ebx, regs->ecx, regs->edx));
+}
+
 ssize_t	sys_dup2(registers_t *regs)
 {
 	return (dup2(regs->ebx, regs->ecx));
@@ -283,6 +288,7 @@ static ssize_t	(*syscall[384])(registers_t*) =
 	[SYS_signal] 		= sys_signal,
 	[SYS_geteuid]		= sys_geteuid,
 	[SYS_getegid]		= sys_getegid,
+	[SYS_ioctl]		= sys_ioctl,
 	[SYS_dup2]		= sys_dup2,
 	[SYS_symlink]		= sys_symlink,
 	[SYS_readlink]		= sys_readlink,

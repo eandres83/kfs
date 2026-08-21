@@ -25,6 +25,7 @@
 #define SYS_signal		48
 #define SYS_geteuid		49
 #define SYS_getegid		50
+#define SYS_ioctl		54
 #define SYS_dup2		63
 #define SYS_symlink		83
 #define SYS_readlink		85
